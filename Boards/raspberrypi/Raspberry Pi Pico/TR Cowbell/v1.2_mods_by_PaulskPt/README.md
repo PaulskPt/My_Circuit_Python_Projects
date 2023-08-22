@@ -66,6 +66,6 @@ on your gear, you'll need:
 - Added support to choose between SSD1306 or SH1107 display drivers;
 - Added sections to enable to play and modify notes (sound) compilations. This is a slightly modified version of @Foamyguys TR_Cowbell_Sequencer_Software repo;
 - Added support for WiFi connections.
-- If you want to be able to change the Circuitpython storage filesystem from Readonly (standard) to Writeble: rename the file boot_pico.py to boot.py. Then you can change the mode by pushing the <BUTTON 1> (= UP button) at the moment you press the <Reset> button on the board. My experience is that you have to perform another reset of the PicoW to see the new filesystem state in the opening text.
+- If you want to be able to change the Circuitpython storage filesystem from Readonly (standard) to Writeble: rename the file boot_pico.py to boot.py. Then you can change the mode by pushing the \<BUTTON 1\> (= UP button) at the moment you press the \<Reset\> button on the board. My experience is that you have to perform another reset of the PicoW to see the new filesystem state in the opening text.
 
 
