@@ -302,7 +302,9 @@ async def pr_state(mTAG, state):
     TAG = await tag_adj("pr_state(): ")
     if new_event or lStart:
         if my_debug:
-            if await count_btns_active(state) > 0:
+            cnt = await count_btns_active(state)
+            print(f"pr_state(): btns active: {cnt}")
+            if cnt > 0:
                 print(TAG+f"notes= {state.notes}")
                 print(TAG+f"sel\'d idx= {state.selected_index}")
             else:
@@ -535,7 +537,7 @@ async def read_encoder(state):
                 if state.selected_index != -1:
                     if my_debug:
                         print(TAG+f"{state.last_position} -> {cur_position}")
-                state.notes[state.selected_index] += 1
+                    state.notes[state.selected_index] += 1
         elif cur_position < state.last_position:
             new_event = True
             if my_debug:
@@ -544,8 +546,9 @@ async def read_encoder(state):
                 decrement_selected(state)
             elif state.mode == "selecting_note":
                 if state.selected_index != -1:
-                    print(TAG+f"{state.last_position} -> {cur_position}")
-                state.notes[state.selected_index] -= 1
+                    if my_debug:
+                        print(TAG+f"{state.last_position} -> {cur_position}")
+                    state.notes[state.selected_index] -= 1
         else:
             # same
             pass
