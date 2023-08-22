@@ -29,7 +29,7 @@ import os
 my_debug = True
 # --- DISPLAY DRTIVER selection flags ---+
 use_ssd1306 = False  #                   |
-use_sh1107 = True  #                     !
+use_sh1107 = True  #                     |
 # ---------------------------------------+
 use_midi = True
 use_wifi = False
