@@ -303,7 +303,7 @@ async def pr_state(mTAG, state):
     if new_event or lStart:
         if my_debug:
             cnt = await count_btns_active(state)
-            print(f"pr_state(): btns active: {cnt}")
+            # print(f"btns active: {cnt}")
             if cnt > 0:
                 print(TAG+f"notes= {state.notes}")
                 print(TAG+f"sel\'d idx= {state.selected_index}")
@@ -559,8 +559,8 @@ async def read_encoder(state):
             new_event = True
             state.mode = "selecting_note" if state.mode == "selecting_index" else "selecting_index"
             if my_debug:
-                print(TAG+"Encoder switch pressed")
-                print(TAG+f"Changed mode to: \"{state.mode}\"")
+                print(TAG+"Encoder sw. pressed")
+                print(TAG+f"Changed mode to:\n\"{state.mode}\"")
         state.last_position = cur_position
         await asyncio.sleep(0.05)
 
