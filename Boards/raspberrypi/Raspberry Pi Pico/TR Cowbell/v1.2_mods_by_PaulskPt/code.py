@@ -32,6 +32,7 @@ use_sh1107 = True  #                     !
 # ---------------------------------------+
 use_midi = True
 use_wifi = False
+use_TAG = False
 
 if use_wifi:
     import wifi
