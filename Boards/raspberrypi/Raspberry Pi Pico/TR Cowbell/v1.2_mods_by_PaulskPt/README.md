@@ -62,4 +62,11 @@ on your gear, you'll need:
 - 2 - 20-pin header male ([Digikey](https://www.digikey.com/en/products/detail/adam-tech/PH1-20-UA/9830398), [Adafruit ](https://www.adafruit.com/product/392))
 - You will also need enough female headers for any breakout pins (GPIO breakout, swd, stemma, mcp interrupts)
 
+### Additions by @PaulskPt:
+- Added support to choose between SSD1306 or SH1107 display drivers;
+- Added sections to enable to play and modify notes (sound) compilations. This is a slightly modified version of @Foamyguys TR_Cowbell_Sequencer_Software repo;
+- Added support for WiFi connections.
+
+### TODO: 
+- solve a problem that I (@PaulskPt) was not able to switch the Circuitpython storage filesystem from Readonly (RO) to ReadWrite (RW) by pressing the <BUTTON 1> (= UP button of the 5-button D-Pad) at the moment of pressing the <Reset> button on the board to reset the PicoW.
 
