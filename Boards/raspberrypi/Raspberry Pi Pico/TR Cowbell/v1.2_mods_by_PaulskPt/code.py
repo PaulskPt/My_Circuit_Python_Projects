@@ -287,14 +287,27 @@ def index_to_chip_and_index(index):
 def chip_and_index_to_index(chip, index):
     return chip * 8 + index
 
+async def count_btns_active(state):
+    cnt = 0
+    for i in range(16):
+        if (state.notes[i] is not None) and (state.notes[i] != 0):
+            cnt += 1
+    #if my_debug:
+    #    print(f"count_btns_active(): {cnt} button(s) active")
+    return cnt
+
 # Called from blink_the_leds()
 async def pr_state(mTAG, state):
     global lStart, new_event
     TAG = await tag_adj("pr_state(): ")
     if new_event or lStart:
         if my_debug:
-            print(TAG+f"state.notes= {state.notes}")
-            print(TAG+f"state.selected_index= {state.selected_index}")
+            if await count_btns_active(state) > 0:
+                print(TAG+f"notes= {state.notes}")
+                print(TAG+f"sel\'d idx= {state.selected_index}")
+            else:
+                print(TAG+"No buttons active")
+
         lStart = False
         new_event = False
 
@@ -504,7 +517,7 @@ async def read_buttons(state):
                     print(TAG+f"new mode: {state.mode}")
 
         # slow down the loop a little bit, can be adjusted
-        await asyncio.sleep(BPM)  # 0.05
+        await asyncio.sleep(0.05)  # Was: BPM
 
 async def read_encoder(state):
     global new_event
@@ -512,26 +525,26 @@ async def read_encoder(state):
     while True:
         cur_position = encoder.position
         # print(cur_position)
-
         if state.last_position < cur_position:
             new_event = True
             if my_debug:
-                print(TAG+f"{state.last_position} -> {cur_position}")
+                print("Encoder turned CW")
             if state.mode == "selecting_index":
                 increment_selected(state)
-                if my_debug:
-                    print(TAG+f"increased selected_index to: {state.selected_index}")
             elif state.mode == "selecting_note":
+                if state.selected_index != -1:
+                    if my_debug:
+                        print(TAG+f"{state.last_position} -> {cur_position}")
                 state.notes[state.selected_index] += 1
         elif cur_position < state.last_position:
             new_event = True
             if my_debug:
-                print(TAG+f"{state.last_position} -> {cur_position}")
+                print("Encoder turned CCW")
             if state.mode == "selecting_index":
                 decrement_selected(state)
-                if my_debug:
-                    print(TAG+f"decreased selected_index to: {state.selected_index}")
             elif state.mode == "selecting_note":
+                if state.selected_index != -1:
+                    print(TAG+f"{state.last_position} -> {cur_position}")
                 state.notes[state.selected_index] -= 1
         else:
             # same
@@ -543,7 +556,8 @@ async def read_encoder(state):
             new_event = True
             state.mode = "selecting_note" if state.mode == "selecting_index" else "selecting_index"
             if my_debug:
-                print(TAG+f"changed mode to {state.mode}")
+                print(TAG+"Encoder switch pressed")
+                print(TAG+f"Changed mode to: \"{state.mode}\"")
         state.last_position = cur_position
         await asyncio.sleep(0.05)
 
