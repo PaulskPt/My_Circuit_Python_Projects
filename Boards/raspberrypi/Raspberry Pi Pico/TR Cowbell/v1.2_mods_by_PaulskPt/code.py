@@ -91,8 +91,6 @@ if use_sh1107:
     rotation=ROTATION,
     )
 
-TEMPO = 120 # Beats Per Minute (approximation)
-
 print("\n\nTR=COWBELL test")
 print(f"board ID: \"{board.board_id}\"")
 vfsfat = storage.getmount('/')
@@ -199,6 +197,7 @@ notes = [None] * 16
 #
 SELECTED_INDEX = -1
 
+TEMPO = 120 # Beats Per Minute (approximation)
 BPM = TEMPO / 60 / 16
 
 def toggle_latch(mcp, pin, state):
@@ -505,7 +504,7 @@ async def read_buttons(state):
                     print(TAG+f"new mode: {state.mode}")
 
         # slow down the loop a little bit, can be adjusted
-        await asyncio.sleep(0.05)
+        await asyncio.sleep(BPM)  # 0.05
 
 async def read_encoder(state):
     global new_event
