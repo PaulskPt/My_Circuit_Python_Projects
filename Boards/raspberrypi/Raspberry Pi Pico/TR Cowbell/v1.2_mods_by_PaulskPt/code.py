@@ -5,7 +5,7 @@
 # This file contains changes, additions by @PaulskPt (Github)
 # Partly also based on TR_Cowbell_Sequencer_Software repo by @Foamyguy
 # 2023-08-20
-# More info about buttons and controls, see file: README_buttons_and_controls.md
+# More info about buttons and controls, see file: README_buttons_and_controls.md (work-in-progress)
 # To choose your display driver: set the global flags "use_ssd1306" and "use_sh1107" (only one can be "True")
 # If you want to use WiFi set the "use_wifi" flag to "True" and fill in your WiFi SSID and Password in the file "settings.toml"
 # A global flag "my_debug" has been added to control the majority of print statements in this script.
