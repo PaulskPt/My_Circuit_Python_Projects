@@ -179,12 +179,27 @@ if use_midi:
         midi_out=usb_midi.ports[1], out_channel=0  # was: out_channel=1
     )
 
+# Global variables, needed for pr_state()
+# lStart is needed to pass the print statements in pr_state() at the start of this script.
+# new_event flag is set in read_buttons() and read_encoder().
+new_event = False
+lStart = True
+
+if use_wifi:
+    ip = None
+    s_ip = '0.0.0.0'
+    pool = None
+
+tag_le_max = 18  # see tag_adj()
+
 # status of the button latches
 latches = [False] * 16
 #
 notes = [None] * 16
 #
 SELECTED_INDEX = -1
+
+BPM = TEMPO / 60 / 16
 
 def toggle_latch(mcp, pin, state):
     # print(mcp, pin)
@@ -273,7 +288,7 @@ def decrement_selected(state):
 # if not, a conversion function could be used to translate:
 # (key_x, key_y) -> (led_x, led_y)
 
-BPM = TEMPO / 60 / 16
+
 
 def index_to_chip_and_index(index):
     return index // 8, index % 8
@@ -281,11 +296,7 @@ def index_to_chip_and_index(index):
 def chip_and_index_to_index(chip, index):
     return chip * 8 + index
 
-# Global variables, needed for pr_state()
-# lStart is needed to pass the print statements in pr_state() at the start of this script.
-# new_event flag is set in read_buttons() and read_encoder().
-new_event = False
-lStart = True
+
 
 # Called from blink_the_leds()
 async def pr_state(mTAG, state):
@@ -607,10 +618,7 @@ async def update_display(state, delay=0.125):
         #
         # await asyncio.sleep(delay)
 
-ip = None
-s_ip = '0.0.0.0'
-pool = None
-tag_le_max = 18  # see tag_adj()
+
 
 """
     Function tag_adj()
@@ -698,8 +706,8 @@ async def do_connect():
         #led.value = False
         print(TAG+f"s_ip= {s_ip}. Resetting this \'{wifi.radio.hostname}\' device...")
         time.sleep(2)  # wait a bit to show the user the message
-        import microcontroller
-        microcontroller.reset()
+        #import microcontroller
+        #microcontroller.reset()
 
 async def wifi_is_connected():
     return True if s_ip is not None and s_ip != '0.0.0.0' else False
