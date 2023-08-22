@@ -68,5 +68,5 @@ on your gear, you'll need:
 - Added support for WiFi connections.
 
 ### TODO: 
-- solve a problem that I (@PaulskPt) was not able to switch the Circuitpython storage filesystem from Readonly (RO) to ReadWrite (RW) by pressing the <BUTTON 1> (= UP button of the 5-button D-Pad) at the moment of pressing the <Reset> button on the board to reset the PicoW.
+- solve a problem that I (@PaulskPt) was not able to switch the Circuitpython storage filesystem from Readonly (RO) to ReadWrite (RW) by pressing the <BUTTON 1> (= UP button of the 5-button D-Pad) at the moment of pressing the <Reset> button on the board to reset the PicoW (while the PicoW was not connected to another PC via USB).
 
