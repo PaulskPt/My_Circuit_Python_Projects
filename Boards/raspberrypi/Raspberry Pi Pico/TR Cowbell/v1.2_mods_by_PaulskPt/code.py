@@ -305,10 +305,8 @@ async def pr_state(mTAG, state):
             cnt = await count_btns_active(state)
             # print(f"btns active: {cnt}")
             if cnt > 0:
-                if cnt == 1:
-                    print(TAG+f"{cnt} button active")
-                else:
-                    print(TAG+f"{cnt} buttons active")
+                btn = "button" if cnt == 1 else "buttons"
+                print(TAG+f"{cnt} {btn} active")
                 print(TAG+f"notes= {state.notes}")
                 print(TAG+f"sel\'d idx= {state.selected_index}")
             else:
