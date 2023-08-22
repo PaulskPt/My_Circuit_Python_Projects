@@ -9,6 +9,7 @@
 # To choose your display driver: set the global flags "use_ssd1306" and "use_sh1107" (only one can be "True")
 # If you want to use WiFi set the "use_wifi" flag to "True" and fill in your WiFi SSID and Password in the file "settings.toml"
 # A global flag "my_debug" has been added to control the majority of print statements in this script.
+# Added global flag "use_TAG". This flag controls if in calls to function tag_adj() tags received will be printed or not.
 # Functions added that are not found in the other repos: tag_adj(), do_connect(), wifi_is_connected(), setup(), pr_state().
 import asyncio
 import time
@@ -619,17 +620,21 @@ tag_le_max = 18  # see tag_adj()
 """
 async def tag_adj(t):
     global tag_le_max
-    le = 0
-    spc = 0
-    ret = t
-    if isinstance(t, str):
-        le = len(t)
-    if le >0:
-        spc = tag_le_max - le
-        #print(f"spc= {spc}")
-        ret = ""+t+"{0:>{1:d}s}".format("",spc)
-        #print(f"s=\'{s}\'")
-    return ret
+
+    if use_TAG:
+        le = 0
+        spc = 0
+        ret = t
+
+        if isinstance(t, str):
+            le = len(t)
+        if le >0:
+            spc = tag_le_max - le
+            #print(f"spc= {spc}")
+            ret = ""+t+"{0:>{1:d}s}".format("",spc)
+            #print(f"s=\'{s}\'")
+        return ret
+    return ""
 
 async def do_connect():
     global ip, s_ip, pool
