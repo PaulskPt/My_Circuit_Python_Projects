@@ -211,10 +211,8 @@ def toggle_latch(mcp, pin, state):
     else:
         state.notes[mcp * 8 + pin] = 0
 
-
 def get_latch(mcp, pin, state):
     return state.latches[mcp * 8 + pin]
-
 
 class State:
     def __init__(self, saved_state_json=None):
@@ -237,7 +235,6 @@ class State:
                     self.latches[i] = True
             self.selected_index = saved_state_obj['selected_index']
 
-
     def load_state_json(self, saved_state_json):
 
         saved_state_obj = json.loads(saved_state_json)
@@ -251,7 +248,6 @@ class State:
                 self.latches[i] = True
             else:
                 self.latches[i] = False
-
 
 def increment_selected(state):
     _checked = 0
@@ -267,7 +263,6 @@ def increment_selected(state):
     if _checked >= 16:
         state.selected_index = -1
 
-
 def decrement_selected(state):
     _checked = 0
     _checking_index = (state.selected_index - 1) % 16
@@ -282,21 +277,16 @@ def decrement_selected(state):
     if _checked >= 16:
         state.selected_index = -1
 
-
 # NOTE: it is assumed that key number x (port A) on MCP number y matches
 # the LED number x (port B) on the same MCP number y
 # if not, a conversion function could be used to translate:
 # (key_x, key_y) -> (led_x, led_y)
-
-
 
 def index_to_chip_and_index(index):
     return index // 8, index % 8
 
 def chip_and_index_to_index(chip, index):
     return chip * 8 + index
-
-
 
 # Called from blink_the_leds()
 async def pr_state(mTAG, state):
@@ -330,7 +320,6 @@ async def blink_the_leds(state, delay=0.125):
                 await play_note(state.notes[x * 8 + y], delay, state)
                 # time.sleep(0.001)
                 led_pins_per_chip[x][y].value = True
-
 
 async def blink_selected(state, delay=0.05):
     while True:
@@ -475,7 +464,6 @@ async def read_buttons(state):
                 print(TAG+f"Error occurred: {e}")
                 state.saved_loops = []
 
-
         if middle_btn.fell:
             new_event = True
             if my_debug:
@@ -583,7 +571,6 @@ async def play_note(note, delay, state):
             if state.send_off:
                 midi.send(NoteOff(note, 0))
 
-
 async def update_display(state, delay=0.125):
     while True:
         b = BytesIO()
@@ -617,8 +604,6 @@ async def update_display(state, delay=0.125):
         #         print(f"received: {data}")
         #
         # await asyncio.sleep(delay)
-
-
 
 """
     Function tag_adj()
@@ -722,7 +707,6 @@ async def setup():
             await do_connect()
         else:
             print(TAG+f"WiFi is connected to {os.getenv('CIRCUITPY_WIFI_SSID')}")
-
 
 async def main():
     # state = State(saved_loops.LOOP1)
