@@ -55,10 +55,12 @@
 # Rotary encoder: has 1 control and 1 switch
 # - the variable for the control is: encoder
 # - the variable for the switch is: encoder_btn
-# -- The switch, when pressed, switches the mode between "selecting_file, "selecting_note" and "selecting_index"
+# -- The switch, when pressed, switches the mode between "selecting_file, "selecting_note", "selecting_index" and "selecting_midi_channel"
 # -- in mode "selecting_file" the rotary encoder has no function.
 # -- in mode "selecting_index" turning the rotary encoder control clockwise will increase the selected_index value to the next selected note.
 # -- in mode "selecting_index" turning the rotary encoder control counter clockwise will decrease the selected index value to the previous selected note.
 # -- In the mode "selecting_note", if one or more buttons is activated, turning the rotary encoder control clockwise will increase the note of the selected_index.
-# -- In the mode "selecting_note", if one or more buttons is activated, turning the rotary encoder control clockwise will decrease the note of the selected_index.
+# -- In the mode "selecting_note", if one or more buttons is activated, turning the rotary encoder control counter clockwise will decrease the note of the selected_index.
+# -- In the mode "selecting_midi_channel, turning the rotary encoder control clockwise will increase the midi channel. Currently the maximum channel number is 2 (default).
+# -- In the mode "selecting_midi_channel, turning the rotary encoder control coounter clockwise will decrease the midi channel. Currently the minimum channel number is 1.
 # ----------------------------------------------

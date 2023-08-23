@@ -149,9 +149,14 @@ led_pins = [(a, b) for a in range(2) for b in range(8)]
 for (m, x) in led_pins:
     led_pins_per_chip[m][x].direction = Direction.OUTPUT
 
-mode_lst = ["selecting_file", "selecting_index", "selecting_note"]
+mode_lst = ["selecting_file", "selecting_index", "selecting_note", "selecting_midi_channel"]
 
 if use_midi:
+    min_midi_channel = 1
+    max_midi_channel = 2
+    midi_channel = max_midi_channel  # Default channel = 2
+    midi_ch_chg_event = False # Midi channel change event. See read_encoder()
+
     encoder = rotaryio.IncrementalEncoder(board.GP18, board.GP19)
     encoder_btn_pin = digitalio.DigitalInOut(board.GP20)
     encoder_btn_pin.direction = digitalio.Direction.INPUT
@@ -344,7 +349,10 @@ async def pr_state(mTAG, state):
                         print()
                 print("\n"+"-"*18)
 
-                print(TAG+f"selected idx: {state.selected_index}")
+                if state.mode == "selecting_midi_channel":
+                    print(TAG+f"midi channel: {midi_channel}")
+                else:
+                    print(TAG+f"selected idx: {state.selected_index}")
             else:
                 print(TAG+"No buttons active")
             print(f"mode: {state.mode[10:]}", end = '')
@@ -440,6 +448,9 @@ async def read_buttons(state):
         #     print("down longpress")
         # if not down_btn.value:
         #     print(down_btn.current_duration)
+
+        if state.mode == "selecting_midi_channel": # Only change midi channel with Rotary Encoder control
+            return
 
         if up_btn.fell:
             new_event = True
@@ -597,7 +608,7 @@ async def read_buttons(state):
         await asyncio.sleep(0.05)  # Was: BPM
 
 async def read_encoder(state):
-    global new_event, enc_sw_cnt
+    global new_event, enc_sw_cnt, midi_ch_chg_event, midi_channel
     TAG = await tag_adj("read_encoder(): ")
     while True:
         cur_position = encoder.position
@@ -613,6 +624,12 @@ async def read_encoder(state):
                     if my_debug:
                         print(TAG+f"{state.last_position} -> {cur_position}")
                     state.notes[state.selected_index] += 1
+            elif state.mode == "selecting_midi_channel":
+                midi_ch_chg_event = True
+                midi_channel += 1
+                if midi_channel > max_midi_channel:
+                    midi_channel = min_midi_channel
+                print(f"new midi channel: {midi_channel}")
         elif cur_position < state.last_position:
             new_event = True
             if my_debug:
@@ -624,6 +641,12 @@ async def read_encoder(state):
                     if my_debug:
                         print(TAG+f"{state.last_position} -> {cur_position}")
                     state.notes[state.selected_index] -= 1
+            elif state.mode == "selecting_midi_channel":
+                midi_ch_chg_event = True
+                midi_channel -= 1
+                if midi_channel < min_midi_channel:
+                    midi_channel = max_midi_channel
+                print(f"new midi channel: {midi_channel}")
         else:
             # same
             pass
@@ -645,19 +668,21 @@ async def read_encoder(state):
         await asyncio.sleep(0.05)
 
 async def play_note(note, delay, state):
+    global midi_ch_chg_event
     TAG = await tag_adj("play_note(): ")
     if (note != 0):
         if not state.send_off:
             midi.send(NoteOff(note, 0))
-        if note == 61:
+        if note == 61 and midi_ch_chg_event:
+            midi_ch_chg_event = False  # Clear event flag
             note_on = NoteOn(note, 127)
-            if my_debug:
-                print(TAG+f"playing other channel? {note_on.channel}")
-            midi.send(note_on, channel=2)
+            #if my_debug:
+            #    print(TAG+f"playing other channel? {note_on.channel}")
+            midi.send(note_on, channel=midi_channel)
             await asyncio.sleep(delay)
 
             if state.send_off:
-                midi.send(NoteOff(note, 0), channel=2)
+                midi.send(NoteOff(note, 0), channel=midi_channel)
         else:
             note_on = NoteOn(note, 127)
             midi.send(note_on)
