@@ -26,7 +26,7 @@ from multi_macropad import MultiKeypad
 from adafruit_display_text import label
 import os
 # Global flags
-my_debug = True
+my_debug = False
 # --- DISPLAY DRTIVER selection flags ---+
 use_ssd1306 = False  #                   |
 use_sh1107 = True  #                     |
@@ -107,10 +107,10 @@ while True:
 # --------------------------------------------------------------------
 
 print("\n\nTR=COWBELL test")
-print(f"board ID: \"{board.board_id}\"")
+print(f"Board:\n{board.board_id}")
 vfsfat = storage.getmount('/')
 ro_state = "Readonly" if (vfsfat.readonly == True) else "Writeable"
-print(f"Storage filesystem is: {ro_state}")
+print(f"Filesystem:{ro_state}")
 
 if use_ssd1306:
     sd = "SSD1306"
@@ -328,34 +328,32 @@ async def pr_state(mTAG, state):
     global lStart, new_event
     TAG = await tag_adj("pr_state(): ")
     if new_event or lStart:
-        if my_debug:
-            cnt = await count_btns_active(state)
-            # print(f"btns active: {cnt}")
-            if cnt > 0:
-                btn = "button" if cnt == 1 else "buttons"
-                print(TAG+f"{cnt} {btn} active")
-                print("-"*18)
-                grp = 0
-                for i in range(len(state.notes)):
-                    if i == 0 or i == 8:
-                        print(f"{grp}/ ", end='')
-                        grp += 1
-                    if i == 4 or i == 12:
-                        print("\n   ", end='')
-                    #if i > 0 and i % 4 == 0:
-                    #    print("\n   ", end='')
-                    print("{:>3d} ".format(state.notes[i]), end='')
-                    if i == 7:
-                        print()
-                print("\n"+"-"*18)
-
-                if state.mode == "selecting_midi_channel":
-                    print(TAG+f"midi channel: {midi_channel}")
-                else:
-                    print(TAG+f"selected idx: {state.selected_index}")
+        cnt = await count_btns_active(state)
+        # print(f"btns active: {cnt}")
+        if cnt > 0:
+            btn = "button" if cnt == 1 else "buttons"
+            print(TAG+f"\n{cnt} {btn} active")
+            print("-"*18)
+            grp = 0
+            for i in range(len(state.notes)):
+                if i == 0 or i == 8:
+                    print(f"{grp}/ ", end='')
+                    grp += 1
+                if i == 4 or i == 12:
+                    print("\n   ", end='')
+                #if i > 0 and i % 4 == 0:
+                #    print("\n   ", end='')
+                print("{:>3d} ".format(state.notes[i]), end='')
+                if i == 7:
+                    print()
+            print("\n"+"-"*18)
+            if state.mode == "selecting_midi_channel":
+                print(TAG+f"midi channel: {midi_channel}")
             else:
-                print(TAG+"No buttons active")
-            print(f"mode: {state.mode[10:]}", end = '')
+                print(TAG+f"selected idx: {state.selected_index}")
+        else:
+            print(TAG+"No buttons active")
+        print(f"mode: {state.mode[10:]}", end = '')
 
         lStart = False
         new_event = False
