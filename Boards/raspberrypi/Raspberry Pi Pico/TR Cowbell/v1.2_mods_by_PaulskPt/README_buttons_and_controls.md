@@ -34,29 +34,31 @@
 # - "selecting_note" and
 # - "selecting_index"
 # - If long pressed:
-#   -- switches state.mode to "selecting_file";
+#   -- switches state.mode to the next mode: "selecting_file", "selecting_note" or "selecting_index".
+#   -- I state-mode is "selecting_file":
 #   -- tries to open file "saved_loops.json";
 #   -- reads content of "loops" into object.item "state.saved_loops"
 #
 # Up button:
-# - In state "selecting_note" increases the note frequency
-# - In state "selecting_index" saves ... to file ...
-# - In state "selecting_file" ...
+# - In state.mode "selecting_note", if one or more buttons is activated: increases the note frequency
+# - In state.mode "selecting_index" saves ... to file ...
+# - In state.mode "selecting_file" ...
 # Down button:
-# - In state "selecting_note" decreases the note frequency
-# - In state "selecting_index" ...
-# - In state "selecting_file" ...
+# - In state.mode "selecting_note", if one or more buttons is activated: decreases the note frequency
+# - In state.mode "selecting_index" ...
+# - In state.mode "selecting_file" ...
 # Left button:
-# - # - In state "selecting_note: decreases note
+# - In state.mode "selecting_note, if one or more buttons is activated: decreases note frequency
 # Right button
-# - In state "selecting_note: increases note
+# - In state.mode "selecting_note, if one or more buttons is activated: increases note frequency
 # ---------------------------------------------
 # Rotary encoder: has 1 control and 1 switch
 # - the variable for the control is: encoder
 # - the variable for the switch is: encoder_btn
-# -- The switch, when pressed, switches the mode between "selecting_index" and "selecting_note".
+# -- The switch, when pressed, switches the mode between "selecting_file, "selecting_note" and "selecting_index"
+# -- in mode "selecting_file" the rotary encoder has no function.
 # -- in mode "selecting_index" turning the rotary encoder control clockwise will increase the selected_index value to the next selected note.
 # -- in mode "selecting_index" turning the rotary encoder control counter clockwise will decrease the selected index value to the previous selected note.
-# -- In the mode "selecting_note" turning the rotary encoder control clockwise will increase the note of the selected_index.
-# -- In the mode "selecting_note" turning the rotary encoder control clockwise will decrease the note of the selected_index.
+# -- In the mode "selecting_note", if one or more buttons is activated, turning the rotary encoder control clockwise will increase the note of the selected_index.
+# -- In the mode "selecting_note", if one or more buttons is activated, turning the rotary encoder control clockwise will decrease the note of the selected_index.
 # ----------------------------------------------
