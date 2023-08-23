@@ -307,7 +307,22 @@ async def pr_state(mTAG, state):
             if cnt > 0:
                 btn = "button" if cnt == 1 else "buttons"
                 print(TAG+f"{cnt} {btn} active")
-                print(TAG+f"notes= {state.notes}")
+                #print(TAG+f"notes= {state.notes}")
+                print("-"*18)
+                grp = 0
+                for i in range(len(state.notes)):
+                    if i == 0 or i == 8:
+                        print(f"{grp}/ ", end='')
+                        grp += 1
+                    if i == 4 or i == 12:
+                        print("\n   ", end='')
+                    #if i > 0 and i % 4 == 0:
+                    #    print("\n   ", end='')
+                    print("{:>3d} ".format(state.notes[i]), end='')
+                    if i == 7:
+                        print()
+                print("\n"+"-"*18)
+
                 print(TAG+f"sel\'d idx= {state.selected_index}")
             else:
                 print(TAG+"No buttons active")
