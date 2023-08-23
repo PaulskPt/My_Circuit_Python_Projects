@@ -91,6 +91,21 @@ if use_sh1107:
     rotation=ROTATION,
     )
 
+# -------------------------------------------------------------------+
+# Switch off the Circuitpython logo and the Circuitpython status bar |
+# -------------------------------------------------------------------+
+import supervisor
+display.root_group[0].hidden = False
+display.root_group[1].hidden = True # logo
+display.root_group[2].hidden = True # status bar
+supervisor.reset_terminal(WIDTH, HEIGHT)
+display.root_group[0].y = 0
+#print("OSC")
+while True:
+    print("\x1b[2J", end="")
+    break
+# --------------------------------------------------------------------
+
 print("\n\nTR=COWBELL test")
 print(f"board ID: \"{board.board_id}\"")
 vfsfat = storage.getmount('/')
@@ -314,7 +329,6 @@ async def pr_state(mTAG, state):
             if cnt > 0:
                 btn = "button" if cnt == 1 else "buttons"
                 print(TAG+f"{cnt} {btn} active")
-                #print(TAG+f"notes= {state.notes}")
                 print("-"*18)
                 grp = 0
                 for i in range(len(state.notes)):
@@ -333,7 +347,7 @@ async def pr_state(mTAG, state):
                 print(TAG+f"sel\'d idx= {state.selected_index}")
             else:
                 print(TAG+"No buttons active")
-            print(f"mode: {state.mode}")
+            print(f"mode: {state.mode[10:]}", end = '')
 
         lStart = False
         new_event = False
@@ -438,7 +452,10 @@ async def read_buttons(state):
                     print(TAG+f"mode: \"{state.mode}\".")
                 if btns_active>0:
                     state.notes[state.selected_index] += 1
-                    print(f"state.notes[{state.selected_index}]= {state.notes[state.selected_index]}")
+                    # print(f"state.notes[{state.selected_index}]= {state.notes[state.selected_index]}")
+            elif state.mode == "selecting_index":
+                if btns_active >0:
+                    increment_selected(state)
             elif state.mode == "selected_file":
                 if state.selected_file is None:
                     state.selected_file = 0
@@ -462,7 +479,10 @@ async def read_buttons(state):
                     print(TAG+f"mode: \"{state.mode}\".")
                 if btns_active>0:
                     state.notes[state.selected_index] -= 1
-                    print(f"state.notes[{state.selected_index}]= {state.notes[state.selected_index]}")
+                    # print(f"state.notes[{state.selected_index}]= {state.notes[state.selected_index]}")
+            elif state.mode == "selecting_index":
+                if btns_active >0:
+                    decrement_selected(state)
             elif state.mode == "selecting_file":
                 if state.selected_file is None:
                     state.selected_file = 0
@@ -485,9 +505,11 @@ async def read_buttons(state):
                 if my_debug:
                     print(TAG+f"mode: \"{state.mode}\".")
                 if btns_active>0:
-                    #increment_selected(state)
                     state.notes[state.selected_index] += 1
-                    print(f"state.notes[{state.selected_index}]= {state.notes[state.selected_index]}")
+                    # print(f"state.notes[{state.selected_index}]= {state.notes[state.selected_index]}")
+            elif state.mode == "selecting_index":
+                if btns_active >0:
+                    inccrement_selected(state)
             elif state.mode == "selecting_file":
                 if my_debug:
                     print(TAG+"BUTTON 2 (RIGHT) doing nothing")
@@ -504,11 +526,13 @@ async def read_buttons(state):
                 if my_debug:
                     print(TAG+f"mode: \"{state.mode}\".")
                 if btns_active >0:
-                    #decrement_selected(state)
                     state.notes[state.selected_index] -= 1
-                    print(f"state.notes[{state.selected_index}]= {state.notes[state.selected_index]}")
+                    # print(f"state.notes[{state.selected_index}]= {state.notes[state.selected_index]}")
                 else:
                     print("no buttons active")
+            elif state.mode == "selecting_index":
+                if btns_active >0:
+                    decrement_selected(state)
             elif state.mode == "selecting_file":
                 if my_debug:
                     print(TAG+"BUTTON 4 (LEFT) doing nothing")
