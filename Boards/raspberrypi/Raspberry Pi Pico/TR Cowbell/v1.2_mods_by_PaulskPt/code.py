@@ -309,7 +309,6 @@ async def pr_state(mTAG, state):
     TAG = await tag_adj("pr_state(): ")
     if new_event or lStart:
         if my_debug:
-            print(f"mode: {state.mode}")
             cnt = await count_btns_active(state)
             # print(f"btns active: {cnt}")
             if cnt > 0:
@@ -334,6 +333,7 @@ async def pr_state(mTAG, state):
                 print(TAG+f"sel\'d idx= {state.selected_index}")
             else:
                 print(TAG+"No buttons active")
+            print(f"mode: {state.mode}")
 
         lStart = False
         new_event = False
