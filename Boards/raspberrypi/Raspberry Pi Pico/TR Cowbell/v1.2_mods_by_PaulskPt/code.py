@@ -106,7 +106,7 @@ while True:
     break
 # --------------------------------------------------------------------
 
-print("\n\nTR=COWBELL test")
+print("\n\nTR-COWBELL test")
 print(f"Board:\n{board.board_id}")
 vfsfat = storage.getmount('/')
 ro_state = "Readonly" if (vfsfat.readonly == True) else "Writeable"
