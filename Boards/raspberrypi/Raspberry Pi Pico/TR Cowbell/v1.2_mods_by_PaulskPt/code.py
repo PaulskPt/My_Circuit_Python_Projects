@@ -344,7 +344,7 @@ async def pr_state(mTAG, state):
                         print()
                 print("\n"+"-"*18)
 
-                print(TAG+f"sel\'d idx= {state.selected_index}")
+                print(TAG+f"selected idx: {state.selected_index}")
             else:
                 print(TAG+"No buttons active")
             print(f"mode: {state.mode[10:]}", end = '')
@@ -605,7 +605,7 @@ async def read_encoder(state):
         if state.last_position < cur_position:
             new_event = True
             if my_debug:
-                print("Encoder turned CW")
+                print("\nEncoder turned CW")
             if state.mode == "selecting_index":
                 increment_selected(state)
             elif state.mode == "selecting_note":
@@ -616,7 +616,7 @@ async def read_encoder(state):
         elif cur_position < state.last_position:
             new_event = True
             if my_debug:
-                print("Encoder turned CCW")
+                print("\nEncoder turned CCW")
             if state.mode == "selecting_index":
                 decrement_selected(state)
             elif state.mode == "selecting_note":
