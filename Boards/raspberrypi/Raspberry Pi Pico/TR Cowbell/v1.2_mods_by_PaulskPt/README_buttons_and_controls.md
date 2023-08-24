@@ -52,7 +52,7 @@
 # - the variable for the control is: encoder
 # - the variable for the switch is: encoder_btn
 #
-# -- The switch, when pressed, switches the mode between the modes: "index", "note", "file" and "midi_channel".
+# -- The switch, when pressed, switches between the modes: "index", "note", "file" and "midi_channel".
 #
 # -- in mode "index" turning the rotary encoder control clockwise will increase the selected_index value to the next selected note.
 # -- in mode "index" turning the rotary encoder control counter clockwise will decrease the selected index value to the previous selected note.
