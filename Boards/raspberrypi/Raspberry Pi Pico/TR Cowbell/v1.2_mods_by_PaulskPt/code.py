@@ -333,13 +333,22 @@ def chip_and_index_to_index(chip, index):
 
 async def count_btns_active(state):
     TAG = await tag_adj("count_btns_active(): ")
-    cnt = 0
+    #cnt = 0
+    latches_cnt = 0
     for i in range(16):
-        if (state.notes_lst[i] is not None) and (state.notes_lst[i] != 0):
-            cnt += 1
+        #if (state.notes_lst[i] is not None) and (state.notes_lst[i] != 0):
+        #    cnt += 1
+        if state.latches[i]:
+            latches_cnt += 1
     if my_debug:
-        print(f"\ncount_btns_active(): {cnt} button(s) active")
-    return cnt
+        if latches_cnt < 2:
+            ltch = "latch"
+        else:
+            ltch = "latches"
+        print(f"\ncount_btns_active(): {latches_cnt} button {ltch} active")
+        #print(f"\ncount_btns_active(): {cnt} button(s) active and {latches_cnt} latches active")
+    # return cnt
+    return latches_cnt
 
 async def clr_scrn():
     for i in range(9):
@@ -396,7 +405,7 @@ async def pr_msg(state, msg_lst=None):
             for j in range((max_lines-le)-1):
                 print()
         # await asyncio.sleep(5)
-        time.sleep(5)
+        time.sleep(3)
 
 async def blink_the_leds(state, delay=0.125):
     TAG = await tag_adj("blink_the_leds(): ")
@@ -525,6 +534,7 @@ async def read_buttons(state):
                     await pr_msg(state, msg)
                     #print(TAG+f"loading: {state.selected_file}")
                     state.load_state_obj(state.saved_loops[state.selected_file])
+                    state.mode = mode_dict[MODE_I] # Change mode to "index"
 
         if down_btn.fell:
             new_event = True
@@ -558,6 +568,7 @@ async def read_buttons(state):
                     await pr_msg(state, msg)
                     #print(TAG+f"loading: {state.selected_file}")
                     state.load_state_obj(state.saved_loops[state.selected_file])
+                    state.mode = mode_dict[MODE_I] # Change mode to "index"
 
         if right_btn.fell:
             new_event = True
@@ -565,16 +576,16 @@ async def read_buttons(state):
             incn = "Increasing note" if state.mode == "note" and btns_active >0 else ""
             if my_debug:
                     print(TAG+f"BUTTON 2 (RIGHT) is pressed: {right_btn.pressed}.")
-            if state.mode == "note":
+            if state.mode == "index":
+                if btns_active >0:
+                    increment_selected(state)
+            elif state.mode == "note":
                 if my_debug:
                     print(TAG+f"{incn}")
                     print(TAG+f"mode: \"{state.mode}\".")
                 if btns_active>0:
                     state.notes_lst[state.selected_index] += 1
                     # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
-            elif state.mode == "index":
-                if btns_active >0:
-                    increment_selected(state)
             elif state.mode == "file":
                 if my_debug:
                     print(TAG+"BUTTON 2 (RIGHT) doing nothing")
@@ -587,7 +598,10 @@ async def read_buttons(state):
             decn = "Decreasing note" if state.mode == "note" and btns_active >0 else ""
             if my_debug:
                     print(TAG+f"BUTTON 4 (LEFT) is pressed: {left_btn.pressed}.")
-            if state.mode == "note":
+            if state.mode == "index":
+                if btns_active >0:
+                    decrement_selected(state)
+            elif state.mode == "note":
                 if my_debug:
                     print(TAG+f"{decn}")
                     print(TAG+f"mode: \"{state.mode}\".")
@@ -596,9 +610,6 @@ async def read_buttons(state):
                     # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
                 else:
                     print("no buttons active")
-            elif state.mode == "index":
-                if btns_active >0:
-                    decrement_selected(state)
             elif state.mode == "file":
                 if my_debug:
                     print(TAG+"BUTTON 4 (LEFT) doing nothing")
@@ -630,7 +641,9 @@ async def read_buttons(state):
             new_event = True
             if my_debug:
                 print(TAG+f"BUTTON 5 (MIDDLE) is pressed: {middle_btn.pressed}")
-            if state.mode == "file":
+            if state.mode == "index" or state.mode == "note":
+                state.mode = mode_dict[MODE_F] # Change mode to "file"
+            elif state.mode == "file":
                 if ro_state == "Writeable":
                     # save the current file
                     if my_debug:

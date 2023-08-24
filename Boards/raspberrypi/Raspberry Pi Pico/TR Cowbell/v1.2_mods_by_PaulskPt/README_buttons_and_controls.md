@@ -17,6 +17,8 @@
 #
 # Middle button:
 # - If normal press:
+#   -- In modes "index" or "note"
+#      --- changes mode to "file" (so one can read a next or previous notes set using the Up or Down button)
 #   -- In mode = "file":
 #       --- if the filesystem is "Writeable":
 #       --- tries to open file "saved_loops.json";
@@ -32,13 +34,17 @@
 #   -- reads content of "loops" into memory object.item "state.saved_loops"
 #
 # Up button:
-# - In mode "note", if one or more buttons is activated: increases the note frequency
 # - In mode "index" if more than one button is activated, this button changes the selected index to the next available index
-# - In mode "file"  if all the notes sets are loaded (through a Middle button long press), this button loads the next notes set from memory
+# - In mode "note", if one or more buttons is activated: increases the note frequency
+# - In mode "file"  if all the notes sets are loaded (through a Middle button long press), 
+#     this button loads the next notes set from memory,
+#     then changes mode to "index"
 # Down button:
-# - In mode "note", if one or more buttons is activated: decreases the note frequency
 # - In mode "index" if more than one button is activated, this button changes the selected index to the previous available index
-# - In mode "file", if all the notes sets are loaded (through a Middle button long press), this button loads the previous notes set from memory
+# - In mode "note", if one or more buttons is activated: decreases the note frequency
+# - In mode "file", if all the notes sets are loaded (through a Middle button long press), 
+#     this button loads the previous notes set from memory, 
+#     then changes mode to "index"
 # Left button:
 # - In mode "index" if more than one button is activated, this button changes the selected index to the next available index
 # - In mode "note, if one or more buttons is activated: decreases note frequency
