@@ -373,7 +373,7 @@ async def pr_state(state):
             if state.mode == "midi_channel":
                 print(TAG+f"midi channel: {midi_channel}")
             else:
-                print(TAG+f"selected idx: {state.selected_index}")
+                print(TAG+f"selected idx: {state.selected_index+1}")
         else:
             print(TAG+"No buttons active")
         print(TAG+f"mode: {state.mode}", end = '')
@@ -499,16 +499,16 @@ async def read_buttons(state):
             incn = "Increasing note" if btns_active >0 else ""
             if my_debug:
                 print(TAG+f"BUTTON 1 (UP) is pressed: {up_btn.pressed}.")
-            if state.mode == "note":
+            if state.mode == "index":
+                if btns_active >0:
+                    increment_selected(state)
+            elif state.mode == "note":
                 if my_debug:
                     print(TAG+f"{incn}")
                     print(TAG+f"mode: \"{state.mode}\".")
                 if btns_active>0:
                     state.notes_lst[state.selected_index] += 1
                     # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
-            elif state.mode == "index":
-                if btns_active >0:
-                    increment_selected(state)
             elif state.mode == "file":
                 if state.selected_file is None:
                     state.selected_file = 0
@@ -532,16 +532,16 @@ async def read_buttons(state):
             decn = "Decreasing note" if btns_active >0 else ""
             if my_debug:
                     print(TAG+f"BUTTON 3 (DOWN) is pressed: {down_btn.pressed}")
-            if state.mode == "note":
+            if state.mode == "index":
+                if btns_active >0:
+                    decrement_selected(state)
+            elif state.mode == "note":
                 if my_debug:
                     print(TAG+f"{decn}")
                     print(TAG+f"mode: \"{state.mode}\".")
                 if btns_active>0:
                     state.notes_lst[state.selected_index] -= 1
                     # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
-            elif state.mode == "index":
-                if btns_active >0:
-                    decrement_selected(state)
             elif state.mode == "file":
                 if state.selected_file is None:
                     state.selected_file = 0
@@ -631,50 +631,27 @@ async def read_buttons(state):
             if my_debug:
                 print(TAG+f"BUTTON 5 (MIDDLE) is pressed: {middle_btn.pressed}")
             if state.mode == "file":
-                if state.selected_file is None:
-                    # read the current file
+                if ro_state == "Writeable":
+                    # save the current file
                     if my_debug:
-                        print("reading from file")
-                    try:
-                        f = open (fn, "r")
-                        saved_loops = json.loads(f.read())
+                        print(TAG+"saving")
+                    try:  # This try...except block added by @PaulskPt
+                        f = open("saved_loops.json", "w")
+                        f.write(json.dumps(state.saved_loops))
                         f.close()
-                        if not state.read_msg_shown:
-                            msg = [TAG, "saved loops", "read from file", fn]
+                        if not state.write_msg_shown:
+                            if my_debug:
+                                print(TAG+"save complete")
+                            msg = [TAG, "saved loops", "saved to file", fn, "OK"]
                             await pr_msg(state, msg)
-                            state.read_msg_shown = True
-                    except OSError:
-                        saved_loops = {"loops":[]}
-
-                    if "loops" not in saved_loops.keys():
-                        saved_loops["loops"] = []
-
-                    saved_loops["loops"].insert(0, {
-                        "notes": state.notes_lst,
-                        "selected_index": state.selected_index
-                    })
-
-                    if ro_state == "Writeable":
-                        # save the current file
-                        if my_debug:
-                            print(TAG+"saving")
-                        try:  # This try...except block added by @PaulskPt
-                            f = open("saved_loops.json", "w")
-                            f.write(json.dumps(saved_loops))
-                            f.close()
-                            if not state.write_msg_shown:
-                                if my_debug:
-                                    print(TAG+"save complete")
-                                msg = [TAG, "saved loops", "saved to file", fn, "OK"]
-                                await pr_msg(state, msg)
-                                state.write_msg_shown = True
-                        except OSError as e:
-                            print(TAG+f"OSError while trying to save data to file. Error: {e}")
-                    else:
-                        if my_debug:
-                            print("Filesystem is readonly. Cannot save data to file")
-                        msg = [TAG, "Filesystem is", "readonly", "Unable to save", "data to file:", fn]
-                        await pr_msg(state, msg)
+                            state.write_msg_shown = True
+                    except OSError as e:
+                        print(TAG+f"OSError while trying to save data to file. Error: {e}")
+                else:
+                    if my_debug:
+                        print("Filesystem is readonly. Cannot save data to file")
+                    msg = [TAG, "Filesystem is", "readonly", "Unable to save", "data to file:", fn]
+                    await pr_msg(state, msg)
                 #else:
                 #    pass
                 #    # go to playback / selecting index mode
