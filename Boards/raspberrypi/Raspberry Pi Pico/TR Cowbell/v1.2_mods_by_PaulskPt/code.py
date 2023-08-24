@@ -149,10 +149,10 @@ led_pins = [(a, b) for a in range(2) for b in range(8)]
 for (m, x) in led_pins:
     led_pins_per_chip[m][x].direction = Direction.OUTPUT
 
-MODE_I = 0
-MODE_N = 1
-MODE_F = 2
-MODE_M = 3
+MODE_I = 0 # index
+MODE_N = 1 # note
+MODE_F = 2 # file
+MODE_M = 3 # midi_channel
 
 
 mode_lst = ["index", "note", "file", "midi_channel"]
