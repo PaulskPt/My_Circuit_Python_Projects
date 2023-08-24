@@ -14,53 +14,51 @@
 # use_sh1107 (for the Adafruit OLED 128x128 display)
 #
 # D-Pad buttons functions:
-# Middle button: switches between states:
+#
+# Middle button:
 # - If normal press:
-#   -- If state.mode = "selecting_file":
-#      If state.selected file is None:
-#           --- prints "saving";
-#           --- tries to open file "saved_loops.json";
-#           --- reads contents of to "saved_loops";
-#           --- closes the file
-#           If "loops" not in saved_loops.keys(), sets saved_loops["loops"] to [];
-#           --- inserts into saved_loops["loops"] an entry containing the keys: "notes" and "selected_indes"
-#           --- tries to open file "saved_loops.json";
-#           --- saves contents of variable saved_loops;
-#           --- In case the storage filesystem is "readonly" (see file boot_pico.py) the data cannot be saved.
-#           --- This will generate an OSError which will be handled by the script. This fact will not crash the script.
-#           --- closes the file
-#      else:
-#           --- sets state.mode to "selecting_index"
-# - "selecting_note" and
-# - "selecting_index"
+#   -- In mode = "file":
+#       --- if the filesystem is "Writeable":
+#       --- tries to open file "saved_loops.json";
+#       --- saves contents of variable saved_loops;
+#       --- In case the storage filesystem is "readonly" (see file boot_pico.py) the data cannot be saved.
+#       --- This will generate an OSError which will be handled by the script. This fact will not crash the script.
+#       --- closes the file
+#    else:
+#        --- Writes an error message that the filesystem is readonly. Cannot save data to file.
 # - If long pressed:
-#   -- switches state.mode to the next mode: "selecting_file", "selecting_note" or "selecting_index".
-#   -- I state-mode is "selecting_file":
+#   -- If state-mode is "file":
 #   -- tries to open file "saved_loops.json";
-#   -- reads content of "loops" into object.item "state.saved_loops"
+#   -- reads content of "loops" into memory object.item "state.saved_loops"
 #
 # Up button:
-# - In state.mode "selecting_note", if one or more buttons is activated: increases the note frequency
-# - In state.mode "selecting_index" saves ... to file ...
-# - In state.mode "selecting_file" ...
+# - In mode "note", if one or more buttons is activated: increases the note frequency
+# - In mode "index" if more than one button is activated, this button changes the selected index to the next available index
+# - In mode "file"  if all the notes sets are loaded (through a Middle button long press), this button loads the next notes set from memory
 # Down button:
-# - In state.mode "selecting_note", if one or more buttons is activated: decreases the note frequency
-# - In state.mode "selecting_index" ...
-# - In state.mode "selecting_file" ...
+# - In mode "note", if one or more buttons is activated: decreases the note frequency
+# - In mode "index" if more than one button is activated, this button changes the selected index to the previous available index
+# - In mode "file", if all the notes sets are loaded (through a Middle button long press), this button loads the previous notes set from memory
 # Left button:
-# - In state.mode "selecting_note, if one or more buttons is activated: decreases note frequency
+# - In mode "index" if more than one button is activated, this button changes the selected index to the next available index
+# - In mode "note, if one or more buttons is activated: decreases note frequency
 # Right button
-# - In state.mode "selecting_note, if one or more buttons is activated: increases note frequency
+# - In mode "index" if more than one button is activated, this button changes the selected index to the previous available index
+# - In mode "note, if one or more buttons is activated: increases note frequency
+#
 # ---------------------------------------------
+#
 # Rotary encoder: has 1 control and 1 switch
 # - the variable for the control is: encoder
 # - the variable for the switch is: encoder_btn
-# -- The switch, when pressed, switches the mode between "selecting_file, "selecting_note", "selecting_index" and "selecting_midi_channel"
-# -- in mode "selecting_file" the rotary encoder has no function.
-# -- in mode "selecting_index" turning the rotary encoder control clockwise will increase the selected_index value to the next selected note.
-# -- in mode "selecting_index" turning the rotary encoder control counter clockwise will decrease the selected index value to the previous selected note.
-# -- In the mode "selecting_note", if one or more buttons is activated, turning the rotary encoder control clockwise will increase the note of the selected_index.
-# -- In the mode "selecting_note", if one or more buttons is activated, turning the rotary encoder control counter clockwise will decrease the note of the selected_index.
-# -- In the mode "selecting_midi_channel, turning the rotary encoder control clockwise will increase the midi channel. Currently the maximum channel number is 2 (default).
-# -- In the mode "selecting_midi_channel, turning the rotary encoder control coounter clockwise will decrease the midi channel. Currently the minimum channel number is 1.
+#
+# -- The switch, when pressed, switches the mode between the modes: "index", "note", "file" and "midi_channel".
+#
+# -- in mode "index" turning the rotary encoder control clockwise will increase the selected_index value to the next selected note.
+# -- in mode "index" turning the rotary encoder control counter clockwise will decrease the selected index value to the previous selected note.
+# -- In mode "note", if one or more buttons is activated, turning the rotary encoder control clockwise will increase the note of the selected_index.
+# -- In mode "note", if one or more buttons is activated, turning the rotary encoder control counter clockwise will decrease the note of the selected_index.
+# -- in mode "file" the rotary encoder has no function.
+# -- In mode "midi_channel, turning the rotary encoder control clockwise will increase the midi channel. Currently the maximum channel number is 2 (default).
+# -- In mode "midi_channel, turning the rotary encoder control coounter clockwise will decrease the midi channel. Currently the minimum channel number is 1.
 # ----------------------------------------------
