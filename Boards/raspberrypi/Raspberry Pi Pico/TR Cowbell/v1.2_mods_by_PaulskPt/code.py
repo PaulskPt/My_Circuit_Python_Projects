@@ -120,7 +120,7 @@ print(f"OLED driver: {sd}")
 sd = None
 print("-"*20)
 time.sleep(5)
-print()
+#print()
 
 # Initialize MCP Chip 1 Step Switches 0-7
 mcp1 = MCP23017(i2c0, address=0x21)
@@ -395,7 +395,8 @@ async def pr_msg(state, msg_lst=None):
         if le < max_lines:
             for j in range((max_lines-le)-1):
                 print()
-        await asyncio.sleep(0.75)
+        # await asyncio.sleep(5)
+        time.sleep(5)
 
 async def blink_the_leds(state, delay=0.125):
     TAG = await tag_adj("blink_the_leds(): ")
@@ -761,7 +762,8 @@ async def read_encoder(state):
         if encoder_btn.fell:
             new_event = True
             enc_sw_cnt += 1
-            print(TAG+f"len(mode_lst): {len(mode_lst)}")
+            if my_debug:
+                print(TAG+f"len(mode_lst): {len(mode_lst)}")
             if enc_sw_cnt > len(mode_lst)-1:
                 enc_sw_cnt = 0
 
