@@ -11,7 +11,7 @@
 # A global flag "my_debug" has been added to control the majority of print statements in this script.
 # Added global flag "use_TAG". This flag controls if in calls to function tag_adj() tags received will be printed or not.
 # On a small display no function names (variable TAG) in print statements make the display more readable.
-# Functions added that are not found in the other repos: tag_adj(), do_connect(), wifi_is_connected(), setup(), pr_state().
+# Functions added that are not found in the other repos: count_btns_active(), clr_scrn(), pr_state(), pr_msg(), tag_adj(), do_connect(), wifi_is_connected(), setup().
 import asyncio
 import time
 import board
