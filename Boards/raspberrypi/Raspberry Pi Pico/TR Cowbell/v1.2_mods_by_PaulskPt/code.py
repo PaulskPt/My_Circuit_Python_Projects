@@ -384,7 +384,9 @@ async def pr_state(state):
             else:
                 print(TAG+f"selected idx: {state.selected_index+1}")
         else:
-            print(TAG+"No buttons active")
+            nba1 = "No buttons active"
+            nba2 = nba1 if lStart else "\n"+nba1
+            print(TAG+f"{nba2}")
         print(TAG+f"mode: {state.mode}", end = '')
 
         lStart = False
@@ -626,15 +628,16 @@ async def read_buttons(state):
                     f.close()
                     if my_debug:
                         print(TAG+fn)
-                    msg = [TAG, "saved loops", "read from file", fn]
-                    print(TAG+f"saved loop: {state.saved_loops}")
+                    msg = [TAG, "saved note sets", "have been", "read from file", fn, "successfully"]
+                    print(TAG+f"saved note set (loop): {state.saved_loops}")
                     await pr_msg(state, msg)
                 except (OSError, KeyError) as e:
                     print(TAG+f"Error occurred: {e}")
                     state.saved_loops = []
             else:
-                print("For reading saved loops set mode to \"file\"")
-                msg = [TAG,"For reading","saved loops","set mode to:", "\"file\""]
+                if my_debug:
+                    print("For reading note sets, saved to files, set mode to \"file\"")
+                msg = [TAG,"For reading","note sets","saved to file","set mode to:", "\"file\""]
                 await pr_msg(state, msg)
 
         if middle_btn.fell:
@@ -655,15 +658,15 @@ async def read_buttons(state):
                         if not state.write_msg_shown:
                             if my_debug:
                                 print(TAG+"save complete")
-                            msg = [TAG, "saved loops", "saved to file", fn, "OK"]
+                            msg = [TAG, "note sets", "saved to file", fn, "successfully"]
                             await pr_msg(state, msg)
                             state.write_msg_shown = True
                     except OSError as e:
-                        print(TAG+f"OSError while trying to save data to file. Error: {e}")
+                        print(TAG+f"OSError while trying to save note sets to file. Error: {e}")
                 else:
                     if my_debug:
-                        print("Filesystem is readonly. Cannot save data to file")
-                    msg = [TAG, "Filesystem is", "readonly", "Unable to save", "data to file:", fn]
+                        print("Filesystem is readonly. Cannot save note sets to file")
+                    msg = [TAG, "Filesystem is", "readonly.", "Unable to save", "note sets","to file:", fn]
                     await pr_msg(state, msg)
                 #else:
                 #    pass
