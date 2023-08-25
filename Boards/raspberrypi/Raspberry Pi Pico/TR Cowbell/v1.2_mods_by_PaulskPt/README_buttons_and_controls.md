@@ -29,7 +29,7 @@
 #       --- This will generate an OSError which will be handled by the script. This fact will not crash the script.
 #       --- closes the file
 #    else:
-#        --- Writes an error message that the filesystem is readonly. Cannot save data to file.
+#        --- Writes an error message that the filesystem is readonly. Cannot save note sets to file.
 # - If long pressed:
 #   -- If state-mode is "file":
 #   -- tries to open file "saved_loops.json";
