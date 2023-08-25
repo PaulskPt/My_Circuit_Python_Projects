@@ -474,7 +474,7 @@ async def blink_selected(state, delay=0.05):
                 led_pins_per_chip[chip_num][index].value = False
             await asyncio.sleep(delay)
 
-async def load_all_note_sets(state, no_warnings):
+async def load_all_note_sets(state, use_warnings):
     TAG = await tag_adj("load_all_note_sets(): ")
     state.selected_file = None
     original_mode = state.mode
@@ -487,7 +487,7 @@ async def load_all_note_sets(state, no_warnings):
         f.close()
         state.selected_file = len(state.saved_loops)-1 # Select last note set (0,0,0,...)
         state.selected_index = -1
-        if not no_warnings:
+        if use_warnings:
             if my_debug:
                 print(TAG+state.fn)
                 print(TAG+f"note sets: {state.saved_loops}\nloaded successfully")
@@ -503,14 +503,14 @@ async def load_all_note_sets(state, no_warnings):
         #    await clear_events(state) # Clear the button event flag
     return ret
 
-async def load_note_set(state, dir_up, no_warnings):
+async def load_note_set(state, dir_up, use_warnings):
     TAG = await tag_adj("load_note_set(): ")
     ret = None
     if state.saved_loops is None:
-        ret = await load_all_note_sets(state, no_warnings) # Try to load all note sets
+        ret = await load_all_note_sets(state, use_warnings) # Try to load all note sets
         if not ret:
             # failed to load
-            if not no_warnings:
+            if use_warnings:
                 msg = [TAG, "Please", "long press", "middle button", "to load note sets", "from file"]
                 await pr_msg(state, msg)
             return
@@ -530,7 +530,7 @@ async def load_note_set(state, dir_up, no_warnings):
             state.selected_file -= 1
             if state.selected_file < 0:
                 state.selected_file = len(state.saved_loops)-1 # wrap to last
-        if not no_warnings:
+        if use_warnings:
             if my_debug:
                 print(TAG+f"loading notes set nr: {state.selected_file+1} (from memory) successful")
             msg = [TAG, "loading:", "from", "notes set nr: "+str(state.selected_file+1)]
@@ -618,8 +618,8 @@ async def read_buttons(state):
                         # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
                 elif state.mode in ["index", "file"]:
                     dir_up = True
-                    no_warnings = False
-                    await load_note_set(state, dir_up, no_warnings)
+                    use_warnings = False
+                    await load_note_set(state, dir_up, use_warnings)
 
             if down_btn.fell:
                 state.btn_event = True
@@ -639,8 +639,8 @@ async def read_buttons(state):
                         # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
                 elif state.mode in ["index", "file"]:
                     dir_up = False
-                    no_warnings = False
-                    await load_note_set(state, dir_up, no_warnings)
+                    use_warnings = False
+                    await load_note_set(state, dir_up, use_warnings)
 
             if right_btn.fell:
                 state.btn_event = True
@@ -691,8 +691,8 @@ async def read_buttons(state):
                 state.longpress_event = True
                 if my_debug:
                     print(TAG+f"BUTTON 5 (MIDDLE) is long pressed: {middle_btn.long_press}")
-                no_warnings = False
-                await load_all_note_sets(state, no_warnings)
+                use_warnings = False
+                await load_all_note_sets(state, use_warnings)
 
             if middle_btn.fell:
                 state.btn_event = True
@@ -988,8 +988,8 @@ async def setup(state):
         else:
             print(TAG+f"WiFi is connected to {os.getenv('CIRCUITPY_WIFI_SSID')}")
 
-    no_warnings = True
-    await load_all_note_sets(state, no_warnings)
+    use_warnings = True
+    await load_all_note_sets(state, use_warnings)
 
 async def main():
     # state = State(saved_loops.LOOP1)
