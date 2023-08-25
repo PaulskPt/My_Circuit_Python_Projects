@@ -120,7 +120,8 @@ print(f"OLED driver: {sd}")
 sd = None
 print("-"*20)
 time.sleep(5)
-#print()
+#
+
 
 # Initialize MCP Chip 1 Step Switches 0-7
 mcp1 = MCP23017(i2c0, address=0x21)
@@ -222,8 +223,8 @@ if use_midi:
 
 # Global variables, needed for pr_state()
 # lStart is needed to pass the print statements in pr_state() at the start of this script.
-# new_event flag is set in read_buttons() and read_encoder().
-new_event = False
+# state.btn_event flag is set in read_buttons() and read_encoder().
+# See: state.btn_event
 lStart = True
 
 if use_wifi:
@@ -269,6 +270,9 @@ class State:
         self.saved_loops = None
         self.read_msg_shown = False  # See read_buttons()
         self.write_msg_shown = True  # idem
+        self.fn = "saved_loops.json"
+        self.btn_event = False
+        self.longpress_event = False
 
         if saved_state_json:
             saved_state_obj = json.loads(saved_state_json)
@@ -350,47 +354,64 @@ async def count_btns_active(state):
     # return cnt
     return latches_cnt
 
+async def clr_events(state):
+    state.btn_event = False
+
 async def clr_scrn():
     for i in range(9):
         print()
 
 # Called from blink_the_leds()
 async def pr_state(state):
-    global lStart, new_event
+    global lStart
     TAG = await tag_adj("pr_state(): ")
-
-    if new_event or lStart:
-        cnt = await count_btns_active(state)
+    # await clr_scrn()
+    if state.selected_file is None:
+        ns = "?"
+    else:
+        ns = state.selected_file+1
+    if state.btn_event or lStart:
+        org_cnt = await count_btns_active(state)
         # print(f"btns active: {cnt}")
-        if cnt > 0:
-            btn = "button" if cnt == 1 else "buttons"
-            print(TAG+f"\n{cnt} {btn} active")
-            print("-"*18)
-            grp = 0
-            for i in range(len(state.notes_lst)):
-                if i == 0 or i == 8:
-                    print(f"{grp}/ ", end='')
-                    grp += 1
-                if i == 4 or i == 12:
-                    print("\n   ", end='')
-                #if i > 0 and i % 4 == 0:
-                #    print("\n   ", end='')
-                print("{:>3d} ".format(state.notes_lst[i]), end='')
-                if i == 7:
-                    print()
-            print("\n"+"-"*18)
-            if state.mode == "midi_channel":
-                print(TAG+f"midi channel: {midi_channel}")
-            else:
-                print(TAG+f"selected idx: {state.selected_index+1}")
+        if org_cnt == 0:
+            my_lst = state.notes_lst
+            if len(my_lst) == 0:
+                my_lst = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+                cnt = len(my_lst)
+        #if cnt > 0:
+        btn = "button" if org_cnt in [0, 1] else "buttons"
+        print(TAG+f"\n{org_cnt} {btn} active")
+        print("-"*18)
+        grp = 0
+        for i in range(len(state.notes_lst)):
+            if i == 0 or i == 8:
+                print(f"{grp}/ ", end='')
+                grp += 1
+            if i == 4 or i == 12:
+                print("\n   ", end='')
+            #if i > 0 and i % 4 == 0:
+            #    print("\n   ", end='')
+            print("{:>3d} ".format(state.notes_lst[i]), end='')
+            if i == 7:
+                print()
+        print("\n"+"-"*18)
+        if state.mode == "midi_channel":
+            print(TAG+f"midi channel: {midi_channel}")
         else:
-            nba1 = "No buttons active"
-            nba2 = nba1 if lStart else "\n"+nba1
-            print(TAG+f"{nba2}")
-        print(TAG+f"mode: {state.mode}", end = '')
+            if org_cnt > 0:
+                print(TAG+f"selected idx: {state.selected_index+1}")
 
-        lStart = False
-        new_event = False
+        if org_cnt == 0:
+            nba1 = "No buttons active"
+            nba2 = nba1 if lStart else nba1
+            print(TAG+f"{nba2}")
+        print(TAG+f"mode:{state.mode}.NoteSet:{ns}", end = '')
+
+        if lStart: lStart = False
+        await clr_events(state)  # Clear events
+        if state.longpress_event:
+            await asyncio.sleep(1)  # extra wait to avoid double/triple act on long keypress
+            state.longpress_event = False
 
 async def pr_msg(state, msg_lst=None):
     TAG = await tag_adj("pr_msg(): ")
@@ -412,7 +433,7 @@ async def pr_msg(state, msg_lst=None):
 async def blink_the_leds(state, delay=0.125):
     TAG = await tag_adj("blink_the_leds(): ")
     while True:
-        await pr_state(state)
+        #await pr_state(state)
         # blink all the LEDs together
         for (x, y) in led_pins:
             if not get_latch(x, y, state):
@@ -430,6 +451,7 @@ async def blink_the_leds(state, delay=0.125):
                 await play_note(state.notes_lst[x * 8 + y], delay, state)
                 # time.sleep(0.001)
                 led_pins_per_chip[x][y].value = True
+        await pr_state(state)
 
 async def blink_selected(state, delay=0.05):
     while True:
@@ -452,15 +474,82 @@ async def blink_selected(state, delay=0.05):
                 led_pins_per_chip[chip_num][index].value = False
             await asyncio.sleep(delay)
 
+async def load_all_note_sets(state, no_warnings):
+    TAG = await tag_adj("load_all_note_sets(): ")
+    state.selected_file = None
+    original_mode = state.mode
+    #if state.mode != "file":
+    state.mode = "file"
+    ret = True
+    try:
+        f = open(state.fn, "r")
+        state.saved_loops = json.loads(f.read())["loops"]
+        f.close()
+        state.selected_file = len(state.saved_loops)-1 # Select last note set (0,0,0,...)
+        state.selected_index = -1
+        if not no_warnings:
+            if my_debug:
+                print(TAG+state.fn)
+                print(TAG+f"note sets: {state.saved_loops}\nloaded successfully")
+            msg = [TAG, "saved note sets", "have been", "read from file", state.fn, "successfully"]
+            await pr_msg(state, msg)
+    except (OSError, KeyError) as e:
+        print(TAG+f"Error occurred: {e}")
+        state.saved_loops = []
+        ret = False
+    finally:
+        state.mode = original_mode # restore mode
+        #if state.btn_event:
+        #    await clear_events(state) # Clear the button event flag
+    return ret
+
+async def load_note_set(state, dir_up, no_warnings):
+    TAG = await tag_adj("load_note_set(): ")
+    ret = None
+    if state.saved_loops is None:
+        ret = await load_all_note_sets(state, no_warnings) # Try to load all note sets
+        if not ret:
+            # failed to load
+            if not no_warnings:
+                msg = [TAG, "Please", "long press", "middle button", "to load note sets", "from file"]
+                await pr_msg(state, msg)
+            return
+
+    if dir_up is None:
+        dir_up = True
+
+    if state.selected_file is None:
+        state.selected_file = -1
+        state.selected_index = -1
+    else:
+        if dir_up:
+            state.selected_file += 1
+            if state.selected_file >= len(state.saved_loops):
+                state.selected_file = 0 # wrap to first
+        else:
+            state.selected_file -= 1
+            if state.selected_file < 0:
+                state.selected_file = len(state.saved_loops)-1 # wrap to last
+        if not no_warnings:
+            if my_debug:
+                print(TAG+f"loading notes set nr: {state.selected_file+1} (from memory) successful")
+            msg = [TAG, "loading:", "from", "notes set nr: "+str(state.selected_file+1)]
+            await pr_msg(state, msg)
+        #print(TAG+f"loading: {state.selected_file}")
+    state.load_state_obj(state.saved_loops[state.selected_file])
+    state.mode = mode_dict[MODE_I] # Change mode to "index"
+    await pr_state(state)
+
 async def read_buttons(state):
-    global new_event, ro_state
+    global ro_state
+
     TAG = await tag_adj("read_buttons(): ")
     btns_active = await count_btns_active(state)
     incn = "Increasing note" if btns_active >0 else ""
     decn = "Decreasing note" if btns_active >0 else ""
-    fn = "saved_loops.json"
     state.read_msg_shown = False
     state.write_msg_shown = False
+
     while True:
         # scan the buttons
         scanner1.update()
@@ -470,11 +559,13 @@ async def read_buttons(state):
             mcp_number = event.pad_number
             key_number = event.key_number
             if event.pressed:
-                new_event = True
+                state.btn_event = True
+
                 if my_debug:
                     print(TAG+f"Key pressed : {mcp_number} / {key_number}")
                 # key pressed, find the matching LED
                 led_pin = led_pins_per_chip[mcp_number][key_number]
+
                 # invert the latch value (independently of the LED)
                 toggle_latch(mcp_number, key_number, state)
                 # change the LED value to match the latch
@@ -482,13 +573,14 @@ async def read_buttons(state):
                 if my_debug:
                     print(TAG+f"setting led to: {_new_latch_state}")
                 led_pin.value = get_latch(mcp_number, key_number, state)
-
                 if not _new_latch_state:
                     if state.selected_index == chip_and_index_to_index(mcp_number, key_number):
                         increment_selected(state)
 
             # make sure to yield during the reading of the buttons
             await asyncio.sleep(0)
+
+        # if state.btn_event: return  # don't handle anything if another event is being processed
 
         # d-pad
         up_btn.update()
@@ -504,197 +596,162 @@ async def read_buttons(state):
         if state.mode == "midi_channel": # Only change midi channel with Rotary Encoder control
             break  # return
 
-        if up_btn.fell:
-            new_event = True
-            btns_active = await count_btns_active(state)
-            incn = "Increasing note" if btns_active >0 else ""
-            if my_debug:
-                print(TAG+f"BUTTON 1 (UP) is pressed: {up_btn.pressed}.")
-            if state.mode == "index":
-                if btns_active >0:
-                    increment_selected(state)
-            elif state.mode == "note":
-                if my_debug:
-                    print(TAG+f"{incn}")
-                    print(TAG+f"mode: \"{state.mode}\".")
-                if btns_active>0:
-                    state.notes_lst[state.selected_index] += 1
-                    # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
-            elif state.mode == "file":
-                if state.selected_file is None:
-                    state.selected_file = 0
-                if state.saved_loops is None:
-                    msg = [TAG, "Please", "long press", "middle button", "to load note sets", "from file"]
-                    await pr_msg(state, msg)
-                else:
-                    state.selected_file += 1
-                    if state.selected_file >= len(state.saved_loops):
-                        state.selected_file = 0
-                    if my_debug:
-                        print(TAG+f"loading from state.saved_loops, notes set nr: {state.selected_file}")
-                    msg = [TAG, "loading:", "from", "notes set nr: "+str(state.selected_file)]
-                    await pr_msg(state, msg)
-                    #print(TAG+f"loading: {state.selected_file}")
-                    state.load_state_obj(state.saved_loops[state.selected_file])
-                    state.mode = mode_dict[MODE_I] # Change mode to "index"
+        #await pr_state(state)  # This also clears events
 
-        if down_btn.fell:
-            new_event = True
-            btns_active = await count_btns_active(state)
-            decn = "Decreasing note" if btns_active >0 else ""
-            if my_debug:
-                    print(TAG+f"BUTTON 3 (DOWN) is pressed: {down_btn.pressed}")
-            if state.mode == "index":
-                if btns_active >0:
-                    decrement_selected(state)
-            elif state.mode == "note":
-                if my_debug:
-                    print(TAG+f"{decn}")
-                    print(TAG+f"mode: \"{state.mode}\".")
-                if btns_active>0:
-                    state.notes_lst[state.selected_index] -= 1
-                    # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
-            elif state.mode == "file":
-                if state.selected_file is None:
-                    state.selected_file = 0
-                if state.saved_loops is None:
-                    msg = [TAG, "Please", "long press", "middle button", "to load note sets", "from file"]
-                    await pr_msg(state, msg)
-                else:
-                    state.selected_file -= 1
-                    if state.selected_file < 0:
-                        state.selected_file = len(state.saved_loops) - 1
-                    if my_debug:
-                        print(TAG+f"loading from state.saved_loops, notes set nr: {state.selected_file}")
-                    msg = [TAG, "loading:", "from", "notes set nr: "+str(state.selected_file)]
-                    await pr_msg(state, msg)
-                    #print(TAG+f"loading: {state.selected_file}")
-                    state.load_state_obj(state.saved_loops[state.selected_file])
-                    state.mode = mode_dict[MODE_I] # Change mode to "index"
+        if state.btn_event == False:  # only if no other event is being processed
 
-        if right_btn.fell:
-            new_event = True
-            btns_active = await count_btns_active(state)
-            incn = "Increasing note" if state.mode == "note" and btns_active >0 else ""
-            if my_debug:
-                    print(TAG+f"BUTTON 2 (RIGHT) is pressed: {right_btn.pressed}.")
-            if state.mode == "index":
-                if btns_active >0:
-                    increment_selected(state)
-            elif state.mode == "note":
+            if up_btn.fell:
+                state.btn_event = True
+                btns_active = await count_btns_active(state)
+                incn = "Increasing note" if btns_active >0 else ""
                 if my_debug:
-                    print(TAG+f"{incn}")
-                    print(TAG+f"mode: \"{state.mode}\".")
-                if btns_active>0:
-                    state.notes_lst[state.selected_index] += 1
-                    # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
-            elif state.mode == "file":
-                if my_debug:
-                    print(TAG+"BUTTON 2 (RIGHT) doing nothing")
-            # state.send_off = not state.send_off
-            # print(f"send off: {state.send_off}")
-
-        if left_btn.fell:
-            new_event = True
-            btns_active = await count_btns_active(state)
-            decn = "Decreasing note" if state.mode == "note" and btns_active >0 else ""
-            if my_debug:
-                    print(TAG+f"BUTTON 4 (LEFT) is pressed: {left_btn.pressed}.")
-            if state.mode == "index":
-                if btns_active >0:
-                    decrement_selected(state)
-            elif state.mode == "note":
-                if my_debug:
-                    print(TAG+f"{decn}")
-                    print(TAG+f"mode: \"{state.mode}\".")
-                if btns_active >0:
-                    state.notes_lst[state.selected_index] -= 1
-                    # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
-                else:
-                    print("no buttons active")
-            elif state.mode == "file":
-                if my_debug:
-                    print(TAG+"BUTTON 4 (LEFT) doing nothing")
-
-        if middle_btn.long_press:
-            new_event = True
-            if my_debug:
-                print(TAG+f"BUTTON 5 (MIDDLE) is long pressed: {middle_btn.long_press}")
-            state.selected_file = None
-            if state.mode == "file":
-                try:
-                    f = open(fn, "r")
-                    state.saved_loops = json.loads(f.read())["loops"]
-                    f.close()
+                    print(TAG+f"BUTTON 1 (UP) is pressed: {up_btn.pressed}.")
+                #if state.mode == "index":
+                #    if btns_active >0:
+                #        increment_selected(state)
+                elif state.mode == "note":
                     if my_debug:
-                        print(TAG+fn)
-                    msg = [TAG, "saved note sets", "have been", "read from file", fn, "successfully"]
-                    print(TAG+f"saved note set (loop): {state.saved_loops}")
-                    await pr_msg(state, msg)
-                except (OSError, KeyError) as e:
-                    print(TAG+f"Error occurred: {e}")
-                    state.saved_loops = []
-            else:
-                if my_debug:
-                    print("For reading note sets, saved to files, set mode to \"file\"")
-                msg = [TAG,"For reading","note sets","saved to file","set mode to:", "\"file\""]
-                await pr_msg(state, msg)
+                        print(TAG+f"{incn}")
+                        print(TAG+f"mode: \"{state.mode}\".")
+                    if btns_active>0:
+                        state.notes_lst[state.selected_index] += 1
+                        # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
+                elif state.mode in ["index", "file"]:
+                    dir_up = True
+                    no_warnings = False
+                    await load_note_set(state, dir_up, no_warnings)
 
-        if middle_btn.fell:
-            new_event = True
-            if my_debug:
-                print(TAG+f"BUTTON 5 (MIDDLE) is pressed: {middle_btn.pressed}")
-            if state.mode == "index" or state.mode == "note":
-                state.mode = mode_dict[MODE_F] # Change mode to "file"
-            elif state.mode == "file":
-                if ro_state == "Writeable":
-                    # save the current file
+            if down_btn.fell:
+                state.btn_event = True
+                btns_active = await count_btns_active(state)
+                decn = "Decreasing note" if btns_active >0 else ""
+                if my_debug:
+                        print(TAG+f"BUTTON 3 (DOWN) is pressed: {down_btn.pressed}")
+                #if state.mode == "index":
+                #    if btns_active >0:
+                #        decrement_selected(state)
+                elif state.mode == "note":
                     if my_debug:
-                        print(TAG+"saving")
-                    try:  # This try...except block added by @PaulskPt
-                        f = open("saved_loops.json", "w")
-                        f.write(json.dumps(state.saved_loops))
-                        f.close()
-                        if not state.write_msg_shown:
-                            if my_debug:
-                                print(TAG+"save complete")
-                            msg = [TAG, "note sets", "saved to file", fn, "successfully"]
-                            await pr_msg(state, msg)
-                            state.write_msg_shown = True
-                    except OSError as e:
-                        print(TAG+f"OSError while trying to save note sets to file. Error: {e}")
-                else:
+                        print(TAG+f"{decn}")
+                        print(TAG+f"mode: \"{state.mode}\".")
+                    if btns_active>0:
+                        state.notes_lst[state.selected_index] -= 1
+                        # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
+                elif state.mode in ["index", "file"]:
+                    dir_up = False
+                    no_warnings = False
+                    await load_note_set(state, dir_up, no_warnings)
+
+            if right_btn.fell:
+                state.btn_event = True
+                btns_active = await count_btns_active(state)
+                incn = "Increasing note" if state.mode == "note" and btns_active >0 else ""
+                if my_debug:
+                        print(TAG+f"BUTTON 2 (RIGHT) is pressed: {right_btn.pressed}.")
+                if state.mode == "index":
+                    if btns_active >0:
+                        increment_selected(state)
+                elif state.mode == "note":
                     if my_debug:
-                        print("Filesystem is readonly. Cannot save note sets to file")
-                    msg = [TAG, "Filesystem is", "readonly.", "Unable to save", "note sets","to file:", fn]
-                    await pr_msg(state, msg)
+                        print(TAG+f"{incn}")
+                        print(TAG+f"mode: \"{state.mode}\".")
+                    if btns_active>0:
+                        state.notes_lst[state.selected_index] += 1
+                        # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
+                elif state.mode == "file":
+                    if my_debug:
+                        print(TAG+"BUTTON 2 (RIGHT) doing nothing")
+                # state.send_off = not state.send_off
+                # print(f"send off: {state.send_off}")
+
+            if left_btn.fell:
+                state.btn_event = True
+                btns_active = await count_btns_active(state)
+                decn = "Decreasing note" if state.mode == "note" and btns_active >0 else ""
+                if my_debug:
+                        print(TAG+f"BUTTON 4 (LEFT) is pressed: {left_btn.pressed}.")
+                if state.mode == "index":
+                    if btns_active >0:
+                        decrement_selected(state)
+                elif state.mode == "note":
+                    if my_debug:
+                        print(TAG+f"{decn}")
+                        print(TAG+f"mode: \"{state.mode}\".")
+                    if btns_active >0:
+                        state.notes_lst[state.selected_index] -= 1
+                        # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
+                    else:
+                        print("no buttons active")
+                elif state.mode == "file":
+                    if my_debug:
+                        print(TAG+"BUTTON 4 (LEFT) doing nothing")
+
+            if middle_btn.long_press:
+                state.btn_event = True
+                state.longpress_event = True
+                if my_debug:
+                    print(TAG+f"BUTTON 5 (MIDDLE) is long pressed: {middle_btn.long_press}")
+                no_warnings = False
+                await load_all_note_sets(state, no_warnings)
+
+            if middle_btn.fell:
+                state.btn_event = True
+                if my_debug:
+                    print(TAG+f"BUTTON 5 (MIDDLE) is pressed: {middle_btn.pressed}")
+                if state.mode == "index" or state.mode == "note":
+                    state.mode = mode_dict[MODE_F] # Change mode to "file"
+                elif state.mode == "file":
+                    if ro_state == "Writeable":
+                        # save the current file
+                        if my_debug:
+                            print(TAG+"saving")
+                        try:  # This try...except block added by @PaulskPt
+                            f = open(state.fn, "w")
+                            f.write(json.dumps(state.saved_loops))
+                            f.close()
+                            if not state.write_msg_shown:
+                                if my_debug:
+                                    print(TAG+"save complete")
+                                msg = [TAG, "note sets", "saved to file", state.fn, "successfully"]
+                                await pr_msg(state, msg)
+                                state.write_msg_shown = True
+                        except OSError as e:
+                            print(TAG+f"OSError while trying to save note sets to file. Error: {e}")
+                    else:
+                        if my_debug:
+                            print("Filesystem is readonly. Cannot save note sets to file")
+                        msg = [TAG, "Filesystem is", "readonly.", "Unable to save", "note sets","to file:", state.fn]
+                        await pr_msg(state, msg)
+                    #else:
+                    #    pass
+                    #    # go to playback / selecting index mode
+                    #    #state.mode = "index"
                 #else:
-                #    pass
-                #    # go to playback / selecting index mode
-                #    #state.mode = "index"
-            #else:
-            #    state.mode = "note" if state.mode == "index" else "index"
-            #    if my_debug:
-            #        print(TAG+f"new mode: {state.mode}")
+                #    state.mode = "note" if state.mode == "index" else "index"
+                #    if my_debug:
+                #        print(TAG+f"new mode: {state.mode}")
         else:
-            # same
+            #msg = [TAG, "Event flag active", "Cannot handle D-pad", "button press"]
+            #await pr_msg(state, msg)
             pass
 
         # slow down the loop a little bit, can be adjusted
         await asyncio.sleep(0.15)  # Was: 0.05 or BPM -- has to be longer to avoid double hit
 
 async def read_encoder(state):
-    global new_event, enc_sw_cnt, midi_ch_chg_event, midi_channel
+    global enc_sw_cnt, midi_ch_chg_event, midi_channel
     TAG = await tag_adj("read_encoder(): ")
     # print("\n"+TAG+f"mode: {state.mode}")
     await pr_state(state)
     #if state.mode == "file":
     #    return
+    if state.btn_event: return  # Do nothing if another event is being processed
+
     while True:
         cur_position = encoder.position
         # print(cur_position)
         if state.last_position < cur_position:
-            new_event = True
+            state.btn_event = True
             if my_debug:
                 print("\n"+TAG+"Encoder turned CW")
             if state.mode == "index":
@@ -720,7 +777,7 @@ async def read_encoder(state):
                     print(TAG+f"state.selected_file= {state.selected_file}")
 
         elif cur_position < state.last_position:
-            new_event = True
+            state.btn_event = True
             if my_debug:
                 print("\n"+TAG+"Encoder turned CCW")
             if state.mode == "index":
@@ -753,7 +810,7 @@ async def read_encoder(state):
         encoder_btn.update()
 
         if encoder_btn.fell:
-            new_event = True
+            state.btn_event = True
             enc_sw_cnt += 1
             if my_debug:
                 print(TAG+f"len(mode_lst): {len(mode_lst)}")
@@ -920,7 +977,7 @@ async def do_connect():
 async def wifi_is_connected():
     return True if s_ip is not None and s_ip != '0.0.0.0' else False
 
-async def setup():
+async def setup(state):
     TAG = await tag_adj("setup(): ")
 
     if use_wifi:
@@ -931,12 +988,15 @@ async def setup():
         else:
             print(TAG+f"WiFi is connected to {os.getenv('CIRCUITPY_WIFI_SSID')}")
 
+    no_warnings = True
+    await load_all_note_sets(state, no_warnings)
+
 async def main():
     # state = State(saved_loops.LOOP1)
     test_state_json = []
     state = State()
     await asyncio.gather(
-        asyncio.create_task(setup()),
+        asyncio.create_task(setup(state)),
         asyncio.create_task(blink_the_leds(state, delay=0.125)),
         asyncio.create_task(read_buttons(state)),
         asyncio.create_task(blink_selected(state)),

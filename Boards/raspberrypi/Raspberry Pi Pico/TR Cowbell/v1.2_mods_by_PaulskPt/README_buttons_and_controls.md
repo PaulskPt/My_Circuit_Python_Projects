@@ -13,6 +13,9 @@
 # use_ssd1306 (for the OLED 128x64 that came with the kit v1.2) (either this flag or use_sh1107 can have value True)
 # use_sh1107 (for the Adafruit OLED 128x128 display)
 #
+# NOTE: At startup all the note sets are loaded into memory. Then the last note set in the list of sets is loaded. This set has all nots with value 0.
+#       and no key buttons selected. By pressing the Up button or the Down button one can load a next or a previous notes set.
+#
 # D-Pad buttons functions:
 #
 # Middle button:
@@ -36,22 +39,16 @@
 #   -- reads all the previously saved note sets (aka: "loops") into memory (state class: object.item "state.saved_loops)"
 #
 # Up button:
-# - In mode "index" if more than one button is activated, this button changes the selected index to the next available index
+# - In mode "index" or "file" this button loads the next notes set from memory
 # - In mode "note", if one or more buttons is activated: increases the note frequency
-# - In mode "file"  if all the notes sets are loaded (through a Middle button long press), 
-#     this button loads the next notes set from memory,
-#     then changes mode to "index"
 # Down button:
-# - In mode "index" if more than one button is activated, this button changes the selected index to the previous available index
+# - In mode "index" or "file" this button loads the previous notes set from memory
 # - In mode "note", if one or more buttons is activated: decreases the note frequency
-# - In mode "file", if all the notes sets are loaded (through a Middle button long press), 
-#     this button loads the previous notes set from memory, 
-#     then changes mode to "index"
 # Left button:
-# - In mode "index" if more than one button is activated, this button changes the selected index to the next available index
+# - In mode "index" if more than one button is activated, this button changes the selected index to the previous available index
 # - In mode "note, if one or more buttons is activated: decreases note frequency
 # Right button
-# - In mode "index" if more than one button is activated, this button changes the selected index to the previous available index
+# - In mode "index" if more than one button is activated, this button changes the selected index to the next available index
 # - In mode "note, if one or more buttons is activated: increases note frequency
 #
 # ---------------------------------------------
@@ -69,4 +66,6 @@
 # -- in mode "file" the rotary encoder has no function.
 # -- In mode "midi_channel, turning the rotary encoder control clockwise will increase the midi channel. Currently the maximum channel number is 2 (default).
 # -- In mode "midi_channel, turning the rotary encoder control coounter clockwise will decrease the midi channel. Currently the minimum channel number is 1.
+#
+# NOTE: It is advised to use the D-Pad (middle, Up and Down keys) to perform file actions.
 # ----------------------------------------------
