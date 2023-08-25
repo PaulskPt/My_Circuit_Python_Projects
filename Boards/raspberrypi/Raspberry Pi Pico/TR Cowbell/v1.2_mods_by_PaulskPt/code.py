@@ -618,7 +618,7 @@ async def read_buttons(state):
                         # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
                 elif state.mode in ["index", "file"]:
                     dir_up = True
-                    use_warnings = False
+                    use_warnings = True
                     await load_note_set(state, dir_up, use_warnings)
 
             if down_btn.fell:
@@ -639,7 +639,7 @@ async def read_buttons(state):
                         # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
                 elif state.mode in ["index", "file"]:
                     dir_up = False
-                    use_warnings = False
+                    use_warnings = True
                     await load_note_set(state, dir_up, use_warnings)
 
             if right_btn.fell:
