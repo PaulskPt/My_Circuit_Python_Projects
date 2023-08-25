@@ -18,7 +18,9 @@
 # Middle button:
 # - If normal press:
 #   -- In modes "index" or "note"
-#      --- changes mode to "file" (so one can read a next or previous notes set using the Up or Down button)
+#      --- changes mode to "file", so one can: 
+#          a) load all saved note sets (aka: saved loops) using a Middle button long press;
+#          b) next: read a next or previous notes set using the Up or Down button
 #   -- In mode = "file":
 #       --- if the filesystem is "Writeable":
 #       --- tries to open file "saved_loops.json";
@@ -31,7 +33,7 @@
 # - If long pressed:
 #   -- If state-mode is "file":
 #   -- tries to open file "saved_loops.json";
-#   -- reads content of "loops" into memory object.item "state.saved_loops"
+#   -- reads all the previously saved note sets (aka: "loops") into memory (state class: object.item "state.saved_loops)"
 #
 # Up button:
 # - In mode "index" if more than one button is activated, this button changes the selected index to the next available index
