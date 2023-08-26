@@ -588,7 +588,7 @@ async def read_buttons(state):
         #     print("down longpress")
         # if not down_btn.value:
         #     print(down_btn.current_duration)
-        
+
         #pr_state(state)  # This also clears events
 
         if state.mode != mode_dict[MODE_M]: # "midi_channel". Only change midi channel with Rotary Encoder control
@@ -727,8 +727,8 @@ async def read_encoder(state):
 
     state.enc_sw_cnt = mode_rv_dict[state.mode]  # line-up the encoder switch count with that of the current state.mode
     if my_debug:
-        print(TAG+f"mode_rv_dict[state.mode]= {mode_rv_dict[state.mode]}")
-    
+        print(TAG+f"mode_rv_dict[\"{state.mode}\"]= {mode_rv_dict[state.mode]}")
+
     # if state.btn_event: return  # Do nothing if another event is being processed
     while True:
         cur_position = encoder.position
@@ -811,7 +811,7 @@ async def read_encoder(state):
         # state.last_position = cur_position
         state.enc_sw_cnt = mode_rv_dict[state.mode]  # line-up the encoder switch count with that of the current state.mode
         if my_debug:
-            print(TAG+f"mode_rv_dict[state.mode]= {mode_rv_dict[state.mode]}")
+            print(TAG+f"mode_rv_dict[\"{state.mode}\"]= {mode_rv_dict[state.mode]}")
         await asyncio.sleep(0.05)
 
 
