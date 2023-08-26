@@ -11,8 +11,8 @@
 # A global flag "my_debug" has been added to control the majority of print statements in this script.
 # Added global flag "use_TAG". This flag controls if in calls to function tag_adj() tags received will be printed or not.
 # On a small display no function names (variable TAG) in print statements make the display more readable.
-# Functions added that are not found in the other repos:
-# count_btns_active(), clr_scrn(), clr_events(), pr_state(), pr_msg(), tag_adj(), do_connect(), wifi_is_connected(), setup().
+# Functions added that are not found in the other repos for the TR-Cowbell board:
+# count_btns_active(), clr_events(), clr_scrn(), pr_state(), pr_msg(), tag_adj(), do_connect(), wifi_is_connected() and setup().
 import asyncio
 import time
 import board
@@ -39,7 +39,6 @@ if use_wifi:
     import wifi
     import ipaddress
     import socketpool
-
 
 import json
 import struct
@@ -244,19 +243,6 @@ SELECTED_INDEX = -1
 TEMPO = 120 # Beats Per Minute (approximation)
 BPM = TEMPO / 60 / 16
 
-def toggle_latch(mcp, pin, state):
-    # print(mcp, pin)
-
-    state.latches[mcp * 8 + pin] = not state.latches[mcp * 8 + pin]
-    if state.latches[mcp * 8 + pin]:
-        state.selected_index = mcp * 8 + pin
-        state.notes_lst[mcp * 8 + pin] = 60
-    else:
-        state.notes_lst[mcp * 8 + pin] = 0
-
-def get_latch(mcp, pin, state):
-    return state.latches[mcp * 8 + pin]
-
 class State:
     def __init__(self, saved_state_json=None):
         self.selected_index = -1
@@ -334,6 +320,19 @@ def index_to_chip_and_index(index):
 
 def chip_and_index_to_index(chip, index):
     return chip * 8 + index
+
+def toggle_latch(mcp, pin, state):
+    # print(mcp, pin)
+
+    state.latches[mcp * 8 + pin] = not state.latches[mcp * 8 + pin]
+    if state.latches[mcp * 8 + pin]:
+        state.selected_index = mcp * 8 + pin
+        state.notes_lst[mcp * 8 + pin] = 60
+    else:
+        state.notes_lst[mcp * 8 + pin] = 0
+
+def get_latch(mcp, pin, state):
+    return state.latches[mcp * 8 + pin]
 
 async def count_btns_active(state):
     TAG = await tag_adj("count_btns_active(): ")
@@ -580,8 +579,6 @@ async def read_buttons(state):
             # make sure to yield during the reading of the buttons
             await asyncio.sleep(0)
 
-        # if state.btn_event: return  # don't handle anything if another event is being processed
-
         # d-pad
         up_btn.update()
         down_btn.update()
@@ -722,18 +719,6 @@ async def read_buttons(state):
                             print("Filesystem is readonly. Cannot save note sets to file")
                         msg = [TAG, "Filesystem is", "readonly.", "Unable to save", "note sets","to file:", state.fn]
                         await pr_msg(state, msg)
-                    #else:
-                    #    pass
-                    #    # go to playback / selecting index mode
-                    #    #state.mode = "index"
-                #else:
-                #    state.mode = "note" if state.mode == "index" else "index"
-                #    if my_debug:
-                #        print(TAG+f"new mode: {state.mode}")
-        else:
-            #msg = [TAG, "Event flag active", "Cannot handle D-pad", "button press"]
-            #await pr_msg(state, msg)
-            pass
 
         # slow down the loop a little bit, can be adjusted
         await asyncio.sleep(0.15)  # Was: 0.05 or BPM -- has to be longer to avoid double hit
@@ -743,9 +728,8 @@ async def read_encoder(state):
     TAG = await tag_adj("read_encoder(): ")
     # print("\n"+TAG+f"mode: {state.mode}")
     await pr_state(state)
-    #if state.mode == "file":
-    #    return
-    if state.btn_event: return  # Do nothing if another event is being processed
+
+    # if state.btn_event: return  # Do nothing if another event is being processed
 
     while True:
         cur_position = encoder.position
@@ -943,7 +927,6 @@ async def do_connect():
         s_ip = str(ip)
 
     if s_ip is not None and s_ip != '0.0.0.0':
-        # led.value = True
         if my_debug:
             # print(TAG+"s_ip= \'{}\'".format(s_ip))
             print(TAG+f"connected to {os.getenv('CIRCUITPY_WIFI_SSID')}")
@@ -968,7 +951,6 @@ async def do_connect():
                 print(TAG+"no response")
             time.sleep(0.5)
     elif s_ip == '0.0.0.0':
-        #led.value = False
         print(TAG+f"s_ip= {s_ip}. Resetting this \'{wifi.radio.hostname}\' device...")
         time.sleep(2)  # wait a bit to show the user the message
         #import microcontroller
