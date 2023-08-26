@@ -151,6 +151,8 @@ MODE_I = 0 # index
 MODE_N = 1 # note
 MODE_F = 2 # file
 MODE_M = 3 # midi_channel
+MODE_MIN = MODE_I
+MODE_MAX = MODE_M
 
 mode_lst = ["index", "note", "file", "midi_channel"]
 
@@ -182,7 +184,6 @@ encoder_btn_pin = digitalio.DigitalInOut(board.GP20)
 encoder_btn_pin.direction = digitalio.Direction.INPUT
 encoder_btn_pin.pull = digitalio.Pull.UP
 encoder_btn = Debouncer(encoder_btn_pin)
-enc_sw_cnt = 0 # mode_lst[1] = index
 
 up_btn_pin = digitalio.DigitalInOut(board.GP21)  # BUTTON 1
 up_btn_pin.direction = digitalio.Direction.INPUT
@@ -261,6 +262,7 @@ class State:
         self.longpress_event = False
         self.midi_channel = 2
         self.midi_ch_chg_event = False # Midi channel change event. See read_encoder() and play_note()
+        self.enc_sw_cnt = 0  # mode_lst[0] = index
 
         if saved_state_json:
             saved_state_obj = json.loads(saved_state_json)
@@ -496,10 +498,7 @@ def load_all_note_sets(state, use_warnings):
         print(TAG+f"Error occurred: {e}")
         state.saved_loops = []
         ret = False
-    finally:
-        state.mode = original_mode # restore mode
-        #if state.btn_event:
-        #    clear_events(state) # Clear the button event flag
+    state.mode = original_mode # restore mode
     return ret
 
 def load_note_set(state, dir_up, use_warnings):
@@ -537,7 +536,7 @@ def load_note_set(state, dir_up, use_warnings):
         #print(TAG+f"loading: {state.selected_file}")
     state.load_state_obj(state.saved_loops[state.selected_file])
     state.mode = mode_dict[MODE_I] # Change mode to "index"
-    pr_state(state)
+    #pr_state(state)
 
 async def read_buttons(state):
     global ro_state
@@ -589,151 +588,153 @@ async def read_buttons(state):
         #     print("down longpress")
         # if not down_btn.value:
         #     print(down_btn.current_duration)
-
-        if state.mode == mode_dict[MODE_M]: # "midi_channel". Only change midi channel with Rotary Encoder control
-            break  # return
-
+        
         #pr_state(state)  # This also clears events
 
-        if state.btn_event == False:  # only if no other event is being processed
+        if state.mode != mode_dict[MODE_M]: # "midi_channel". Only change midi channel with Rotary Encoder control
+            if state.btn_event == False:  # only if no other event is being processed
 
-            if up_btn.fell:
-                state.btn_event = True
-                btns_active = count_btns_active(state)
-                incn = "Increasing note" if btns_active >0 else ""
-                if my_debug:
-                    print(TAG+f"BUTTON 1 (UP) is pressed: {up_btn.pressed}.")
-                #if state.mode == mode_dict[MODE_I]: # "index"
-                #    if btns_active >0:
-                #        increment_selected(state)
-                elif state.mode == mode_dict[MODE_N]: # "note"
+                if up_btn.fell:
+                    state.btn_event = True
+                    btns_active = count_btns_active(state)
+                    incn = "Increasing note" if btns_active >0 else ""
                     if my_debug:
-                        print(TAG+f"{incn}")
-                        print(TAG+f"mode: \"{state.mode}\".")
-                    if btns_active>0:
-                        state.notes_lst[state.selected_index] += 1
-                        # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
-                elif state.mode in ["index", "file"]:
-                    dir_up = True
-                    use_warnings = True
-                    load_note_set(state, dir_up, use_warnings)
-
-            if down_btn.fell:
-                state.btn_event = True
-                btns_active = count_btns_active(state)
-                decn = "Decreasing note" if btns_active >0 else ""
-                if my_debug:
-                        print(TAG+f"BUTTON 3 (DOWN) is pressed: {down_btn.pressed}")
-                #if state.mode == mode_dict[MODE_I]:  # "index"
-                #    if btns_active >0:
-                #        decrement_selected(state)
-                elif state.mode == mode_dict[MODE_N]:  # "note"
-                    if my_debug:
-                        print(TAG+f"{decn}")
-                        print(TAG+f"mode: \"{state.mode}\".")
-                    if btns_active>0:
-                        state.notes_lst[state.selected_index] -= 1
-                        # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
-                elif state.mode in ["index", "file"]:
-                    dir_up = False
-                    use_warnings = True
-                    load_note_set(state, dir_up, use_warnings)
-
-            if right_btn.fell:
-                state.btn_event = True
-                btns_active = count_btns_active(state)
-                incn = "Increasing note" if state.mode == mode_dict[MODE_N] and btns_active >0 else ""
-                if my_debug:
-                        print(TAG+f"BUTTON 2 (RIGHT) is pressed: {right_btn.pressed}.")
-                if state.mode == mode_dict[MODE_I]:  # "index"
-                    if btns_active >0:
-                        increment_selected(state)
-                elif state.mode == mode_dict[MODE_N]:  # "note"
-                    if my_debug:
-                        print(TAG+f"{incn}")
-                        print(TAG+f"mode: \"{state.mode}\".")
-                    if btns_active>0:
-                        state.notes_lst[state.selected_index] += 1
-                        # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
-                elif state.mode == mode_dict[MODE_F]:  # "file"
-                    if my_debug:
-                        print(TAG+"BUTTON 2 (RIGHT) doing nothing")
-                # state.send_off = not state.send_off
-                # print(f"send off: {state.send_off}")
-
-            if left_btn.fell:
-                state.btn_event = True
-                btns_active = count_btns_active(state)
-                decn = "Decreasing note" if state.mode == mode_dict[MODE_N] and btns_active >0 else ""
-                if my_debug:
-                        print(TAG+f"BUTTON 4 (LEFT) is pressed: {left_btn.pressed}.")
-                if state.mode == mode_dict[MODE_I]:  # "index"
-                    if btns_active >0:
-                        decrement_selected(state)
-                elif state.mode == mode_dict[MODE_N]:  # "note"
-                    if my_debug:
-                        print(TAG+f"{decn}")
-                        print(TAG+f"mode: \"{state.mode}\".")
-                    if btns_active >0:
-                        state.notes_lst[state.selected_index] -= 1
-                        # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
-                    else:
-                        print("no buttons active")
-                elif state.mode == mode_dict[MODE_F]:  # "file"
-                    if my_debug:
-                        print(TAG+"BUTTON 4 (LEFT) doing nothing")
-
-            if middle_btn.long_press:
-                state.btn_event = True
-                state.longpress_event = True
-                if my_debug:
-                    print(TAG+f"BUTTON 5 (MIDDLE) is long pressed: {middle_btn.long_press}")
-                use_warnings = False
-                load_all_note_sets(state, use_warnings)
-
-            if middle_btn.fell:
-                state.btn_event = True
-                if my_debug:
-                    print(TAG+f"BUTTON 5 (MIDDLE) is pressed: {middle_btn.pressed}")
-                if state.mode  in ["index", "note", "midi_channel"]:
-                    state.mode = mode_dict[MODE_F] # Change mode to "file"
-                elif state.mode == mode_dict[MODE_F]: # "file"
-                    if ro_state == "Writeable":
-                        # save the current file
+                        print(TAG+f"BUTTON 1 (UP) is pressed: {up_btn.pressed}.")
+                    #if state.mode == mode_dict[MODE_I]: # "index"
+                    #    if btns_active >0:
+                    #        increment_selected(state)
+                    if state.mode == mode_dict[MODE_N]: # "note"
                         if my_debug:
-                            print(TAG+"saving")
-                        try:  # This try...except block added by @PaulskPt
-                            f = open(state.fn, "w")
-                            f.write(json.dumps(state.saved_loops))
-                            f.close()
-                            if not state.write_msg_shown:
-                                if my_debug:
-                                    print(TAG+"save complete")
-                                msg = [TAG, "note sets", "saved to file", state.fn, "successfully"]
-                                pr_msg(state, msg)
-                                state.write_msg_shown = True
-                        except OSError as e:
-                            print(TAG+f"OSError while trying to save note sets to file. Error: {e}")
-                    else:
+                            print(TAG+f"{incn}")
+                            print(TAG+f"mode: \"{state.mode}\".")
+                        if btns_active>0:
+                            state.notes_lst[state.selected_index] += 1
+                            # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
+                    elif state.mode in ["index", "file"]:
+                        dir_up = True
+                        use_warnings = True
+                        load_note_set(state, dir_up, use_warnings)
+
+                if down_btn.fell:
+                    state.btn_event = True
+                    btns_active = count_btns_active(state)
+                    decn = "Decreasing note" if btns_active >0 else ""
+                    if my_debug:
+                            print(TAG+f"BUTTON 3 (DOWN) is pressed: {down_btn.pressed}")
+                    #if state.mode == mode_dict[MODE_I]:  # "index"
+                    #    if btns_active >0:
+                    #        decrement_selected(state)
+                    if state.mode == mode_dict[MODE_N]:  # "note"
                         if my_debug:
-                            print("Filesystem is readonly. Cannot save note sets to file")
-                        msg = [TAG, "Filesystem is", "readonly.", "Unable to save", "note sets","to file:", state.fn]
-                        pr_msg(state, msg)
+                            print(TAG+f"{decn}")
+                            print(TAG+f"mode: \"{state.mode}\".")
+                        if btns_active>0:
+                            state.notes_lst[state.selected_index] -= 1
+                            # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
+                    elif state.mode in ["index", "file"]:
+                        dir_up = False
+                        use_warnings = True
+                        load_note_set(state, dir_up, use_warnings)
+
+                if right_btn.fell:
+                    state.btn_event = True
+                    btns_active = count_btns_active(state)
+                    incn = "Increasing note" if state.mode == mode_dict[MODE_N] and btns_active >0 else ""
+                    if my_debug:
+                            print(TAG+f"BUTTON 2 (RIGHT) is pressed: {right_btn.pressed}.")
+                    if state.mode == mode_dict[MODE_I]:  # "index"
+                        if btns_active >0:
+                            increment_selected(state)
+                    elif state.mode == mode_dict[MODE_N]:  # "note"
+                        if my_debug:
+                            print(TAG+f"{incn}")
+                            print(TAG+f"mode: \"{state.mode}\".")
+                        if btns_active>0:
+                            state.notes_lst[state.selected_index] += 1
+                            # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
+                    elif state.mode == mode_dict[MODE_F]:  # "file"
+                        if my_debug:
+                            print(TAG+"BUTTON 2 (RIGHT) doing nothing")
+                    # state.send_off = not state.send_off
+                    # print(f"send off: {state.send_off}")
+
+                if left_btn.fell:
+                    state.btn_event = True
+                    btns_active = count_btns_active(state)
+                    decn = "Decreasing note" if state.mode == mode_dict[MODE_N] and btns_active >0 else ""
+                    if my_debug:
+                            print(TAG+f"BUTTON 4 (LEFT) is pressed: {left_btn.pressed}.")
+                    if state.mode == mode_dict[MODE_I]:  # "index"
+                        if btns_active >0:
+                            decrement_selected(state)
+                    elif state.mode == mode_dict[MODE_N]:  # "note"
+                        if my_debug:
+                            print(TAG+f"{decn}")
+                            print(TAG+f"mode: \"{state.mode}\".")
+                        if btns_active >0:
+                            state.notes_lst[state.selected_index] -= 1
+                            # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
+                        else:
+                            print("no buttons active")
+                    elif state.mode == mode_dict[MODE_F]:  # "file"
+                        if my_debug:
+                            print(TAG+"BUTTON 4 (LEFT) doing nothing")
+
+                if middle_btn.long_press:
+                    state.btn_event = True
+                    state.longpress_event = True
+                    if my_debug:
+                        print(TAG+f"BUTTON 5 (MIDDLE) is long pressed: {middle_btn.long_press}")
+                    use_warnings = False
+                    load_all_note_sets(state, use_warnings)
+
+                if middle_btn.fell:
+                    state.btn_event = True
+                    if my_debug:
+                        print(TAG+f"BUTTON 5 (MIDDLE) is pressed: {middle_btn.pressed}")
+                    if state.mode  in ["index", "note"]:
+                        state.mode = mode_dict[MODE_F] # Change mode to "file"
+                    elif state.mode == mode_dict[MODE_F]: # "file"
+                        if ro_state == "Writeable":
+                            # save the current file
+                            if my_debug:
+                                print(TAG+"saving")
+                            try:  # This try...except block added by @PaulskPt
+                                f = open(state.fn, "w")
+                                f.write(json.dumps(state.saved_loops))
+                                f.close()
+                                if not state.write_msg_shown:
+                                    if my_debug:
+                                        print(TAG+"save complete")
+                                    msg = [TAG, "note sets", "saved to file", state.fn, "successfully"]
+                                    pr_msg(state, msg)
+                                    state.write_msg_shown = True
+                            except OSError as e:
+                                print(TAG+f"OSError while trying to save note sets to file. Error: {e}")
+                        else:
+                            if my_debug:
+                                print("Filesystem is readonly. Cannot save note sets to file")
+                            msg = [TAG, "Filesystem is", "readonly.", "Unable to save", "note sets","to file:", state.fn]
+                            pr_msg(state, msg)
 
         # slow down the loop a little bit, can be adjusted
         await asyncio.sleep(0.15)  # Was: 0.05 or BPM -- has to be longer to avoid double hit
 
 async def read_encoder(state):
-    global enc_sw_cnt
     TAG = tag_adj("read_encoder(): ")
     # print("\n"+TAG+f"mode: {state.mode}")
     pr_state(state)
 
+    state.enc_sw_cnt = mode_rv_dict[state.mode]  # line-up the encoder switch count with that of the current state.mode
+    if my_debug:
+        print(TAG+f"mode_rv_dict[state.mode]= {mode_rv_dict[state.mode]}")
+    
     # if state.btn_event: return  # Do nothing if another event is being processed
     while True:
         cur_position = encoder.position
         # print(cur_position)
         if state.last_position < cur_position:
+            state.last_position = cur_position
             state.btn_event = True
             if my_debug:
                 print("\n"+TAG+"Encoder turned CW")
@@ -760,6 +761,7 @@ async def read_encoder(state):
                     print(TAG+f"state.selected_file= {state.selected_file}")
 
         elif cur_position < state.last_position:
+            state.last_position = cur_position
             state.btn_event = True
             if my_debug:
                 print("\n"+TAG+"Encoder turned CCW")
@@ -794,19 +796,22 @@ async def read_encoder(state):
 
         if encoder_btn.fell:
             state.btn_event = True
-            enc_sw_cnt += 1
+            state.enc_sw_cnt += 1
+            if state.enc_sw_cnt > MODE_MAX:
+                state.enc_sw_cnt = MODE_MIN
             if my_debug:
-                print(TAG+f"len(mode_lst): {len(mode_lst)}")
-            if enc_sw_cnt > len(mode_lst)-1:
-                enc_sw_cnt = 0
+                print(TAG+f"len(mode_lst): {len(mode_lst)}. New enc_sw_cnt: {state.enc_sw_cnt}")
 
             #state.mode = "note" if state.mode == "index" else "index"
-            state.mode = mode_lst[enc_sw_cnt]
+            state.mode = mode_dict[state.enc_sw_cnt]  # mode_lst[state.enc_sw_cnt]
             if my_debug:
                 print(TAG+"Encoder sw. pressed")
                 print(TAG+f"new mode:\n\"{state.mode}\"")
 
-        state.last_position = cur_position
+        # state.last_position = cur_position
+        state.enc_sw_cnt = mode_rv_dict[state.mode]  # line-up the encoder switch count with that of the current state.mode
+        if my_debug:
+            print(TAG+f"mode_rv_dict[state.mode]= {mode_rv_dict[state.mode]}")
         await asyncio.sleep(0.05)
 
 
