@@ -175,7 +175,7 @@ mode_rv_dict = {
 min_midi_channel = 1
 max_midi_channel = 2
 midi_channel = max_midi_channel  # Default channel = 2
-midi_ch_chg_event = False # Midi channel change event. See read_encoder()
+midi_ch_chg_event = False # Midi channel change event. See read_encoder() and play_note()
 max_note_files = None
 encoder = rotaryio.IncrementalEncoder(board.GP18, board.GP19)
 encoder_btn_pin = digitalio.DigitalInOut(board.GP20)
@@ -394,7 +394,7 @@ async def pr_state(state):
             if i == 7:
                 print()
         print("\n"+"-"*18)
-        if state.mode == "midi_channel":
+        if state.mode == mode_dict[MODE_M]:  # "midi_channel"
             print(TAG+f"midi channel: {midi_channel}")
         else:
             if org_cnt > 0:
@@ -478,7 +478,7 @@ async def load_all_note_sets(state, use_warnings):
     state.selected_file = None
     original_mode = state.mode
     #if state.mode != "file":
-    state.mode = "file"
+    state.mode = mode_dict[MODE_F] # "file"
     ret = True
     try:
         f = open(state.fn, "r")
@@ -590,7 +590,7 @@ async def read_buttons(state):
         # if not down_btn.value:
         #     print(down_btn.current_duration)
 
-        if state.mode == "midi_channel": # Only change midi channel with Rotary Encoder control
+        if state.mode == mode_dict[MODE_M]: # "midi_channel". Only change midi channel with Rotary Encoder control
             break  # return
 
         #await pr_state(state)  # This also clears events
@@ -603,10 +603,10 @@ async def read_buttons(state):
                 incn = "Increasing note" if btns_active >0 else ""
                 if my_debug:
                     print(TAG+f"BUTTON 1 (UP) is pressed: {up_btn.pressed}.")
-                #if state.mode == "index":
+                #if state.mode == mode_dict[MODE_I]: # "index"
                 #    if btns_active >0:
                 #        increment_selected(state)
-                elif state.mode == "note":
+                elif state.mode == mode_dict[MODE_N]: # "note"
                     if my_debug:
                         print(TAG+f"{incn}")
                         print(TAG+f"mode: \"{state.mode}\".")
@@ -624,10 +624,10 @@ async def read_buttons(state):
                 decn = "Decreasing note" if btns_active >0 else ""
                 if my_debug:
                         print(TAG+f"BUTTON 3 (DOWN) is pressed: {down_btn.pressed}")
-                #if state.mode == "index":
+                #if state.mode == mode_dict[MODE_I]:  # "index"
                 #    if btns_active >0:
                 #        decrement_selected(state)
-                elif state.mode == "note":
+                elif state.mode == mode_dict[MODE_N]:  # "note"
                     if my_debug:
                         print(TAG+f"{decn}")
                         print(TAG+f"mode: \"{state.mode}\".")
@@ -642,20 +642,20 @@ async def read_buttons(state):
             if right_btn.fell:
                 state.btn_event = True
                 btns_active = await count_btns_active(state)
-                incn = "Increasing note" if state.mode == "note" and btns_active >0 else ""
+                incn = "Increasing note" if state.mode == mode_dict[MODE_N] and btns_active >0 else ""
                 if my_debug:
                         print(TAG+f"BUTTON 2 (RIGHT) is pressed: {right_btn.pressed}.")
-                if state.mode == "index":
+                if state.mode == mode_dict[MODE_I]:  # "index"
                     if btns_active >0:
                         increment_selected(state)
-                elif state.mode == "note":
+                elif state.mode == mode_dict[MODE_N]:  # "note"
                     if my_debug:
                         print(TAG+f"{incn}")
                         print(TAG+f"mode: \"{state.mode}\".")
                     if btns_active>0:
                         state.notes_lst[state.selected_index] += 1
                         # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
-                elif state.mode == "file":
+                elif state.mode == mode_dict[MODE_F]:  # "file"
                     if my_debug:
                         print(TAG+"BUTTON 2 (RIGHT) doing nothing")
                 # state.send_off = not state.send_off
@@ -664,13 +664,13 @@ async def read_buttons(state):
             if left_btn.fell:
                 state.btn_event = True
                 btns_active = await count_btns_active(state)
-                decn = "Decreasing note" if state.mode == "note" and btns_active >0 else ""
+                decn = "Decreasing note" if state.mode == mode_dict[MODE_N] and btns_active >0 else ""
                 if my_debug:
                         print(TAG+f"BUTTON 4 (LEFT) is pressed: {left_btn.pressed}.")
-                if state.mode == "index":
+                if state.mode == mode_dict[MODE_I]:  # "index"
                     if btns_active >0:
                         decrement_selected(state)
-                elif state.mode == "note":
+                elif state.mode == mode_dict[MODE_N]:  # "note"
                     if my_debug:
                         print(TAG+f"{decn}")
                         print(TAG+f"mode: \"{state.mode}\".")
@@ -679,7 +679,7 @@ async def read_buttons(state):
                         # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
                     else:
                         print("no buttons active")
-                elif state.mode == "file":
+                elif state.mode == mode_dict[MODE_F]:  # "file"
                     if my_debug:
                         print(TAG+"BUTTON 4 (LEFT) doing nothing")
 
@@ -695,9 +695,9 @@ async def read_buttons(state):
                 state.btn_event = True
                 if my_debug:
                     print(TAG+f"BUTTON 5 (MIDDLE) is pressed: {middle_btn.pressed}")
-                if state.mode == "index" or state.mode == "note":
+                if state.mode  in ["index", "note", "midi_channel"]:
                     state.mode = mode_dict[MODE_F] # Change mode to "file"
-                elif state.mode == "file":
+                elif state.mode == mode_dict[MODE_F]: # "file"
                     if ro_state == "Writeable":
                         # save the current file
                         if my_debug:
@@ -738,21 +738,21 @@ async def read_encoder(state):
             state.btn_event = True
             if my_debug:
                 print("\n"+TAG+"Encoder turned CW")
-            if state.mode == "index":
+            if state.mode == mode_dict[MODE_I]:  # "index"
                 increment_selected(state)
-            elif state.mode == "note":
+            elif state.mode == mode_dict[MODE_N]:  # "note"
                 if state.selected_index != -1:
                     if my_debug:
                         print(TAG+f"{state.last_position} -> {cur_position}")
                     state.notes_lst[state.selected_index] += 1
-            elif state.mode == "midi_channel":
+            elif state.mode == mode_dict[MODE_M]:  # "midi_channel"
                 midi_ch_chg_event = True
                 midi_channel += 1
                 if midi_channel > max_midi_channel:
                     midi_channel = min_midi_channel
                 if my_debug:
                     print(f"new midi channel: {midi_channel}")
-            elif state.mode == "file":
+            elif state.mode == mode_dict[MODE_F]:  # "file"
                 if state.selected_file is None:
                     state.selected_file = 0
                 else:
@@ -764,21 +764,21 @@ async def read_encoder(state):
             state.btn_event = True
             if my_debug:
                 print("\n"+TAG+"Encoder turned CCW")
-            if state.mode == "index":
+            if state.mode == mode_dict[MODE_I]:  # "index"
                 decrement_selected(state)
-            elif state.mode == "note":
+            elif state.mode == mode_dict[MODE_N]:  # "note"
                 if state.selected_index != -1:
                     if my_debug:
                         print(TAG+f"{state.last_position} -> {cur_position}")
                     state.notes_lst[state.selected_index] -= 1
-            elif state.mode == "midi_channel":
+            elif state.mode == mode_dict[MODE_M]:  # "midi_channel"
                 midi_ch_chg_event = True
                 midi_channel -= 1
                 if midi_channel < min_midi_channel:
                     midi_channel = max_midi_channel
                 if my_debug:
                     print(f"new midi channel: {midi_channel}")
-            elif state.mode == "file":
+            elif state.mode == mode_dict[MODE_F]:  # "file"
                 if state.selected_file is None:
                     state.selected_file = 0
                 else:
