@@ -119,8 +119,6 @@ print(f"OLED driver: {sd}")
 sd = None
 print("-"*20)
 time.sleep(5)
-#
-
 
 # Initialize MCP Chip 1 Step Switches 0-7
 mcp1 = MCP23017(i2c0, address=0x21)
@@ -154,23 +152,21 @@ MODE_N = 1 # note
 MODE_F = 2 # file
 MODE_M = 3 # midi_channel
 
-
 mode_lst = ["index", "note", "file", "midi_channel"]
 
 mode_dict = {
     MODE_I : "index",
     MODE_N : "note",
-    MODE_M : "midi_channel",
-    MODE_F : "file"
+    MODE_F : "file",
+    MODE_M : "midi_channel"
     }
 
 mode_rv_dict = {
     "index" : MODE_I,
     "note" : MODE_N,
-    "midi_channel" : MODE_M,
-    "file" : MODE_F
+    "file" : MODE_F,
+    "midi_channel" : MODE_M
     }
-
 
 min_midi_channel = 1
 max_midi_channel = 2
