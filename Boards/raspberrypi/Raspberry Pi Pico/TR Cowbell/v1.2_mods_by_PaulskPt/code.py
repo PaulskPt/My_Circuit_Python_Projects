@@ -11,7 +11,8 @@
 # A global flag "my_debug" has been added to control the majority of print statements in this script.
 # Added global flag "use_TAG". This flag controls if in calls to function tag_adj() tags received will be printed or not.
 # On a small display no function names (variable TAG) in print statements make the display more readable.
-# Functions added that are not found in the other repos: count_btns_active(), clr_scrn(), pr_state(), pr_msg(), tag_adj(), do_connect(), wifi_is_connected(), setup().
+# Functions added that are not found in the other repos:
+# count_btns_active(), clr_scrn(), clr_events(), pr_state(), pr_msg(), tag_adj(), do_connect(), wifi_is_connected(), setup().
 import asyncio
 import time
 import board
@@ -31,7 +32,6 @@ my_debug = False
 use_ssd1306 = False  #                   |
 use_sh1107 = True  #                     |
 # ---------------------------------------+
-use_midi = True
 use_wifi = False
 use_TAG = False
 
@@ -40,20 +40,20 @@ if use_wifi:
     import ipaddress
     import socketpool
 
-if use_midi:
-    import json
-    import struct
-    import storage
-    from io import BytesIO
-    import msgpack
-    from adafruit_midi.note_off import NoteOff
-    from adafruit_midi.note_on import NoteOn
-    import adafruit_midi
-    import usb_midi
-    import rotaryio
-    from adafruit_debouncer import Debouncer, Button
-    import digitalio as digitalio
-    from digitalio import Direction
+
+import json
+import struct
+import storage
+from io import BytesIO
+import msgpack
+from adafruit_midi.note_off import NoteOff
+from adafruit_midi.note_on import NoteOn
+import adafruit_midi
+import usb_midi
+import rotaryio
+from adafruit_debouncer import Debouncer, Button
+import digitalio as digitalio
+from digitalio import Direction
 
 displayio.release_displays()
 
@@ -172,54 +172,54 @@ mode_rv_dict = {
     "file" : MODE_F
     }
 
-if use_midi:
-    min_midi_channel = 1
-    max_midi_channel = 2
-    midi_channel = max_midi_channel  # Default channel = 2
-    midi_ch_chg_event = False # Midi channel change event. See read_encoder()
-    max_note_files = None
-    encoder = rotaryio.IncrementalEncoder(board.GP18, board.GP19)
-    encoder_btn_pin = digitalio.DigitalInOut(board.GP20)
-    encoder_btn_pin.direction = digitalio.Direction.INPUT
-    encoder_btn_pin.pull = digitalio.Pull.UP
-    encoder_btn = Debouncer(encoder_btn_pin)
-    enc_sw_cnt = 0 # mode_lst[1] = index
 
-    up_btn_pin = digitalio.DigitalInOut(board.GP21)  # BUTTON 1
-    up_btn_pin.direction = digitalio.Direction.INPUT
-    up_btn_pin.pull = digitalio.Pull.UP
-    up_btn = Button(up_btn_pin)
+min_midi_channel = 1
+max_midi_channel = 2
+midi_channel = max_midi_channel  # Default channel = 2
+midi_ch_chg_event = False # Midi channel change event. See read_encoder()
+max_note_files = None
+encoder = rotaryio.IncrementalEncoder(board.GP18, board.GP19)
+encoder_btn_pin = digitalio.DigitalInOut(board.GP20)
+encoder_btn_pin.direction = digitalio.Direction.INPUT
+encoder_btn_pin.pull = digitalio.Pull.UP
+encoder_btn = Debouncer(encoder_btn_pin)
+enc_sw_cnt = 0 # mode_lst[1] = index
 
-    down_btn_pin = digitalio.DigitalInOut(board.GP28) # BUTTON 3
-    down_btn_pin.direction = digitalio.Direction.INPUT
-    down_btn_pin.pull = digitalio.Pull.UP
-    down_btn = Button(down_btn_pin)
+up_btn_pin = digitalio.DigitalInOut(board.GP21)  # BUTTON 1
+up_btn_pin.direction = digitalio.Direction.INPUT
+up_btn_pin.pull = digitalio.Pull.UP
+up_btn = Button(up_btn_pin)
 
-    right_btn_pin = digitalio.DigitalInOut(board.GP22) # BUTTON 2
-    right_btn_pin.direction = digitalio.Direction.INPUT
-    right_btn_pin.pull = digitalio.Pull.UP
-    right_btn = Button(right_btn_pin)
+down_btn_pin = digitalio.DigitalInOut(board.GP28) # BUTTON 3
+down_btn_pin.direction = digitalio.Direction.INPUT
+down_btn_pin.pull = digitalio.Pull.UP
+down_btn = Button(down_btn_pin)
 
-    left_btn_pin = digitalio.DigitalInOut(board.GP15)  # BUTTON 4
-    left_btn_pin.direction = digitalio.Direction.INPUT
-    left_btn_pin.pull = digitalio.Pull.UP
-    left_btn = Button(left_btn_pin)
+right_btn_pin = digitalio.DigitalInOut(board.GP22) # BUTTON 2
+right_btn_pin.direction = digitalio.Direction.INPUT
+right_btn_pin.pull = digitalio.Pull.UP
+right_btn = Button(right_btn_pin)
 
-    middle_btn_pin = digitalio.DigitalInOut(board.GP14)  # BUTTON 5
-    middle_btn_pin.direction = digitalio.Direction.INPUT
-    middle_btn_pin.pull = digitalio.Pull.UP
-    middle_btn = Button(middle_btn_pin)
+left_btn_pin = digitalio.DigitalInOut(board.GP15)  # BUTTON 4
+left_btn_pin.direction = digitalio.Direction.INPUT
+left_btn_pin.pull = digitalio.Pull.UP
+left_btn = Button(left_btn_pin)
 
-    # midi setup
-    midi_tx_pin, midi_rx_pin = board.GP16, board.GP17
-    midi_timeout = 0.01
-    display_uart = busio.UART(tx=midi_tx_pin, rx=midi_rx_pin,
-        baudrate=31250, timeout=midi_timeout) # Was: uart = ...
-    #display_uart = busio.UART(board.GP0, board.GP1, baudrate=19200)
-    midi = adafruit_midi.MIDI(
-        midi_in=usb_midi.ports[0], in_channel=0,
-        midi_out=usb_midi.ports[1], out_channel=0  # was: out_channel=1
-    )
+middle_btn_pin = digitalio.DigitalInOut(board.GP14)  # BUTTON 5
+middle_btn_pin.direction = digitalio.Direction.INPUT
+middle_btn_pin.pull = digitalio.Pull.UP
+middle_btn = Button(middle_btn_pin)
+
+# midi setup
+midi_tx_pin, midi_rx_pin = board.GP16, board.GP17
+midi_timeout = 0.01
+display_uart = busio.UART(tx=midi_tx_pin, rx=midi_rx_pin,
+    baudrate=31250, timeout=midi_timeout) # Was: uart = ...
+#display_uart = busio.UART(board.GP0, board.GP1, baudrate=19200)
+midi = adafruit_midi.MIDI(
+    midi_in=usb_midi.ports[0], in_channel=0,
+    midi_out=usb_midi.ports[1], out_channel=0  # was: out_channel=1
+)
 
 # Global variables, needed for pr_state()
 # lStart is needed to pass the print statements in pr_state() at the start of this script.
