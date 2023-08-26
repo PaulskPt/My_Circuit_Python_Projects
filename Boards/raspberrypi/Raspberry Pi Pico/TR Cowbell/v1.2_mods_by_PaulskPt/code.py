@@ -161,6 +161,13 @@ mode_dict = {
     MODE_M : "midi_channel"
     }
 
+mode_short_dict = {
+    MODE_I : "indx",
+    MODE_N : "note",
+    MODE_F : "file",
+    MODE_M : "midi"
+    }
+
 mode_rv_dict = {
     "index" : MODE_I,
     "note" : MODE_N,
@@ -168,11 +175,8 @@ mode_rv_dict = {
     "midi_channel" : MODE_M
     }
 
-min_midi_channel = 1
-max_midi_channel = 2
-midi_channel = max_midi_channel  # Default channel = 2
-midi_ch_chg_event = False # Midi channel change event. See read_encoder() and play_note()
-max_note_files = None
+midi_channel_min = 1
+midi_channel_max = 2
 encoder = rotaryio.IncrementalEncoder(board.GP18, board.GP19)
 encoder_btn_pin = digitalio.DigitalInOut(board.GP20)
 encoder_btn_pin.direction = digitalio.Direction.INPUT
@@ -255,6 +259,8 @@ class State:
         self.fn = "saved_loops.json"
         self.btn_event = False
         self.longpress_event = False
+        self.midi_channel = 2
+        self.midi_ch_chg_event = False # Midi channel change event. See read_encoder() and play_note()
 
         if saved_state_json:
             saved_state_obj = json.loads(saved_state_json)
@@ -330,8 +336,8 @@ def toggle_latch(mcp, pin, state):
 def get_latch(mcp, pin, state):
     return state.latches[mcp * 8 + pin]
 
-async def count_btns_active(state):
-    TAG = await tag_adj("count_btns_active(): ")
+def count_btns_active(state):
+    TAG = tag_adj("count_btns_active(): ")
     #cnt = 0
     latches_cnt = 0
     for i in range(16):
@@ -349,24 +355,24 @@ async def count_btns_active(state):
     # return cnt
     return latches_cnt
 
-async def clr_events(state):
+def clr_events(state):
     state.btn_event = False
 
-async def clr_scrn():
+def clr_scrn():
     for i in range(9):
         print()
 
 # Called from blink_the_leds()
-async def pr_state(state):
+def pr_state(state):
     global lStart
-    TAG = await tag_adj("pr_state(): ")
-    # await clr_scrn()
+    TAG = tag_adj("pr_state(): ")
+    # clr_scrn()
     if state.selected_file is None:
         ns = "?"
     else:
         ns = state.selected_file+1
     if state.btn_event or lStart:
-        org_cnt = await count_btns_active(state)
+        org_cnt = count_btns_active(state)
         # print(f"btns active: {cnt}")
         if org_cnt == 0:
             my_lst = state.notes_lst
@@ -391,7 +397,7 @@ async def pr_state(state):
                 print()
         print("\n"+"-"*18)
         if state.mode == mode_dict[MODE_M]:  # "midi_channel"
-            print(TAG+f"midi channel: {midi_channel}")
+            print(TAG+f"midi channel: {state.midi_channel}")
         else:
             if org_cnt > 0:
                 print(TAG+f"selected idx: {state.selected_index+1}")
@@ -400,35 +406,33 @@ async def pr_state(state):
             nba1 = "No buttons active"
             nba2 = nba1 if lStart else nba1
             print(TAG+f"{nba2}")
-        print(TAG+f"mode:{state.mode}.NoteSet:{ns}", end = '')
+        print(TAG+f"mode:{mode_short_dict[mode_rv_dict[state.mode]]}.NoteSet:{ns}", end = '')
 
         if lStart: lStart = False
-        await clr_events(state)  # Clear events
+        clr_events(state)  # Clear events
         if state.longpress_event:
-            await asyncio.sleep(1)  # extra wait to avoid double/triple act on long keypress
             state.longpress_event = False
 
-async def pr_msg(state, msg_lst=None):
-    TAG = await tag_adj("pr_msg(): ")
+def pr_msg(state, msg_lst=None):
+    TAG = tag_adj("pr_msg(): ")
     if msg_lst is None:
         msg_lst = ["pr_msg", "test message", "param rcvd:", "None"]
     le = len(msg_lst)
     max_lines = 9
     nr_lines = max_lines if le >= max_lines else le
-    await clr_scrn()
+    clr_scrn()
     if le > 0:
         for i in range(nr_lines):
             print(TAG+f"{msg_lst[i]}")
         if le < max_lines:
             for j in range((max_lines-le)-1):
                 print()
-        # await asyncio.sleep(5)
         time.sleep(3)
 
 async def blink_the_leds(state, delay=0.125):
-    TAG = await tag_adj("blink_the_leds(): ")
+    TAG = tag_adj("blink_the_leds(): ")
     while True:
-        #await pr_state(state)
+        #pr_state(state)
         # blink all the LEDs together
         for (x, y) in led_pins:
             if not get_latch(x, y, state):
@@ -443,10 +447,10 @@ async def blink_the_leds(state, delay=0.125):
                     #print(TAG+f"index: {x}, {y} - {x * 8 + y}")
                 led_pins_per_chip[x][y].value = False
                 #---------- PLAY A NOTE ------------- (added by @PaulskPt -- seeing @Foamyguys stream of dec 2022
-                await play_note(state.notes_lst[x * 8 + y], delay, state)
+                await play_note(state, state.notes_lst[x * 8 + y], delay)
                 # time.sleep(0.001)
                 led_pins_per_chip[x][y].value = True
-        await pr_state(state)
+        pr_state(state)
 
 async def blink_selected(state, delay=0.05):
     while True:
@@ -469,8 +473,8 @@ async def blink_selected(state, delay=0.05):
                 led_pins_per_chip[chip_num][index].value = False
             await asyncio.sleep(delay)
 
-async def load_all_note_sets(state, use_warnings):
-    TAG = await tag_adj("load_all_note_sets(): ")
+def load_all_note_sets(state, use_warnings):
+    TAG = tag_adj("load_all_note_sets(): ")
     state.selected_file = None
     original_mode = state.mode
     #if state.mode != "file":
@@ -487,7 +491,7 @@ async def load_all_note_sets(state, use_warnings):
                 print(TAG+state.fn)
                 print(TAG+f"note sets: {state.saved_loops}\nloaded successfully")
             msg = [TAG, "saved note sets", "have been", "read from file", state.fn, "successfully"]
-            await pr_msg(state, msg)
+            pr_msg(state, msg)
     except (OSError, KeyError) as e:
         print(TAG+f"Error occurred: {e}")
         state.saved_loops = []
@@ -495,19 +499,19 @@ async def load_all_note_sets(state, use_warnings):
     finally:
         state.mode = original_mode # restore mode
         #if state.btn_event:
-        #    await clear_events(state) # Clear the button event flag
+        #    clear_events(state) # Clear the button event flag
     return ret
 
-async def load_note_set(state, dir_up, use_warnings):
-    TAG = await tag_adj("load_note_set(): ")
+def load_note_set(state, dir_up, use_warnings):
+    TAG = tag_adj("load_note_set(): ")
     ret = None
     if state.saved_loops is None:
-        ret = await load_all_note_sets(state, use_warnings) # Try to load all note sets
+        ret = load_all_note_sets(state, use_warnings) # Try to load all note sets
         if not ret:
             # failed to load
             if use_warnings:
                 msg = [TAG, "Please", "long press", "middle button", "to load note sets", "from file"]
-                await pr_msg(state, msg)
+                pr_msg(state, msg)
             return
 
     if dir_up is None:
@@ -529,17 +533,17 @@ async def load_note_set(state, dir_up, use_warnings):
             if my_debug:
                 print(TAG+f"loading notes set nr: {state.selected_file+1} (from memory) successful")
             msg = [TAG, "loading:", "from", "notes set nr: "+str(state.selected_file+1)]
-            await pr_msg(state, msg)
+            pr_msg(state, msg)
         #print(TAG+f"loading: {state.selected_file}")
     state.load_state_obj(state.saved_loops[state.selected_file])
     state.mode = mode_dict[MODE_I] # Change mode to "index"
-    await pr_state(state)
+    pr_state(state)
 
 async def read_buttons(state):
     global ro_state
 
-    TAG = await tag_adj("read_buttons(): ")
-    btns_active = await count_btns_active(state)
+    TAG = tag_adj("read_buttons(): ")
+    btns_active = count_btns_active(state)
     incn = "Increasing note" if btns_active >0 else ""
     decn = "Decreasing note" if btns_active >0 else ""
     state.read_msg_shown = False
@@ -589,13 +593,13 @@ async def read_buttons(state):
         if state.mode == mode_dict[MODE_M]: # "midi_channel". Only change midi channel with Rotary Encoder control
             break  # return
 
-        #await pr_state(state)  # This also clears events
+        #pr_state(state)  # This also clears events
 
         if state.btn_event == False:  # only if no other event is being processed
 
             if up_btn.fell:
                 state.btn_event = True
-                btns_active = await count_btns_active(state)
+                btns_active = count_btns_active(state)
                 incn = "Increasing note" if btns_active >0 else ""
                 if my_debug:
                     print(TAG+f"BUTTON 1 (UP) is pressed: {up_btn.pressed}.")
@@ -612,11 +616,11 @@ async def read_buttons(state):
                 elif state.mode in ["index", "file"]:
                     dir_up = True
                     use_warnings = True
-                    await load_note_set(state, dir_up, use_warnings)
+                    load_note_set(state, dir_up, use_warnings)
 
             if down_btn.fell:
                 state.btn_event = True
-                btns_active = await count_btns_active(state)
+                btns_active = count_btns_active(state)
                 decn = "Decreasing note" if btns_active >0 else ""
                 if my_debug:
                         print(TAG+f"BUTTON 3 (DOWN) is pressed: {down_btn.pressed}")
@@ -633,11 +637,11 @@ async def read_buttons(state):
                 elif state.mode in ["index", "file"]:
                     dir_up = False
                     use_warnings = True
-                    await load_note_set(state, dir_up, use_warnings)
+                    load_note_set(state, dir_up, use_warnings)
 
             if right_btn.fell:
                 state.btn_event = True
-                btns_active = await count_btns_active(state)
+                btns_active = count_btns_active(state)
                 incn = "Increasing note" if state.mode == mode_dict[MODE_N] and btns_active >0 else ""
                 if my_debug:
                         print(TAG+f"BUTTON 2 (RIGHT) is pressed: {right_btn.pressed}.")
@@ -659,7 +663,7 @@ async def read_buttons(state):
 
             if left_btn.fell:
                 state.btn_event = True
-                btns_active = await count_btns_active(state)
+                btns_active = count_btns_active(state)
                 decn = "Decreasing note" if state.mode == mode_dict[MODE_N] and btns_active >0 else ""
                 if my_debug:
                         print(TAG+f"BUTTON 4 (LEFT) is pressed: {left_btn.pressed}.")
@@ -685,7 +689,7 @@ async def read_buttons(state):
                 if my_debug:
                     print(TAG+f"BUTTON 5 (MIDDLE) is long pressed: {middle_btn.long_press}")
                 use_warnings = False
-                await load_all_note_sets(state, use_warnings)
+                load_all_note_sets(state, use_warnings)
 
             if middle_btn.fell:
                 state.btn_event = True
@@ -706,7 +710,7 @@ async def read_buttons(state):
                                 if my_debug:
                                     print(TAG+"save complete")
                                 msg = [TAG, "note sets", "saved to file", state.fn, "successfully"]
-                                await pr_msg(state, msg)
+                                pr_msg(state, msg)
                                 state.write_msg_shown = True
                         except OSError as e:
                             print(TAG+f"OSError while trying to save note sets to file. Error: {e}")
@@ -714,19 +718,18 @@ async def read_buttons(state):
                         if my_debug:
                             print("Filesystem is readonly. Cannot save note sets to file")
                         msg = [TAG, "Filesystem is", "readonly.", "Unable to save", "note sets","to file:", state.fn]
-                        await pr_msg(state, msg)
+                        pr_msg(state, msg)
 
         # slow down the loop a little bit, can be adjusted
         await asyncio.sleep(0.15)  # Was: 0.05 or BPM -- has to be longer to avoid double hit
 
 async def read_encoder(state):
-    global enc_sw_cnt, midi_ch_chg_event, midi_channel
-    TAG = await tag_adj("read_encoder(): ")
+    global enc_sw_cnt
+    TAG = tag_adj("read_encoder(): ")
     # print("\n"+TAG+f"mode: {state.mode}")
-    await pr_state(state)
+    pr_state(state)
 
     # if state.btn_event: return  # Do nothing if another event is being processed
-
     while True:
         cur_position = encoder.position
         # print(cur_position)
@@ -742,12 +745,12 @@ async def read_encoder(state):
                         print(TAG+f"{state.last_position} -> {cur_position}")
                     state.notes_lst[state.selected_index] += 1
             elif state.mode == mode_dict[MODE_M]:  # "midi_channel"
-                midi_ch_chg_event = True
-                midi_channel += 1
-                if midi_channel > max_midi_channel:
-                    midi_channel = min_midi_channel
+                state.midi_channel += 1
+                state.midi_ch_chg_event = True
+                if state.midi_channel > midi_channel_max:
+                    state.midi_channel = midi_channel_min
                 if my_debug:
-                    print(f"new midi channel: {midi_channel}")
+                    print(f"new midi channel: {state.midi_channel}")
             elif state.mode == mode_dict[MODE_F]:  # "file"
                 if state.selected_file is None:
                     state.selected_file = 0
@@ -768,12 +771,12 @@ async def read_encoder(state):
                         print(TAG+f"{state.last_position} -> {cur_position}")
                     state.notes_lst[state.selected_index] -= 1
             elif state.mode == mode_dict[MODE_M]:  # "midi_channel"
-                midi_ch_chg_event = True
-                midi_channel -= 1
-                if midi_channel < min_midi_channel:
-                    midi_channel = max_midi_channel
+                state.midi_channel -= 1
+                state.midi_ch_chg_event = True
+                if state.midi_channel < midi_channel_min:
+                    state.midi_channel = midi_channel_max
                 if my_debug:
-                    print(f"new midi channel: {midi_channel}")
+                    print(f"new midi channel: {state.midi_channel}")
             elif state.mode == mode_dict[MODE_F]:  # "file"
                 if state.selected_file is None:
                     state.selected_file = 0
@@ -806,22 +809,22 @@ async def read_encoder(state):
         state.last_position = cur_position
         await asyncio.sleep(0.05)
 
-async def play_note(note, delay, state):
-    global midi_ch_chg_event
-    TAG = await tag_adj("play_note(): ")
+
+async def play_note(state, note, delay):
+    TAG = tag_adj("play_note(): ")
+    if state.midi_ch_chg_event:  # was: if note == 61 and midi_ch_chg_event
+        state.midi_ch_chg_event = False  # Clear event flag
     if (note != 0):
         if not state.send_off:
             midi.send(NoteOff(note, 0))
-        if note == 61 and midi_ch_chg_event:
-            midi_ch_chg_event = False  # Clear event flag
             note_on = NoteOn(note, 127)
             #if my_debug:
             #    print(TAG+f"playing other channel? {note_on.channel}")
-            midi.send(note_on, channel=midi_channel)
+            midi.send(note_on, channel=state.midi_channel)
             await asyncio.sleep(delay)
 
             if state.send_off:
-                midi.send(NoteOff(note, 0), channel=midi_channel)
+                midi.send(NoteOff(note, 0), channel=state.midi_channel)
         else:
             note_on = NoteOn(note, 127)
             midi.send(note_on)
@@ -873,7 +876,7 @@ async def update_display(state, delay=0.125):
 
     This function fills param t with trailing spaces up to the value of global variable tag_le_max
 """
-async def tag_adj(t):
+def tag_adj(t):
     global tag_le_max
 
     if use_TAG:
@@ -891,9 +894,9 @@ async def tag_adj(t):
         return ret
     return ""
 
-async def do_connect():
+def do_connect():
     global ip, s_ip, pool
-    TAG = await tag_adj("do_connect(): ")
+    TAG = tag_adj("do_connect(): ")
     # if my_debug:
     #    print(TAG+"wifi.radio.enabled=", wifi.radio.enabled)
     cnt = 0
@@ -952,29 +955,29 @@ async def do_connect():
         #import microcontroller
         #microcontroller.reset()
 
-async def wifi_is_connected():
+def wifi_is_connected():
     return True if s_ip is not None and s_ip != '0.0.0.0' else False
 
-async def setup(state):
-    TAG = await tag_adj("setup(): ")
+def setup(state):
+    TAG = tag_adj("setup(): ")
 
     if use_wifi:
-        if not await wifi_is_connected():
+        if not wifi_is_connected():
             if my_debug:
                 print(TAG+f"Connecting WiFi to {os.getenv('CIRCUITPY_WIFI_SSID')}")
-            await do_connect()
+            do_connect()
         else:
             print(TAG+f"WiFi is connected to {os.getenv('CIRCUITPY_WIFI_SSID')}")
 
     use_warnings = True
-    await load_all_note_sets(state, use_warnings)
+    load_all_note_sets(state, use_warnings)
 
 async def main():
     # state = State(saved_loops.LOOP1)
     test_state_json = []
     state = State()
+    setup(state)
     await asyncio.gather(
-        asyncio.create_task(setup(state)),
         asyncio.create_task(blink_the_leds(state, delay=0.125)),
         asyncio.create_task(read_buttons(state)),
         asyncio.create_task(blink_selected(state)),
