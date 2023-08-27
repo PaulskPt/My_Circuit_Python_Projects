@@ -454,7 +454,7 @@ def pr_state(state):
                 #if i > 0 and i % 4 == 0:
                 #    print("\n   ", end='')
                 sn = state.notes_lst[i]
-                if sn == 60:
+                if sn in notes_c_dict.keys():
                     sn = notes_C_dict[sn]
                     print("{:>3s} ".format(sn), end='')
                 else:
