@@ -673,7 +673,7 @@ def mode_change(state):
                     print(TAG+f"  >> {v} {k+1} <<")
                 else:
                     print(TAG+f"     {v} {k+1}   ")
-            print(TAG+"| Exit=> Enc Btn |", end= '')
+            print(TAG+"| Exit=>Enc Btn |", end= '')
             msg_shown = True
 
         enc_pos = encoder.position
@@ -898,7 +898,6 @@ async def read_encoder(state):
     if my_debug:
         print(TAG+f"mode_rv_dict[\"{state.mode}\"]= {mode_rv_dict[state.mode]}")
 
-    # if state.btn_event: return  # Do nothing if another event is being processed
     while True:
         cur_position = encoder.position
         # print(cur_position)
@@ -981,7 +980,8 @@ async def read_encoder(state):
             tm_diff = tm_current - tm_start
 
             if state.encoder_btn_cnt > 1:
-                print(TAG+f"tm_start: {tm_start}. tm_trigger: {tm_trigger}, tm_diff: {tm_diff}")
+                if my_debug:
+                    print(TAG+f"\ntm_start: {tm_start}. tm_trigger: {tm_trigger}, tm_diff: {tm_diff}")
                 if tm_diff >= tm_trigger:
                     state.encoder_btn_cnt = 0
                     tm_start = tm_current
