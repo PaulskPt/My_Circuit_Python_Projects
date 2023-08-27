@@ -817,6 +817,25 @@ async def read_buttons(state):
         # slow down the loop a little bit, can be adjusted
         await asyncio.sleep(0.15)  # Was: 0.05 or BPM -- has to be longer to avoid double hit
 
+def fifths_change(state):
+    TAG = tag_adj("fifths_change(): ")
+    if state.display_fifths:
+        state.display_fifths = False  # negate the flag
+    else:
+        state.display_fifths = True
+    msg = [TAG, "Display fifths", "changed to:", state.display_fifths]
+    pr_msg(state, msg)
+
+def key_change(state):
+    TAG = tag_adj("key_change(): ")
+    if state.key_major:
+        state.key_major = False  # negate the flag
+    else:
+        state.key_major = True
+    k = "{:s}".format("Major" if state.key_major else "Minor")
+    msg = [TAG, "The key", "of the notes", "changed to:", k]
+    pr_msg(state, msg)
+
 async def read_encoder(state):
     TAG = tag_adj("read_encoder(): ")
     # print("\n"+TAG+f"mode: {state.mode}")
@@ -857,20 +876,9 @@ async def read_encoder(state):
                 if my_debug:
                     print(TAG+f"state.selected_file= {state.selected_file}")
             elif state.mode == mode_dict[MODE_D]: # "fifths"
-                if state.display_fifths:
-                    state.display_fifths = False  # negate the flag
-                else:
-                    state.display_fifths = True
-                msg = [TAG, "Display fifths", "changed to:", state.display_fifths]
-                pr_msg(state, msg)
+                fifths_change(state)
             elif state.mode == mode_dict[MODE_K]: # "note key Major or Minor
-                if state.key_major:
-                    state.key_major = False  # negate the flag
-                else:
-                    state.key_major = True
-                k = "{:s}".format("Major" if state.key_major else "Minor")
-                msg = [TAG, "The key", "of the notes", "changed to:", k]
-                pr_msg(state, msg)
+                key_change(state)
         elif cur_position < state.last_position:
             state.last_position = cur_position
             state.btn_event = True
@@ -900,20 +908,9 @@ async def read_encoder(state):
                 if my_debug:
                     print(TAG+f"state.selected_file= {state.selected_file}")
             elif state.mode == mode_dict[MODE_D]: # "fifths"
-                if state.display_fifths:
-                    state.display_fifths = False  # negate the flag
-                else:
-                    state.display_fifths = True
-                msg = [TAG, "Display fifths", "changed to:", state.display_fifths]
-                pr_msg(state, msg)
+                fifths_change(state)
             elif state.mode == mode_dict[MODE_K]: # "note key Major or Minor
-                if state.key_major:
-                    state.key_major = False  # negate the flag
-                else:
-                    state.key_major = True
-                k = "{:s}".format("Major" if state.key_major else "Minor")
-                msg = [TAG, "The key", "of the notes", "changed to:", k]
-                pr_msg(state, msg)
+                key_change(state)
         else:
             # same
             pass
