@@ -1,0 +1,243 @@
+2023-08-27 13h03 utc+1
+
+Platform: TR-Cowbell by @DJDevon3
+
+IDE: mu-editor v 1.1.1 
+
+REPL output with annotations
+of a code.py script containing changes and additions by @PaulskPt (Github)
+
+
+]0;🐍Wi-Fi: No IP | Done | 8.2.3\
+Auto-reload is on. Simply save files over USB to run them or enter REPL to disable.
+code.py output:
+]0;🐱92.168.x.yy | code.py | 8.2.3\
+
+
+TR-COWBELL test       <<<= Opening screen text after powering up or after a "reset"
+Board:
+raspberry_pi_pico_w
+Filesystem:Readonly
+OLED driver: SH1107
+--------------------
+
+
+
+saved note sets        <<<=== After the opening screen disappears, this message is shown
+have been                     to inform the user that all saved note sets have been read
+read from file                into memory of the Raspberry PicoW
+saved_loops.json
+successfully
+
+
+
+0 button active       <<<===  Next, the default screen is presented
+------------------
+0/   0   0   0   0 
+     0   0   0   0 
+1/   0   0   0   0 
+     0   0   0   0 
+------------------
+No buttons active
+mode:indx.NoteSet:5   <<<=== Default the 5th note set is loaded which has all values 0,
+                             It has no note button (key) selected.
+
+
+
+loading:           <<<=== This happens after pressing the Up button (BUTTON 1). 
+from                      which can be done in the modes "indx" or "file".
+notes set nr: 1
+
+
+8 buttons active
+------------------
+0/  69  74  77   0   <<<=== Default representation of the 16 notes of the notes set #1
+     0  67   0  67          ('Display fifths flag is Off (False), which is default)
+1/   0   0   0  79 
+    76  69   0   0 
+------------------
+selected idx: 14
+mode:indx.NoteSet:1  <<<=== Default at startup mode is "indx" (= "index")
+8 buttons active            This image represents the fact after loading the 1st notes set.
+
+
+------------------
+0/  69  74  77   0 
+     0  67   0  67 
+1/   0   0   0  79 
+    76  69   0   0 
+------------------
+selected idx: 14
+mode:note.NoteSet:1   <<<=== After pressing Encoder switch
+                             mode changed to "note"
+
+8 buttons active   
+------------------
+0/  69  74  77   0 
+     0  67   0  67 
+1/   0   0   0  79 
+    76  69   0   0 
+------------------
+selected idx: 14
+mode:file.NoteSet:1   <<<=== After pressing Encoder switch a 2nd time
+                             mode changed to "file"
+
+8 buttons active
+------------------
+0/  69  74  77   0 
+     0  67   0  67 
+1/   0   0   0  79 
+    76  69   0   0 
+------------------
+midi channel: 2
+mode:midi.NoteSet:1   <<<=== After pressing Encoder switch a 3rd time
+                             mode changed to "midi" (= "midi channel")
+
+8 buttons active 
+------------------
+0/  69  74  77   0 
+     0  67   0  67 
+1/   0   0   0  79 
+    76  69   0   0 
+------------------
+selected idx: 14
+mode:fift.NoteSet:1   <<<=== After pressing Encoder switch a 4th time
+                             mode changed to "fift" (= "fifths")
+
+
+
+Display fifths   <<<=== After turning the Encoder control clockwise (CW) or counter clockwise (CCW)
+changed to:             changes the value between "Display fifths" ON or OFF (= OFF is the default display)
+True
+
+
+
+8 buttons active
+------------------
+Eb D B/Cb C            <<<=== Display with the "Fifths" flag active (True)
+C C#/Db C C#/Db 
+C C C C#/Db 
+E Eb C C 
+------------------
+selected idx: 14
+mode:fift.NoteSet:1
+
+
+
+Display fifths        <<<=== Display as fifths flag switched Off (False)
+changed to:
+False
+
+
+
+8 buttons active
+------------------
+0/  69  74  77   0      <<<=== 'default' Display with the "Fifths" flag Off (False)
+     0  67   0  67 
+1/   0   0   0  79 
+    76  69   0   0 
+------------------
+selected idx: 14
+mode:fift.NoteSet:1
+
+
+
+Display fifths         <<<=== Display as fifths flag again switched On (True)
+changed to:
+True
+
+
+
+8 buttons active
+------------------
+Eb D B/Cb C             <<<=== Display back to the "Fifths" representation
+C C#/Db C C#/Db 
+C C C C#/Db 
+E Eb C C 
+------------------
+selected idx: 14
+mode:fift.NoteSet:1    <<<=== We're still in the "fift" mode
+
+
+
+8 buttons active
+------------------
+Eb D B/Cb C 
+C C#/Db C C#/Db 
+C C C C#/Db 
+E Eb C C 
+------------------
+selected idx: 14
+mode:nkey.NoteSet:1   <<<=== After pressing Encoder switch a 5th time
+                             mode changed to "nkey" (= "note key")
+                             In this mode the key of the notes can be
+							 changed between "Major" or "Minor"
+
+
+The key	             <<<=== After turning the Encoder rotary control clockwise (CW) or counter clockwise (CCW)
+of the notes                the key of the notes is changed to "Minor"
+changed to:
+Minor
+
+
+8 buttons active
+------------------
+c b g# a 			<<<=== Representation of the notes in key Minor
+a bb a bb 
+a a a bb 
+c# c a a 
+------------------
+selected idx: 14
+mode:nkey.NoteSet:1
+
+
+
+The key	             <<<=== After turning the Encoder rotary control clockwise (CW) or counter clockwise (CCW)
+of the notes                the key of the notes is changed back to "Major" (default)
+changed to:
+Major
+
+
+
+8 buttons active
+------------------
+Eb D B/Cb C  			<<<=== Representation of the notes in key Major
+C C#/Db C C#/Db 
+C C C C#/Db 
+E Eb C C 
+------------------
+selected idx: 14
+mode:nkey.NoteSet:1
+
+
+
+8 buttons active
+------------------
+Eb D B/Cb C 
+C C#/Db C C#/Db 
+C C C C#/Db 
+E Eb C C 
+------------------
+selected idx: 1        <<<=== "selected idx: 1" indicates that note at position #1 is selected to be changed
+mode:note.NoteSet:1           This only can happen when the mode is "note", which is the case in this example.
+
+
+8 buttons active
+------------------
+Bb D B/Cb C             <<<=== Value of the selected note #1 changed after pressing the Up button (BUTTON 1)
+C C#/Db C C#/Db 
+C C C C#/Db 
+E Eb C C 
+------------------
+selected idx: 1
+mode:note.NoteSet:1
+8 buttons active
+------------------
+Eb D B/Cb C             <<<=== Value of the selected note #1 back to its previous value after pressing
+C C#/Db C C#/Db                the Down button (BUTTON 3)
+C C C C#/Db 
+E Eb C C 
+------------------
+selected idx: 1
+mode:note.NoteSet:1
+
