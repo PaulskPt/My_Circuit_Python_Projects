@@ -56,23 +56,24 @@
 # Rotary encoder: has 1 control and 1 switch
 #
 # -- The switch, when pressed, switches between the modes:
-#   +------------------+---------------+
-#   | Mode             |  Displayed as |
-#   +------------------+---------------+
-#   | "index"          |   "indx"      |
-#   | "note"           |   "note"      |
-#   | "file"           |   "file"      |
-#   | "midi_channel"   |   "midi"      |
-#   | "display_fifths" |   "fift"      |
-#   | "note_key_major" |   "nkey"      |
-#   +------------------+---------------+
-#
-# -- in mode "indx" turning the rotary encoder control clockwise will increase the selected_index value to the next selected note.
+```
+   +------------------+---------------+
+   | Mode             |  Displayed as |
+   +------------------+---------------+
+   | "index"          |   "indx"      |
+   | "note"           |   "note"      |
+   | "file"           |   "file"      |
+   | "midi_channel"   |   "midi"      |
+   | "display_fifths" |   "fift"      |
+   | "note_key_major" |   "nkey"      |
+   +------------------+---------------+
+```
+# -- in mode "indx" turning the rotary encoder control clockwise will increase the selected index value to the next selected note.
 # -- in mode "indx" turning the rotary encoder control counter clockwise will decrease the selected index value to the previous selected note.
 # -- In mode "note", if one or more buttons is activated, 
-#    turning the rotary encoder control clockwise will increase the note of the selected_index.
+#    turning the rotary encoder control clockwise will increase the note of the selected index.
 # -- In mode "note", if one or more buttons is activated, 
-#    turning the rotary encoder control counter clockwise will decrease the note of the selected_index.
+#    turning the rotary encoder control counter clockwise will decrease the note of the selected index.
 # -- in mode "file" the rotary encoder has no function.
 # -- In mode "midi", (i.e.: "midi_channel", turning the rotary encoder control clockwise will increase the midi channel. 
 #    Currently the maximum channel number is 2 (default).
