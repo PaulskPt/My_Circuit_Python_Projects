@@ -147,19 +147,21 @@ led_pins = [(a, b) for a in range(2) for b in range(8)]
 for (m, x) in led_pins:
     led_pins_per_chip[m][x].direction = Direction.OUTPUT
 
-MODE_I = 0 # index
-MODE_N = 1 # note
-MODE_F = 2 # file
-MODE_M = 3 # midi_channel
-MODE_D = 4 # fifths (circle of fifths) flag choose
-MODE_K = 5 # key of the notes: Major or Minor
-MODE_MIN = MODE_I
+MODE_C = 0 # mchg  # mode change
+MODE_I = 1 # index
+MODE_N = 2 # note
+MODE_F = 3 # file
+MODE_M = 4 # midi_channel
+MODE_D = 5 # fifths (circle of fifths) flag choose
+MODE_K = 6 # key of the notes: Major or Minor
+MODE_MIN = MODE_C
 MODE_MAX = MODE_K
 
 
-mode_lst = ["index", "note", "file", "midi_channel", "disp_fifths", "note_key"]
+mode_lst = ["mode_change", "index", "note", "file", "midi_channel", "disp_fifths", "note_key"]
 
 mode_dict = {
+    MODE_C : "mode_change",
     MODE_I : "index",
     MODE_N : "note",
     MODE_F : "file",
@@ -169,6 +171,7 @@ mode_dict = {
     }
 
 mode_short_dict = {
+    MODE_C : "mchg",
     MODE_I : "indx",
     MODE_N : "note",
     MODE_F : "file",
@@ -178,6 +181,7 @@ mode_short_dict = {
     }
 
 mode_rv_dict = {
+    "mode_change" : MODE_C,
     "index" : MODE_I,
     "note" : MODE_N,
     "file" : MODE_F,
@@ -305,7 +309,7 @@ class State:
         self.notes_lst = [0] * 16
         self.latches = [False] * 16
         self.last_position = encoder.position
-        self.mode = mode_dict[MODE_I] # was: "index"
+        self.mode = mode_dict[MODE_C] # was: MODE_I  (indx)
         self.send_off = True
         self.received_ack = True
         self.selected_file = None
@@ -320,6 +324,7 @@ class State:
         self.enc_sw_cnt = 0  # mode_lst[0] = index
         self.display_fifths = False # "Normal" (number values) display
         self.key_major = True  # If False, the key is Minor
+        self.encoder_btn_cnt = 0  # Counter for double press
 
         if saved_state_json:
             saved_state_obj = json.loads(saved_state_json)
@@ -635,6 +640,71 @@ def load_note_set(state, dir_up, use_warnings):
     state.mode = mode_dict[MODE_I] # Change mode to "index"
     #pr_state(state)
 
+
+def fifths_change(state):
+    TAG = tag_adj("fifths_change(): ")
+    if state.display_fifths:
+        state.display_fifths = False  # negate the flag
+    else:
+        state.display_fifths = True
+    msg = [TAG, "Display fifths", "changed to:", state.display_fifths]
+    pr_msg(state, msg)
+
+def key_change(state):
+    TAG = tag_adj("key_change(): ")
+    if state.key_major:
+        state.key_major = False  # negate the flag
+    else:
+        state.key_major = True
+    k = "{:s}".format("Major" if state.key_major else "Minor")
+    msg = [TAG, "The key", "of the notes", "changed to:", k]
+    pr_msg(state, msg)
+
+def mode_change(state):
+    TAG = tag_adj("mode_change(): ")
+    state.btn_event = True
+    m_idx = MODE_I
+    msg_shown = False
+    while True:
+        if not msg_shown:
+            print(TAG+"\n|---- Mode -----|")
+            for k, v in mode_short_dict.items():
+                if m_idx == k:
+                    print(TAG+f"  >> {v} {k+1} <<")
+                else:
+                    print(TAG+f"     {v} {k+1}   ")
+            print(TAG+"| Exit=> Enc Btn |", end= '')
+            msg_shown = True
+
+        enc_pos = encoder.position
+        # print(TAG+f"state.lp: {state.last_position}, enc pos: {enc_pos}")
+
+        if state.last_position < enc_pos:
+            state.last_position = enc_pos
+            m_idx += 1
+            if m_idx > MODE_MAX:
+                m_idx = MODE_MIN
+            msg_shown = False
+        elif enc_pos < state.last_position:
+            state.last_position = enc_pos
+            m_idx -= 1
+            if m_idx < MODE_MIN:
+                m_idx = MODE_MAX
+            msg_shown = False
+        else:
+            pass
+
+        encoder_btn.update()
+
+        if encoder_btn.fell:
+            if my_debug:
+                print(TAG+f"\nsaving mode as: {mode_dict[m_idx]}")
+            state.enc_sw_cnt = m_idx
+            state.mode = mode_dict[m_idx]
+            state.last_position = enc_pos
+            break
+        time.sleep(0.05)
+
 async def read_buttons(state):
     global ro_state
 
@@ -817,29 +887,12 @@ async def read_buttons(state):
         # slow down the loop a little bit, can be adjusted
         await asyncio.sleep(0.15)  # Was: 0.05 or BPM -- has to be longer to avoid double hit
 
-def fifths_change(state):
-    TAG = tag_adj("fifths_change(): ")
-    if state.display_fifths:
-        state.display_fifths = False  # negate the flag
-    else:
-        state.display_fifths = True
-    msg = [TAG, "Display fifths", "changed to:", state.display_fifths]
-    pr_msg(state, msg)
-
-def key_change(state):
-    TAG = tag_adj("key_change(): ")
-    if state.key_major:
-        state.key_major = False  # negate the flag
-    else:
-        state.key_major = True
-    k = "{:s}".format("Major" if state.key_major else "Minor")
-    msg = [TAG, "The key", "of the notes", "changed to:", k]
-    pr_msg(state, msg)
-
 async def read_encoder(state):
     TAG = tag_adj("read_encoder(): ")
     # print("\n"+TAG+f"mode: {state.mode}")
     pr_state(state)
+    tm_start = int(time.monotonic())
+    tm_trigger = 7
 
     state.enc_sw_cnt = mode_rv_dict[state.mode]  # line-up the encoder switch count with that of the current state.mode
     if my_debug:
@@ -854,7 +907,9 @@ async def read_encoder(state):
             state.btn_event = True
             if my_debug:
                 print("\n"+TAG+"Encoder turned CW")
-            if state.mode == mode_dict[MODE_I]:  # "index"
+            if state.mode == mode_dict[MODE_C]:  # "chgm"
+                pass # mode_change(state)
+            elif state.mode == mode_dict[MODE_I]:  # "index"
                 increment_selected(state)
             elif state.mode == mode_dict[MODE_N]:  # "note"
                 if state.selected_index != -1:
@@ -884,7 +939,9 @@ async def read_encoder(state):
             state.btn_event = True
             if my_debug:
                 print("\n"+TAG+"Encoder turned CCW")
-            if state.mode == mode_dict[MODE_I]:  # "index"
+            if state.mode == mode_dict[MODE_C]:  # "chgm"
+                pass # mode_change(state)
+            elif state.mode == mode_dict[MODE_I]:  # "index"
                 decrement_selected(state)
             elif state.mode == mode_dict[MODE_N]:  # "note"
                 if state.selected_index != -1:
@@ -918,18 +975,32 @@ async def read_encoder(state):
         encoder_btn.update()
 
         if encoder_btn.fell:
-            state.btn_event = True
-            state.enc_sw_cnt += 1
-            if state.enc_sw_cnt > MODE_MAX:
-                state.enc_sw_cnt = MODE_MIN
-            if my_debug:
-                print(TAG+f"len(mode_lst): {len(mode_lst)}. New enc_sw_cnt: {state.enc_sw_cnt}")
 
-            #state.mode = "note" if state.mode == "index" else "index"
-            state.mode = mode_dict[state.enc_sw_cnt]  # mode_lst[state.enc_sw_cnt]
-            if my_debug:
-                print(TAG+"Encoder sw. pressed")
-                print(TAG+f"new mode:\n\"{state.mode}\"")
+            state.encoder_btn_cnt += 1
+            tm_current = int(time.monotonic())
+            tm_diff = tm_current - tm_start
+
+            if state.encoder_btn_cnt > 1:
+                print(TAG+f"tm_start: {tm_start}. tm_trigger: {tm_trigger}, tm_diff: {tm_diff}")
+                if tm_diff >= tm_trigger:
+                    state.encoder_btn_cnt = 0
+                    tm_start = tm_current
+                    mode_change(state)
+            #if state.mode == mode_dict[MODE_C]:  # "chgm"
+            #    mode_change(state)
+            else:
+                state.btn_event = True
+                state.enc_sw_cnt += 1
+                if state.enc_sw_cnt > MODE_MAX:
+                    state.enc_sw_cnt = MODE_MIN
+                if my_debug:
+                    print(TAG+f"len(mode_lst): {len(mode_lst)}. New enc_sw_cnt: {state.enc_sw_cnt}")
+
+                #state.mode = "note" if state.mode == "index" else "index"
+                state.mode = mode_dict[state.enc_sw_cnt]  # mode_lst[state.enc_sw_cnt]
+                if my_debug:
+                    print(TAG+"Encoder sw. pressed")
+                    print(TAG+f"new mode:\n\"{state.mode}\"")
 
         # state.last_position = cur_position
         state.enc_sw_cnt = mode_rv_dict[state.mode]  # line-up the encoder switch count with that of the current state.mode

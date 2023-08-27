@@ -53,13 +53,31 @@
 #
 # ---------------------------------------------
 #
-# Rotary encoder: has 1 control and 1 switch
+# Rotary encoder: has 1 control and 1 button (switch)
 #
-# -- The switch, when pressed, switches between the modes:
+# -- After a double press of the encoder button, the menu below appears:
+```
+   !---- Mode ----|
+        mchg 1
+     >> indx 2 <<
+        note 3
+        file 4
+        midi 5
+        fift 6
+        nkey 7
+   ! Exit=> Enc Btn |
+```
+# turning the rotary encoder control clockwise moves the selector indicator down to the next mode in the list.
+# turning the rotary encoder control counter clockwise moves the selector indicator up to the previous mode in the list.
+# To exit with the selected mode press the encoder button once again.
+
+# In the table below the available modes and their abbreviations:
+
 ```
    +------------------+---------------+
    | Mode             |  Displayed as |
    +------------------+---------------+
+   ! "mode change"    |   "mchg"      |
    | "index"          |   "indx"      |
    | "note"           |   "note"      |
    | "file"           |   "file"      |
@@ -68,6 +86,7 @@
    | "note_key_major" |   "nkey"      |
    +------------------+---------------+
 ```
+# -- in mode "mchg" (see above)
 # -- in mode "indx" turning the rotary encoder control clockwise will increase the selected index value to the next selected note.
 # -- in mode "indx" turning the rotary encoder control counter clockwise will decrease the selected index value to the previous selected note.
 # -- In mode "note", if one or more buttons is activated, 
