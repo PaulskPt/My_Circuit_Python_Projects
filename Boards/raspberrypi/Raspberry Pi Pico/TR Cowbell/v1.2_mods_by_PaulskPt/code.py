@@ -151,30 +151,86 @@ MODE_I = 0 # index
 MODE_N = 1 # note
 MODE_F = 2 # file
 MODE_M = 3 # midi_channel
+MODE_D = 4 # fifths (circle of fifths) flag choose
+MODE_K = 5 # key of the notes: Major or Minor
 MODE_MIN = MODE_I
-MODE_MAX = MODE_M
+MODE_MAX = MODE_K
 
-mode_lst = ["index", "note", "file", "midi_channel"]
+
+mode_lst = ["index", "note", "file", "midi_channel", "disp_fifths", "note_key"]
 
 mode_dict = {
     MODE_I : "index",
     MODE_N : "note",
     MODE_F : "file",
-    MODE_M : "midi_channel"
+    MODE_M : "midi_channel",
+    MODE_D : "fifths",
+    MODE_K : "note_key" # C Major or C Minor
     }
 
 mode_short_dict = {
     MODE_I : "indx",
     MODE_N : "note",
     MODE_F : "file",
-    MODE_M : "midi"
+    MODE_M : "midi",
+    MODE_D : "fift",
+    MODE_K : "nkey"
     }
 
 mode_rv_dict = {
     "index" : MODE_I,
     "note" : MODE_N,
     "file" : MODE_F,
-    "midi_channel" : MODE_M
+    "midi_channel" : MODE_M,
+    "fifths" : MODE_D,
+    "note_key" : MODE_K
+    }
+
+notes_C_dict = {
+     0 : "C-",   # My, fictive notation
+    12 : "C0",
+    24 : "C1",
+    36 : "C2",
+    48 : "C3",
+    60 : "C4",
+    72 : "C5",
+    84 : "C6",
+    96 : "C7"
+    }
+
+# See https://en.wikipedia.org/wiki/Circle_of_fifths
+# Circle of fifths is a way of organizing the 12 chromatic pitches
+# as a sequence of perfect fifths.
+# Key of C Major:
+notes_major_dict = {
+    60 : "C",
+    61 : "G",
+    62 : "D",
+    63 : "A",
+    64 : "E",
+    65 : "B/Cb",
+    66 : "F#/Gb",
+    67 : "C#/Db",
+    68 : "Ab",
+    69 : "Eb",
+    70 : "Bb",
+    71 : "F"
+    }
+
+# Key of C Minor
+notes_minor_dict = {
+    60 : "a",
+    61 : "e",
+    62 : "b",
+    63 : "f#",
+    64 : "c#",
+    65 : "g#",
+    66 : "d#/cb",
+    67 : "bb",
+    68 : "f",
+    69 : "c",
+    70 : "g",
+    71 : "d"
     }
 
 midi_channel_min = 1
@@ -263,6 +319,8 @@ class State:
         self.midi_channel = 2
         self.midi_ch_chg_event = False # Midi channel change event. See read_encoder() and play_note()
         self.enc_sw_cnt = 0  # mode_lst[0] = index
+        self.display_fifths = False # "Normal" (number values) display
+        self.key_major = True  # If False, the key is Minor
 
         if saved_state_json:
             saved_state_obj = json.loads(saved_state_json)
@@ -386,18 +444,58 @@ def pr_state(state):
         print(TAG+f"\n{org_cnt} {btn} active")
         print("-"*18)
         grp = 0
-        for i in range(len(state.notes_lst)):
-            if i == 0 or i == 8:
-                print(f"{grp}/ ", end='')
-                grp += 1
-            if i == 4 or i == 12:
-                print("\n   ", end='')
-            #if i > 0 and i % 4 == 0:
-            #    print("\n   ", end='')
-            print("{:>3d} ".format(state.notes_lst[i]), end='')
-            if i == 7:
-                print()
-        print("\n"+"-"*18)
+        if not state.display_fifths:
+            for i in range(len(state.notes_lst)):
+                if i == 0 or i == 8:
+                    print(f"{grp}/ ", end='')
+                    grp += 1
+                if i == 4 or i == 12:
+                    print("\n   ", end='')
+                #if i > 0 and i % 4 == 0:
+                #    print("\n   ", end='')
+                sn = state.notes_lst[i]
+                if sn == 60:
+                    sn = notes_C_dict[sn]
+                    print("{:>3s} ".format(sn), end='')
+                else:
+                    print("{:>3d} ".format(sn), end='')
+                if i == 7:
+                    print()
+            print("\n"+"-"*18)
+        else:
+            for i in range(len(state.notes_lst)):
+                if i == 0 or i == 8:
+                    grp += 1
+                if i == 4 or i == 12:
+                    print("\n", end='')
+                #if i > 0 and i % 4 == 0:
+                #    print("\n   ", end='')
+
+                n = state.notes_lst[i] % 12
+                idx = 60 + n # Value 60 represents the "Central C" or C4
+                if state.key_major:
+                    if idx in notes_major_dict.keys():
+                        sn = notes_major_dict[idx]
+                    else:
+                        sn = state.notes_lst[i]
+                        if sn == 60:
+                            sn = notes_C_dict[sn]
+                else:
+                    if idx in notes_minor_dict.keys():
+                        sn = notes_minor_dict[idx]
+                    else:
+                        sn = state.notes_lst[i]
+                        if sn == 60:
+                            sn = notes_C_dict[sn]
+                le = len(sn)
+                if le > 5:
+                    sn = sn[:5]
+                print("{:s} ".format(sn), end='')
+                #else:
+                #    print("{:>3d} ".format(state.notes_lst[i]), end='')
+                if i == 7:
+                    print()
+            print("\n"+"-"*18)
         if state.mode == mode_dict[MODE_M]:  # "midi_channel"
             print(TAG+f"midi channel: {state.midi_channel}")
         else:
@@ -759,7 +857,21 @@ async def read_encoder(state):
                     state.selected_file += 1
                 if my_debug:
                     print(TAG+f"state.selected_file= {state.selected_file}")
-
+            elif state.mode == mode_dict[MODE_D]: # "fifths"
+                if state.display_fifths:
+                    state.display_fifths = False  # negate the flag
+                else:
+                    state.display_fifths = True
+                msg = [TAG, "Display fifths", "changed to:", state.display_fifths]
+                pr_msg(state, msg)
+            elif state.mode == mode_dict[MODE_K]: # "note key Major or Minor
+                if state.key_major:
+                    state.key_major = False  # negate the flag
+                else:
+                    state.key_major = True
+                k = "{:s}".format("Major" if state.key_major else "Minor")
+                msg = [TAG, "The key", "of the notes", "changed to:", k]
+                pr_msg(state, msg)
         elif cur_position < state.last_position:
             state.last_position = cur_position
             state.btn_event = True
@@ -788,6 +900,21 @@ async def read_encoder(state):
                         state.selected_file = 0
                 if my_debug:
                     print(TAG+f"state.selected_file= {state.selected_file}")
+            elif state.mode == mode_dict[MODE_D]: # "fifths"
+                if state.display_fifths:
+                    state.display_fifths = False  # negate the flag
+                else:
+                    state.display_fifths = True
+                msg = [TAG, "Display fifths", "changed to:", state.display_fifths]
+                pr_msg(state, msg)
+            elif state.mode == mode_dict[MODE_K]: # "note key Major or Minor
+                if state.key_major:
+                    state.key_major = False  # negate the flag
+                else:
+                    state.key_major = True
+                k = "{:s}".format("Major" if state.key_major else "Minor")
+                msg = [TAG, "The key", "of the notes", "changed to:", k]
+                pr_msg(state, msg)
         else:
             # same
             pass

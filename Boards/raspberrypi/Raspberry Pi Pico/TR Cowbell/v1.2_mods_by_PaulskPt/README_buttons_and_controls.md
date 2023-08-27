@@ -55,17 +55,34 @@
 #
 # Rotary encoder: has 1 control and 1 switch
 #
-# -- The switch, when pressed, switches between the modes: "index", "note", "file" and "midi_channel", displayed as: "indx", "note", "file" and "midi".
+# -- The switch, when pressed, switches between the modes:
+#   +------------------+---------------+
+#   | Mode             |  Displayed as |
+#   +------------------+---------------+
+#   | "index"          |   "indx"      |
+#   | "note"           |   "note"      |
+#   | "file"           |   "file"      |
+#   | "midi_channel"   |   "midi"      |
+#   | "display_fifths" |   "fift"      |
+#   | "note_key_major" |   "nkey"      |
+#   +------------------+---------------+
 #
 # -- in mode "indx" turning the rotary encoder control clockwise will increase the selected_index value to the next selected note.
 # -- in mode "indx" turning the rotary encoder control counter clockwise will decrease the selected index value to the previous selected note.
-# -- In mode "note", if one or more buttons is activated, turning the rotary encoder control clockwise will increase the note of the selected_index.
-# -- In mode "note", if one or more buttons is activated, turning the rotary encoder control counter clockwise will decrease the note of the selected_index.
+# -- In mode "note", if one or more buttons is activated, 
+#    turning the rotary encoder control clockwise will increase the note of the selected_index.
+# -- In mode "note", if one or more buttons is activated, 
+#    turning the rotary encoder control counter clockwise will decrease the note of the selected_index.
 # -- in mode "file" the rotary encoder has no function.
 # -- In mode "midi", (i.e.: "midi_channel", turning the rotary encoder control clockwise will increase the midi channel. 
 #    Currently the maximum channel number is 2 (default).
 # -- In mode "midi", turning the rotary encoder control coounter clockwise will decrease the midi channel. 
 #    Currently the minimum channel number is 1.
+# -- In mode "fift", turning the rotary encoder control clockwise or coounter clockwise will change the display of fifths ON or OFF
+#    (normal number values)
+# -- In mode "nkey", turning the rotary encoder control clockwise or coounter clockwise will change the key of the notes display between
+#    Major and Minor
 #
+# NOTE: At startup the flag for "display of fifths" is set to False. The flag for the Key of notes is set to True (Major)
 # NOTE: It is advised to use the D-Pad (middle, Up and Down keys) to perform file actions.
 # ----------------------------------------------
