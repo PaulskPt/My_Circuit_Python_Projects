@@ -187,7 +187,6 @@ mode_rv_dict = {
     }
 
 notes_C_dict = {
-     0 : "C-",   # My, fictive notation
     12 : "C0",
     24 : "C1",
     36 : "C2",
