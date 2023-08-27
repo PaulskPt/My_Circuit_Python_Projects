@@ -9,9 +9,9 @@
 # Only error situations will be printed to the REPL
 #
 # There are several other global variables (flags)
-# use_midi
 # use_ssd1306 (for the OLED 128x64 that came with the kit v1.2) (either this flag or use_sh1107 can have value True)
 # use_sh1107 (for the Adafruit OLED 128x128 display)
+# other flags are inside the state class object
 #
 # NOTE: At startup all the note sets are loaded into memory. Then the last note set in the list of sets is loaded. This set has all notes with value 0.
 #       and no key buttons selected. By pressing the Up button or the Down button one can load a next or a previous notes set.
