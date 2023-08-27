@@ -164,8 +164,8 @@ mode_dict = {
     MODE_N : "note",
     MODE_F : "file",
     MODE_M : "midi_channel",
-    MODE_D : "fifths",
-    MODE_K : "note_key" # C Major or C Minor
+    MODE_D : "fifths",   # Display as Fifths or 'Normal' number values
+    MODE_K : "note_key"  # When displaying as Fifths, display in Key C Major or C Minor
     }
 
 mode_short_dict = {
