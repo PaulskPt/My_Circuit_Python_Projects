@@ -589,6 +589,8 @@ def load_all_note_sets(state, use_warnings):
         f = open(state.fn, "r")
         state.saved_loops = json.loads(f.read())["loops"]
         f.close()
+        if my_debug:
+            print(TAG+f"\nread fm file: {state.saved_loops}")
         state.selected_file = len(state.saved_loops)-1 # Select last note set (0,0,0,...)
         state.selected_index = -1
         if use_warnings:
@@ -598,7 +600,7 @@ def load_all_note_sets(state, use_warnings):
             msg = [TAG, "saved note sets", "have been", "read from file", state.fn, "successfully"]
             pr_msg(state, msg)
     except (OSError, KeyError) as e:
-        print(TAG+f"Error occurred: {e}")
+        print(TAG+f"Error occurred while reading from file {f}: {e}")
         state.saved_loops = []
         ret = False
     state.mode = original_mode # restore mode
@@ -864,17 +866,37 @@ async def read_buttons(state):
                         state.mode = mode_dict[MODE_F] # Change mode to "file"
                     elif state.mode == mode_dict[MODE_F]: # "file"
                         if ro_state == "Writeable":
-                            # save the current file
-                            if my_debug:
-                                print(TAG+"saving")
-                            try:  # This try...except block added by @PaulskPt
+                            f_lst = os.listdir("/")
+                            fn_bak = "/" + state.fn[:-4] + "bak"
+                            if fn_bak in f_lst:
+                                try:
+                                    os.remove(fn_bak)  # remove the file "saved_loops.bak"
+                                    print(TAG+f"removing file: \"{fn_bak}\"")
+                                except OSError as e:
+                                    print(TAG+f"OSError while trying to remove file \"{fn_bak}\". Error: {e}")
+                            else:
+                                print(TAG+f"file \"{fn_bak}\" not found")
+                            if state.fn in f_lst:  # rename existing saved_loops.json to saved_loops.bak
+                                try:
+                                    fn_ren = "/"+state.fn   # e.g. "/saved_loops.json"
+                                    os.rename(fn_ren, fn_bak)
+                                    print(TAG+f"file \"{fn_ren}\" renamed to \"{fn_bak}\"")
+                                except OSError as e:
+                                    print(TAG+f"OSError while trying to rename file \"{fn_ren}\" to \"{fn_bak}\". Error: {e}")
+                            try:
+                                # save the current file
+                                if my_debug:
+                                    print(TAG+f"saving note sets (loops) to: \"{state.fn}\"")
+                                msg = [TAG, "Saving", "note sets (loops)", "to file:", state.fn]
+                                pr_msg(state, msg)
                                 f = open(state.fn, "w")
+                                f.write("{\"loops\": ")
                                 f.write(json.dumps(state.saved_loops))
+                                f.write("}")
                                 f.close()
                                 if not state.write_msg_shown:
-                                    if my_debug:
-                                        print(TAG+"save complete")
-                                    msg = [TAG, "note sets", "saved to file", state.fn, "successfully"]
+                                    print(TAG+"save complete")
+                                    msg = [TAG, "note sets (loops)", "saved to file", state.fn, "successfully"]
                                     pr_msg(state, msg)
                                     state.write_msg_shown = True
                             except OSError as e:

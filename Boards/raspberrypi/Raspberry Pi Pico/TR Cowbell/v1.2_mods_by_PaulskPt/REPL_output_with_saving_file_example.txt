@@ -1,0 +1,128 @@
+Monday 2023-08-28 15h00 PT (utc +1)
+
+Platform: @DJDevon3's TR=COWBELL with Raspberry Pi PicoW
+
+IDE: mu-editor
+
+REPL output:     (Note: my_debug flag = False)
+
+]0;🐍Wi-Fi: No IP | Done | 8.2.3\]0;🐍Wi-Fi: No IP | Done | 8.2.3\
+Auto-reload is on. Simply save files over USB to run them or enter REPL to disable.
+code.py output:
+]0;🐍192.168.xx.yy | code.py | 8.2.3\
+
+TR-COWBELL test
+Board:
+raspberry_pi_pico_w
+Filesystem:Writeable  <<<=== boot.py file present. Situation after pressing button-combo: "reset"+"BUTTON 1" (Up btn)
+OLED driver: SH1107
+--------------------
+
+
+note sets
+have been
+read from file
+saved_loops.json
+successfully
+
+
+
+0 button active
+------------------
+0/   0   0   0   0 
+     0   0   0   0 
+1/   0   0   0   0 
+     0   0   0   0 
+------------------
+No buttons active
+mode:mchg.NoteSet:5
+
+
+0 button active
+------------------
+0/   0   0   0   0 
+     0   0   0   0 
+1/   0   0   0   0 
+     0   0   0   0 
+------------------
+No buttons active
+mode:indx.NoteSet:5
+
+
+|---- Mode -----|
+     mchg 1   
+  >> indx 2 <<          <<<=== Mode change menu appears after encoder button double click
+     note 3   
+     file 4   
+     midi 5   
+     fift 6   
+     nkey 7   
+| Exit=>Enc Btn |
+
+
+|---- Mode -----|
+     mchg 1   
+     indx 2   
+  >> note 3 <<         <<<=== moved selection to mode "note" (by turning encoder control clockwise)
+     file 4   
+     midi 5   
+     fift 6   
+     nkey 7   
+| Exit=>Enc Btn |
+
+|---- Mode -----|
+     mchg 1   
+     indx 2   
+     note 3   
+  >> file 4 <<         <<<=== moved selection to mode "file" (by turning encoder control clockwise a 2nd time)
+     midi 5   
+     fift 6   
+     nkey 7   
+| Exit=>Enc Btn |      <<<=== Exited menu with selected mode: "file"
+
+
+0 button active
+------------------
+0/   0   0   0   0 
+     0   0   0   0 
+1/   0   0   0   0 
+     0   0   0   0 
+------------------
+No buttons active
+mode:file.NoteSet:5     <<<=== mode "file"
+
+
+file "/saved_loops.bak" not found                        <<<=== After pressing Middle button (BUTTON 4) one time
+file "/saved_loops.json" renamed to "/saved_loops.bak"          same
+
+
+Saving                                                   <<<=== loops saved to file "saved_loops.json"
+note sets (loops)
+to file:
+saved_loops.json
+
+
+save complete                                            <<<=== Message after saving file
+
+
+note sets (loops)                                        <<<=== Message to display
+saved to file
+saved_loops.json
+successfully
+
+
+0 button active
+------------------
+0/   0   0   0   0 
+     0   0   0   0 
+1/   0   0   0   0 
+     0   0   0   0 
+------------------
+No buttons active
+mode:file.NoteSet:5
+
+
+
+
+
+
