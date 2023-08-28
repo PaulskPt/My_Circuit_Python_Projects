@@ -11,8 +11,9 @@
 # A global flag "my_debug" has been added to control the majority of print statements in this script.
 # Added global flag "use_TAG". This flag controls if in calls to function tag_adj() tags received will be printed or not.
 # On a small display no function names (variable TAG) in print statements make the display more readable.
-# Functions added that are not found in the other repos for the TR-Cowbell board:
-# count_btns_active(), clr_events(), clr_scrn(), pr_state(), pr_msg(), tag_adj(), do_connect(), wifi_is_connected() and setup().
+# Fourteen functions added that are not found in the other repos for the TR-Cowbell board:
+#   count_btns_active(), clr_events(), clr_scrn(), pr_state(), pr_msg(), load_all_note_sets(), load_note_set(),
+#   fifths_change(), key_change(), mode_change() tag_adj(), do_connect(), wifi_is_connected() and setup().
 import asyncio
 import time
 import board
