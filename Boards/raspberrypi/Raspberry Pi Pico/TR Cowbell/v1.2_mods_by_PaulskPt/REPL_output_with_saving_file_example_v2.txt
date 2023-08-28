@@ -44,7 +44,7 @@ mode:mchg.NoteSet:1
 0/   0   0   0   0 
      0   0   0   0 
 1/   0   0   0   0 
-     0   0   0  C4 
+     0   0   0  C4   <<<=== button 16 activated
 ------------------
 selected idx: 16
 mode:mchg.NoteSet:1
@@ -54,7 +54,7 @@ mode:mchg.NoteSet:1
 ------------------
 0/   0   0   0   0 
      0   0   0   0 
-1/   0   0  C4   0 
+1/   0   0  C4   0    <<<=== button 11 activated
      0   0   0  C4 
 ------------------
 selected idx: 11
@@ -64,7 +64,7 @@ mode:mchg.NoteSet:1
 3 buttons active
 ------------------
 0/   0   0   0   0 
-     0  C4   0   0 
+     0  C4   0   0    <<<=== button 6 activated
 1/   0   0  C4   0 
      0   0   0  C4 
 ------------------
@@ -74,7 +74,7 @@ mode:mchg.NoteSet:1
 
 4 buttons active
 ------------------
-0/  C4   0   0   0 
+0/  C4   0   0   0    <<<=== button 1 activated
      0  C4   0   0 
 1/   0   0  C4   0 
      0   0   0  C4 
@@ -85,7 +85,7 @@ mode:mchg.NoteSet:1
 
 |---- Mode -----|
      mchg 1   
-  >> indx 2 <<
+  >> indx 2 <<   <<<=== Mode change menu after encoder button double click
      note 3   
      file 4   
      midi 5   
@@ -97,7 +97,7 @@ mode:mchg.NoteSet:1
 |---- Mode -----|
      mchg 1   
      indx 2   
-  >> note 3 <<
+  >> note 3 <<  <<<=== Moved to next item in menu after encoder rotary control turned clockwise 
      file 4   
      midi 5   
      fift 6   
@@ -109,11 +109,11 @@ mode:mchg.NoteSet:1
      mchg 1   
      indx 2   
      note 3   
-  >> file 4 <<
+  >> file 4 <<  <<<=== Moved to next item in menu after encoder rotary control turned clockwise a second time 
      midi 5   
      fift 6   
      nkey 7   
-| Exit=>Enc Btn |
+| Exit=>Enc Btn |   <<<=== Pressed encoder button one time to exit this menu with the mode selected
 
 
 4 buttons active
@@ -124,13 +124,13 @@ mode:mchg.NoteSet:1
      0   0   0  C4 
 ------------------
 selected idx: 1
-mode:file.NoteSet:1
+mode:file.NoteSet:1    <<<=== mode "file" active
 
-file "/saved_loops.bak" not found
-file "/saved_loops.json" renamed to "/saved_loops.bak"
+file "/saved_loops.bak" not found                         <<<=== after pressing the Middle button one time
+file "/saved_loops.json" renamed to "/saved_loops.bak"           same
 
 
-Saving
+Saving                                 <<<=== Message to display
 note sets (loops)
 to file:
 saved_loops.json
@@ -147,7 +147,7 @@ saving to file: "{"loops": [{"notes": [69, 74, 77, 0, 0, 67, 0, 67, 0, 0, 0, 79,
 save complete
 
 
-note sets (loops)
+note sets (loops)      <<<=== Message to screen
 saved to file
 saved_loops.json
 successfully
