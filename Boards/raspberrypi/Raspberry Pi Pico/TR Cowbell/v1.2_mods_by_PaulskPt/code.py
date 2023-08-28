@@ -585,12 +585,20 @@ def load_all_note_sets(state, use_warnings):
     #if state.mode != "file":
     state.mode = mode_dict[MODE_F] # "file"
     ret = True
+    f = None
     try:
         f = open(state.fn, "r")
-        state.saved_loops = json.loads(f.read())["loops"]
+        #state.saved_loops = json.loads(f.read())["loops"]
+        sl = json.loads(f.read()) # ["loops"]
         f.close()
         if my_debug:
-            print(TAG+f"\nread fm file: {state.saved_loops}")
+            print(TAG+f"\nread fm file: {sl}")
+
+        if "loops" not in sl.keys():
+            sl["loops"] = []
+
+        state.saved_loops = sl
+
         state.selected_file = len(state.saved_loops)-1 # Select last note set (0,0,0,...)
         state.selected_index = -1
         if use_warnings:
@@ -875,7 +883,7 @@ async def read_buttons(state):
                                 except OSError as e:
                                     print(TAG+f"OSError while trying to remove file \"{fn_bak}\". Error: {e}")
                             else:
-                                print(TAG+f"file \"{fn_bak}\" not found")
+                                print(TAG+f"\nfile \"{fn_bak}\" not found")
                             if state.fn in f_lst:  # rename existing saved_loops.json to saved_loops.bak
                                 try:
                                     fn_ren = "/"+state.fn   # e.g. "/saved_loops.json"
@@ -889,9 +897,19 @@ async def read_buttons(state):
                                     print(TAG+f"saving note sets (loops) to: \"{state.fn}\"")
                                 msg = [TAG, "Saving", "note sets (loops)", "to file:", state.fn]
                                 pr_msg(state, msg)
+
+                                le = len(state.saved_loops["loops"])
+                                state.saved_loops["loops"].insert(le,
+                                {
+                                "notes": state.notes_lst,
+                                "selected_index": state.selected_index
+                                })
+
                                 f = open(state.fn, "w")
                                 f.write("{\"loops\": ")
-                                f.write(json.dumps(state.saved_loops))
+                                tmp = json.dumps(state.saved_loops)
+                                print(TAG+f"saving to file: \"{tmp}\"")
+                                f.write(tmp)
                                 f.write("}")
                                 f.close()
                                 if not state.write_msg_shown:

@@ -1,0 +1,165 @@
+Monday 2023-08-28 17h03 PT (utc +1)
+
+Platform: @DJDevon3's TR=COWBELL with Raspberry Pi PicoW
+
+IDE: mu-editor
+
+REPL output:     (Note: my_debug flag = False)
+
+
+]0;🐍Wi-Fi: No IP | Done | 8.2.3\]0;🐍Wi-Fi: No IP | Done | 8.2.3\
+Auto-reload is on. Simply save files over USB to run them or enter REPL to disable.
+code.py output:
+]0;🐍192.168.1.79 | code.py | 8.2.3\
+
+TR-COWBELL test
+Board:
+raspberry_pi_pico_w
+Filesystem:Writeable
+OLED driver: SH1107
+--------------------
+
+
+note sets
+have been
+read from file
+saved_loops.json
+successfully
+
+
+
+0 button active
+------------------
+0/   0   0   0   0 
+     0   0   0   0 
+1/   0   0   0   0 
+     0   0   0   0 
+------------------
+No buttons active
+mode:mchg.NoteSet:1
+
+
+1 button active
+------------------
+0/   0   0   0   0 
+     0   0   0   0 
+1/   0   0   0   0 
+     0   0   0  C4 
+------------------
+selected idx: 16
+mode:mchg.NoteSet:1
+
+
+2 buttons active
+------------------
+0/   0   0   0   0 
+     0   0   0   0 
+1/   0   0  C4   0 
+     0   0   0  C4 
+------------------
+selected idx: 11
+mode:mchg.NoteSet:1
+
+
+3 buttons active
+------------------
+0/   0   0   0   0 
+     0  C4   0   0 
+1/   0   0  C4   0 
+     0   0   0  C4 
+------------------
+selected idx: 6
+mode:mchg.NoteSet:1
+
+
+4 buttons active
+------------------
+0/  C4   0   0   0 
+     0  C4   0   0 
+1/   0   0  C4   0 
+     0   0   0  C4 
+------------------
+selected idx: 1
+mode:mchg.NoteSet:1
+
+
+|---- Mode -----|
+     mchg 1   
+  >> indx 2 <<
+     note 3   
+     file 4   
+     midi 5   
+     fift 6   
+     nkey 7   
+| Exit=>Enc Btn |
+
+
+|---- Mode -----|
+     mchg 1   
+     indx 2   
+  >> note 3 <<
+     file 4   
+     midi 5   
+     fift 6   
+     nkey 7   
+| Exit=>Enc Btn |
+
+
+|---- Mode -----|
+     mchg 1   
+     indx 2   
+     note 3   
+  >> file 4 <<
+     midi 5   
+     fift 6   
+     nkey 7   
+| Exit=>Enc Btn |
+
+
+4 buttons active
+------------------
+0/  C4   0   0   0 
+     0  C4   0   0 
+1/   0   0  C4   0 
+     0   0   0  C4 
+------------------
+selected idx: 1
+mode:file.NoteSet:1
+
+file "/saved_loops.bak" not found
+file "/saved_loops.json" renamed to "/saved_loops.bak"
+
+
+Saving
+note sets (loops)
+to file:
+saved_loops.json
+
+
+
+saving to file: "{"loops": [{"notes": [69, 74, 77, 0, 0, 67, 0, 67, 0, 0, 0, 79, 76, 69, 0, 0], "selected_index": 13}, {"notes": [60, 0, 55, 0, 64, 62, 0, 0, 57, 62, 60, 0, 64, 0, 0, 0], "selected_index": 8}, {"notes": [55, 60, 64, 0, 0, 62, 0, 64, 0, 66, 0, 0, 64, 62, 0, 0], "selected_index": 2}, {"notes": [0, 54, 0, 53, 0, 0, 68, 62, 55, 0, 0, 0, 67, 0, 69, 64], "selected_index": 1}, {"notes": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "selected_index": -1}, {"notes": [60, 0, 0, 0, 0, 60, 0, 0, 0, 0, 60, 0, 0, 0, 0, 60], "selected_index": 0}]}"   
+
+    <<<== the last "notes" (shown in the last screen) has been added to the file.
+	      TODO 1: arrange it to have the "empty" notes set as the last set
+		  TODO 2: set a limit to the number of notes sets (because of memory constraints
+		  
+		  
+save complete
+
+
+note sets (loops)
+saved to file
+saved_loops.json
+successfully
+
+
+4 buttons active
+------------------
+0/  C4   0   0   0 
+     0  C4   0   0 
+1/   0   0  C4   0 
+     0   0   0  C4 
+------------------
+selected idx: 1
+mode:file.NoteSet:1
+
