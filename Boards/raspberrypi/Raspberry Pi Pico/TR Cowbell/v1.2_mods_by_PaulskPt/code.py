@@ -901,6 +901,11 @@ async def read_buttons(state):
                                     state.write_msg_shown = True
                             except OSError as e:
                                 print(TAG+f"OSError while trying to save note sets to file. Error: {e}")
+                            # Cleanup
+                            f = None
+                            f_lst = None
+                            fn_ren = None
+                            fn_bak = None
                         else:
                             if my_debug:
                                 print("Filesystem is readonly. Cannot save note sets to file")
