@@ -10,7 +10,7 @@ REPL output:     (Note: my_debug flag = False)
 ]0;🐍Wi-Fi: No IP | Done | 8.2.3\]0;🐍Wi-Fi: No IP | Done | 8.2.3\
 Auto-reload is on. Simply save files over USB to run them or enter REPL to disable.
 code.py output:
-]0;🐍192.168.1.79 | code.py | 8.2.3\
+]0;🐍192.168.xx.yy | code.py | 8.2.3\
 
 TR-COWBELL test
 Board:
