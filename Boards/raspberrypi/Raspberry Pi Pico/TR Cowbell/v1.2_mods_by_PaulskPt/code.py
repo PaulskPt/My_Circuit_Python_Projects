@@ -597,7 +597,7 @@ def load_all_note_sets(state, use_warnings):
             if my_debug:
                 print(TAG+state.fn)
                 print(TAG+f"note sets: {state.saved_loops}\nloaded successfully")
-            msg = [TAG, "saved note sets", "have been", "read from file", state.fn, "successfully"]
+            msg = [TAG, "note sets", "have been", "read from file", state.fn, "successfully"]
             pr_msg(state, msg)
     except (OSError, KeyError) as e:
         print(TAG+f"Error occurred while reading from file {f}: {e}")
