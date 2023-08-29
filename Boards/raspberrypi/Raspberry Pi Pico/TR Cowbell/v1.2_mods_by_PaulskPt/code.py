@@ -931,8 +931,8 @@ async def read_buttons(state):
                                     f_lst2 = os.listdir("/")
                                     if not fn_bak in f_lst2:
                                         if my_debug:
-                                            print(TAG+f"file: \"{fn_bak}\" successfully removed")
-                                        msg = [TAG, "file:", fn_bak, "successfully removed"]
+                                            print(TAG+f"file: \"{fn_bak}\" removed successfully")
+                                        msg = [TAG, "file:", fn_bak, "removed successfully"]
                                         pr_msg(state, msg)
                                     f_lst2 = None
                                 except OSError as e:
@@ -949,8 +949,8 @@ async def read_buttons(state):
                                     f_lst3 = os.listdir("/")
                                     if (fn_bak in f_lst3) and (not state.fn in f_lst3):
                                         if my_debug:
-                                            print(TAG+f"file: \"{state.fn}\" successfully renamed to: \"{fn_bak}\"")
-                                        msg = [TAG, "file:", state.fn, "successfully renamed to:", fn_bak]
+                                            print(TAG+f"file: \"{state.fn}\" renamed to: \"{fn_bak}\" successfully")
+                                        msg = [TAG, "file:", state.fn, "renamed to:", fn_bak, "successfully"]
                                         pr_msg(state, msg)
                                     else:
                                         if my_debug:
