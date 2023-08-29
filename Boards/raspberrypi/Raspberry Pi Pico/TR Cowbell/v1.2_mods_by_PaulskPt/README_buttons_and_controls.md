@@ -40,9 +40,9 @@
 #       --- 5) if exists a 'zero notes set', it will be added to the end of state.saved_loops.
 #       ---    if no 'zero notes set' exists, a 'zero notes set' will be created. This set will be added to state.saved_loops.
 #       --- 6) the contents of state.saved_loops will be written to file 'saved_loops.json'.
+#       --- closes the file 'saved_loops.json'.
 #       --- In case the storage filesystem is "readonly" (see file boot_pico.py) the data cannot be saved.
 #       --- This will generate an OSError which will be handled by the script. This fact will not crash the script.
-#       --- closes the file
 #    else:
 #        --- Writes an error message that the filesystem is readonly. Cannot save note sets to file.
 # - If long pressed:
