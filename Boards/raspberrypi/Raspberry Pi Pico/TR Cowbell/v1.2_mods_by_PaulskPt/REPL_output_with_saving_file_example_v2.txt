@@ -148,14 +148,15 @@ saved_loops.bak
 
 file:
 saved_loops.bak
-successfully removed
+removed successfully
 
 
 
 file:
 saved_loops.json
-successfully renamed to:
+renamed to:
 saved_loops.bak
+successfully
 
 
 
