@@ -591,7 +591,7 @@ def load_all_note_sets(state, use_warnings):
         #state.saved_loops = json.loads(f.read())["loops"]
         sl = json.loads(f.read()) # ["loops"]
         f.close()
-        if not my_debug:
+        if my_debug:
             print(TAG+f"\nread fm file: {sl}")
 
         if "loops" not in sl.keys():
@@ -605,7 +605,7 @@ def load_all_note_sets(state, use_warnings):
             ne = {"id": le, "notes": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "selected_index": -1}
             sl['loops'].insert(set_nr, ne)
         state.saved_loops = sl
-        if not my_debug:
+        if my_debug:
             # Show result
             print(TAG+f"state.saved_loops after adding empty note set: {state.saved_loops}")
         set_nr = fnd_empty_loop(state)  # Check again
@@ -750,7 +750,7 @@ def fnd_empty_loop(state):
                 if en[j] == 0:
                     cnt += 1
                 if cnt == 16:
-                    if not my_debug:
+                    if my_debug:
                         id = lps['loops'][i]['id']
                         if my_debug:
                             print(TAG+f"id of the found empty set: {id}")
@@ -1042,7 +1042,7 @@ async def read_buttons(state):
                                     print(TAG+f"contents of lps after insert at end: {lps}. new length: {len(lps[s])}")
                                 gc.collect()
                                 state.saved_loops = lps
-                                if not my_debug:
+                                if my_debug:
                                     print(TAG+f"state.saved_loops after change: {state.saved_loops}]")
                                 lps = None
                                 # Write the changed saved loops to file on disk
