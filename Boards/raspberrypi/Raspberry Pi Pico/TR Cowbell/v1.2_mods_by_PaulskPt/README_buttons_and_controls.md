@@ -31,8 +31,8 @@
 #          a) load all saved note sets (aka: saved loops) using a Middle button long press;
 #          b) next: read a next or previous notes set using the Up or Down button
 #   -- In mode = "file":
-#       --- if the filesystem is "Writeable":
-#       The following six actions will be performed:
+#      If the filesystem is "Writeable":
+#       --- The following six actions will be performed:
 #       --- 1) if file 'saved_loops.bak' exists, this file will be deleted (os.remove);
 #       --- 2) The file 'saved_loops.json' will be renamed to: 'saved_loops.bak';
 #       --- 3) if exists an empty notes list (all sixteen notes value 0) in state.staved_loops, this empty set will be copied to memory and deleted from state.saved_loops;
@@ -41,9 +41,7 @@
 #       ---    if no 'zero notes set' exists, a 'zero notes set' will be created. This set will be added to state.saved_loops.
 #       --- 6) the contents of state.saved_loops will be written to file 'saved_loops.json'.
 #       --- closes the file 'saved_loops.json'.
-#       --- In case the storage filesystem is "readonly" (see file boot_pico.py) the data cannot be saved.
-#       --- This will generate an OSError which will be handled by the script. This fact will not crash the script.
-#    else:
+#      else:
 #        --- Writes an error message that the filesystem is readonly. Cannot save note sets to file.
 # - If long pressed:
 #   -- If state-mode is "file":
