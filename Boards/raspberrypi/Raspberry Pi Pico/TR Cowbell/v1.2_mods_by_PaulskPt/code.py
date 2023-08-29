@@ -656,7 +656,7 @@ def load_note_set(state, dir_up, use_warnings):
             msg = [TAG, "loading:", "from", "notes set nr: "+str(state.selected_file+1)]
             pr_msg(state, msg)
         #print(TAG+f"loading: {state.selected_file}")
-    state.load_state_obj(state.saved_loops[state.selected_file])
+    state.load_state_obj(state.saved_loops['loops'][state.selected_file])
     state.mode = mode_dict[MODE_I] # Change mode to "index"
 
 def fifths_change(state):
