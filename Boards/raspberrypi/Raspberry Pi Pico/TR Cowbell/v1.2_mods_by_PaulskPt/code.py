@@ -591,15 +591,28 @@ def load_all_note_sets(state, use_warnings):
         #state.saved_loops = json.loads(f.read())["loops"]
         sl = json.loads(f.read()) # ["loops"]
         f.close()
-        if my_debug:
+        if not my_debug:
             print(TAG+f"\nread fm file: {sl}")
 
         if "loops" not in sl.keys():
             sl["loops"] = []
-
+        # Check for an empty note set.
+        # If not found, add one
+        le = len(sl['loops'])
+        set_nr = fnd_empty_loop(state)
+        if set_nr < 0:
+            # No empty notes set found. We're going to add one
+            ne = {"id": le, "notes": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "selected_index": -1}
+            sl['loops'].insert(set_nr, ne)
         state.saved_loops = sl
-
-        state.selected_file = len(state.saved_loops)-1 # Select last note set (0,0,0,...)
+        if not my_debug:
+            # Show result
+            print(TAG+f"state.saved_loops after adding empty note set: {state.saved_loops}")
+        set_nr = fnd_empty_loop(state)  # Check again
+        if set_nr > -1:
+            state.selected_file = set_nr # Select empty note set found
+        else:
+            state.selected_file = len(state.saved_loops)-1 # Select last note set (0,0,0,...)
         state.selected_index = -1
         if use_warnings:
             if my_debug:
