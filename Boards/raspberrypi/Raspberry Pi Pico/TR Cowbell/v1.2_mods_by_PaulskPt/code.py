@@ -644,12 +644,12 @@ def load_note_set(state, dir_up, use_warnings):
     else:
         if dir_up:
             state.selected_file += 1
-            if state.selected_file >= len(state.saved_loops):
+            if state.selected_file >= len(state.saved_loops['loops']):
                 state.selected_file = 0 # wrap to first
         else:
             state.selected_file -= 1
             if state.selected_file < 0:
-                state.selected_file = len(state.saved_loops)-1 # wrap to last
+                state.selected_file = len(state.saved_loops['loops'])-1 # wrap to last
         if use_warnings:
             if my_debug:
                 print(TAG+f"loading notes set nr: {state.selected_file+1} (from memory) successful")
