@@ -148,15 +148,15 @@ saved_loops.bak
 
 file:
 saved_loops.bak
-removed successfully
-
+removed
+successfully 
 
 
 file:
 saved_loops.json
 renamed to:
 saved_loops.bak
-successfully
+successfully 
 
 
 
@@ -169,7 +169,7 @@ saved_loops.json
 
 
 note sets (loops)  <<<=== file removing, renaming and file saving completed
-saved to file
+saved to file:
 saved_loops.json
 successfully
 
