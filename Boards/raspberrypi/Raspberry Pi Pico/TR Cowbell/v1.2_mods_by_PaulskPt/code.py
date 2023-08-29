@@ -582,13 +582,11 @@ def load_all_note_sets(state, use_warnings):
     TAG = tag_adj("load_all_note_sets(): ")
     state.selected_file = None
     original_mode = state.mode
-    #if state.mode != "file":
     state.mode = mode_dict[MODE_F] # "file"
     ret = True
     f = None
     try:
         f = open(state.fn, "r")
-        #state.saved_loops = json.loads(f.read())["loops"]
         sl = json.loads(f.read()) # ["loops"]
         f.close()
         if my_debug:
@@ -638,10 +636,8 @@ def load_note_set(state, dir_up, use_warnings):
                 msg = [TAG, "Please", "long press", "middle button", "to load note sets", "from file"]
                 pr_msg(state, msg)
             return
-
     if dir_up is None:
         dir_up = True
-
     if state.selected_file is None:
         state.selected_file = -1
         state.selected_index = -1
@@ -662,8 +658,6 @@ def load_note_set(state, dir_up, use_warnings):
         #print(TAG+f"loading: {state.selected_file}")
     state.load_state_obj(state.saved_loops[state.selected_file])
     state.mode = mode_dict[MODE_I] # Change mode to "index"
-    #pr_state(state)
-
 
 def fifths_change(state):
     TAG = tag_adj("fifths_change(): ")
@@ -772,7 +766,6 @@ def chg_id(lps, ne, s, le):  # Called from read_buttons()
 
 async def read_buttons(state):
     global ro_state
-
     TAG = tag_adj("read_buttons(): ")
     btns_active = count_btns_active(state)
     incn = "Increasing note" if btns_active >0 else ""
@@ -790,7 +783,6 @@ async def read_buttons(state):
             key_number = event.key_number
             if event.pressed:
                 state.btn_event = True
-
                 if my_debug:
                     print(TAG+f"Key pressed : {mcp_number} / {key_number}")
                 # key pressed, find the matching LED
@@ -820,7 +812,6 @@ async def read_buttons(state):
         #     print("down longpress")
         # if not down_btn.value:
         #     print(down_btn.current_duration)
-
         #pr_state(state)  # This also clears events
 
         if state.mode != mode_dict[MODE_M]: # "midi_channel". Only change midi channel with Rotary Encoder control
@@ -928,6 +919,7 @@ async def read_buttons(state):
                         state.mode = mode_dict[MODE_F] # Change mode to "file"
                     elif state.mode == mode_dict[MODE_F]: # "file"
                         if ro_state == "Writeable":
+                            # Initiate variables
                             f = None
                             f_lst = os.listdir("/")
                             f_lst2 = None
@@ -1007,7 +999,6 @@ async def read_buttons(state):
                                     # print(TAG+f"contents of lps b4 pop: {lps}. Length: {len(lps[s])}")
                                     lps[s].pop(set_nr)  # delete the empty notes list
                                     # print(TAG+f"contents of lps after pop: {lps}. Length: {len(lps[s])}")
-                                    # Add the new note list
                                 else:
                                     # Create an empty notes set
                                     ne = {"id": 4, "notes": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "selected_index": -1}
@@ -1173,11 +1164,9 @@ async def read_encoder(state):
         encoder_btn.update()
 
         if encoder_btn.fell:
-
             state.encoder_btn_cnt += 1
             tm_current = int(time.monotonic())
             tm_diff = tm_current - tm_start
-
             if state.encoder_btn_cnt > 1:
                 if my_debug:
                     print(TAG+f"\ntm_start: {tm_start}. tm_trigger: {tm_trigger}, tm_diff: {tm_diff}")
@@ -1194,19 +1183,16 @@ async def read_encoder(state):
                     state.enc_sw_cnt = MODE_MIN
                 if my_debug:
                     print(TAG+f"len(mode_lst): {len(mode_lst)}. New enc_sw_cnt: {state.enc_sw_cnt}")
-
                 #state.mode = "note" if state.mode == "index" else "index"
                 state.mode = mode_dict[state.enc_sw_cnt]  # mode_lst[state.enc_sw_cnt]
                 if my_debug:
                     print(TAG+"Encoder sw. pressed")
                     print(TAG+f"new mode:\n\"{state.mode}\"")
-
         # state.last_position = cur_position
         state.enc_sw_cnt = mode_rv_dict[state.mode]  # line-up the encoder switch count with that of the current state.mode
         if my_debug:
             print(TAG+f"mode_rv_dict[\"{state.mode}\"]= {mode_rv_dict[state.mode]}")
         await asyncio.sleep(0.05)
-
 
 async def play_note(state, note, delay):
     TAG = tag_adj("play_note(): ")
@@ -1220,15 +1206,12 @@ async def play_note(state, note, delay):
             #    print(TAG+f"playing other channel? {note_on.channel}")
             midi.send(note_on, channel=state.midi_channel)
             await asyncio.sleep(delay)
-
             if state.send_off:
                 midi.send(NoteOff(note, 0), channel=state.midi_channel)
         else:
             note_on = NoteOn(note, 127)
             midi.send(note_on)
-
             await asyncio.sleep(delay)
-
             if state.send_off:
                 midi.send(NoteOff(note, 0))
 
@@ -1266,14 +1249,6 @@ async def update_display(state, delay=0.125):
         #
         # await asyncio.sleep(delay)
 
-"""
-    Function tag_adj()
-
-    :param  str
-    :return str
-
-    This function fills param t with trailing spaces up to the value of global variable tag_le_max
-"""
 def tag_adj(t):
     global tag_le_max
 
@@ -1301,7 +1276,6 @@ def do_connect():
     timeout_cnt = 5
     dc_ip = None
     #s_ip = None
-
     # print(TAG+f"dc_ip= {dc_ip}. type(dc_ip)= {type(dc_ip)}")
     while dc_ip is None or dc_ip == '0.0.0.0':
         # print(TAG+f"cnt= {cnt}")
@@ -1318,26 +1292,21 @@ def do_connect():
             print(TAG+"WiFi connection timed-out")
             break
         time.sleep(1)
-
     if dc_ip:
         ip = dc_ip
         s_ip = str(ip)
-
     if s_ip is not None and s_ip != '0.0.0.0':
         if my_debug:
             # print(TAG+"s_ip= \'{}\'".format(s_ip))
             print(TAG+f"connected to {os.getenv('CIRCUITPY_WIFI_SSID')}")
             print(TAG+"IP address is", ip)
-
         addr_idx = 0
         addr_dict = {0:'LAN gateway', 1:'google.com'}
-
         info = pool.getaddrinfo(addr_dict[1], 80)
         addr = info[0][4][0]
         if my_debug:
             print(TAG+f"resolved {addr_dict[1][:-4]} as {addr}")
         ipv4 = ipaddress.ip_address(addr)
-
         for _ in range(10):
             result = wifi.radio.ping(ipv4)
             if result:
@@ -1358,7 +1327,6 @@ def wifi_is_connected():
 
 def setup(state):
     TAG = tag_adj("setup(): ")
-
     if use_wifi:
         if not wifi_is_connected():
             if my_debug:
@@ -1366,7 +1334,6 @@ def setup(state):
             do_connect()
         else:
             print(TAG+f"WiFi is connected to {os.getenv('CIRCUITPY_WIFI_SSID')}")
-
     use_warnings = True
     load_all_note_sets(state, use_warnings)
 
