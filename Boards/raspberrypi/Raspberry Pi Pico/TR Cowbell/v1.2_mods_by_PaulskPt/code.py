@@ -310,7 +310,7 @@ class State:
         self.notes_lst = [0] * 16
         self.latches = [False] * 16
         self.last_position = encoder.position
-        self.mode = mode_dict[MODE_C] # was: MODE_I  (indx)
+        self.mode = mode_dict[MODE_I]
         self.send_off = True
         self.received_ack = True
         self.selected_file = None
