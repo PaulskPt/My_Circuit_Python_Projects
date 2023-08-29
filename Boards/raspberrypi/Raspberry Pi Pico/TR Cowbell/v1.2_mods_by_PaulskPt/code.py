@@ -11,9 +11,9 @@
 # A global flag "my_debug" has been added to control the majority of print statements in this script.
 # Added global flag "use_TAG". This flag controls if in calls to function tag_adj() tags received will be printed or not.
 # On a small display no function names (variable TAG) in print statements make the display more readable.
-# Fifteen functions added that are not found in the other repos for the TR-Cowbell board:
+# Sixteen functions added that are not found in the other repos for the TR-Cowbell board:
 #   count_btns_active(), clr_events(), clr_scrn(), pr_state(), pr_msg(), load_all_note_sets(), load_note_set(),
-#   fifths_change(), key_change(), mode_change() fnd_empty_loop), tag_adj(), do_connect(), wifi_is_connected() and setup().
+#   fifths_change(), key_change(), mode_change() fnd_empty_loop), chg_id(), tag_adj(), do_connect(), wifi_is_connected() and setup().
 import asyncio
 import time
 import board
@@ -747,6 +747,16 @@ def fnd_empty_loop(state):
                 break
     return ret
 
+def chg_id(lps, ne, s, le):  # Called from read_buttons()
+    lps2 = lps
+    if 'id' in ne.keys():
+        ne['id'] = le  # update the id value
+        lps2[s].insert(
+        le,
+        ne
+        )
+    return lps2
+
 async def read_buttons(state):
     global ro_state
 
@@ -905,10 +915,21 @@ async def read_buttons(state):
                         state.mode = mode_dict[MODE_F] # Change mode to "file"
                     elif state.mode == mode_dict[MODE_F]: # "file"
                         if ro_state == "Writeable":
+                            f = None
                             f_lst = os.listdir("/")
+                            f_lst2 = None
+                            f_lst3 = None
                             fn_bak = state.fn[:-4] + "bak"
                             fn_bak2 = "/" + fn_bak
                             fn_ren = "/"+state.fn   # e.g. "/saved_loops.json"
+                            le1 = None
+                            le2 = None
+                            le3 = None
+                            lps = None
+                            msg = []
+                            ne = None
+                            s = None
+                            tmp = None
                             print()  # make a line space
                             if fn_bak in f_lst:
                                 try:
@@ -960,8 +981,6 @@ async def read_buttons(state):
                                     print(TAG+f"loops of state.saved_loops= {lps}")
                                 s = 'loops'  # was: "loops"
                                 le1 = len(lps[s])
-                                le2 = 0
-                                le3 = 0
                                 set_nr = fnd_empty_loop(state)
                                 if set_nr > -1:
                                     # set with all zeroes found
@@ -976,9 +995,13 @@ async def read_buttons(state):
                                     lps[s].pop(set_nr)  # delete the empty notes list
                                     # print(TAG+f"contents of lps after pop: {lps}. Length: {len(lps[s])}")
                                     # Add the new note list
-
+                                else:
+                                    # Create an empty notes set
+                                    ne = {"id": 4, "notes": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "selected_index": -1}
                                 # Insert the current notes set (state.notes_lst)
                                 le2 = len(lps[s])
+                                if set_nr == -1:
+                                    set_nr = le2  # Correct in case no zero notes set was found
                                 lps[s].insert(set_nr,
                                 {
                                 "notes": state.notes_lst,
@@ -990,23 +1013,25 @@ async def read_buttons(state):
                                     print(TAG+f"contents of lps after removing zero loop at {set_nr}")
                                     print(TAG+f"and insert \'state.notes_lst\' at end: {lps}. new length: {le3}")
 
-                                if set_nr > -1:
+                                if set_nr < 0:
+                                    # Add the newly created empty notes set to the end
+                                    try:
+                                        lps = chg_id(lps, ne, s, le3)
+                                    except KeyError as e:
+                                        print(TAG+f"Error: {e}")
+                                elif set_nr > -1:
                                     # Add the saved empty notes set to the end
                                     try:
-                                        if 'id' in ne.keys():
-                                            ne['id'] = le3  # update the id value
-                                        lps[s].insert(
-                                        le3,
-                                        ne
-                                        )
+                                        lps = chg_id(lps, ne, s, le3)
                                     except KeyError as e:
                                         print(TAG+f"Error: {e}")
                                 if my_debug:
                                     print(TAG+f"contents of lps after insert at end: {lps}. new length: {len(lps[s])}")
-                                le1 = None
-                                le2 = None
-                                le3 = None
+                                gc.collect()
                                 state.saved_loops = lps
+                                if not my_debug:
+                                    print(TAG+f"state.saved_loops after change: {state.saved_loops}]")
+                                lps = None
                                 # Write the changed saved loops to file on disk
                                 f = open(state.fn, "w")
                                 tmp = json.dumps(state.saved_loops)
@@ -1026,9 +1051,19 @@ async def read_buttons(state):
                             # Cleanup
                             f = None
                             f_lst = None
-                            fn_ren = None
+                            f_lst2 = None
+                            f_lst3 = None
                             fn_bak = None
                             fn_bak2 = None
+                            fn_ren = None
+                            le1 = None
+                            le2 = None
+                            le3 = None
+                            lps = None
+                            msg = []
+                            ne = None
+                            s = None
+                            tmp = None
                         else:
                             if my_debug:
                                 print("Filesystem is readonly. Cannot save note sets to file")
