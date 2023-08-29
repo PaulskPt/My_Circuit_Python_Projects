@@ -13,8 +13,14 @@
 # use_sh1107 (for the Adafruit OLED 128x128 display)
 # other flags are inside the state class object
 #
-# NOTE: At startup all the note sets are loaded into memory. Then the last note set in the list of sets is loaded. This set has all notes with value 0.
-#       and no key buttons selected. By pressing the Up button or the Down button one can load a next or a previous notes set.
+# NOTE: 
+# At startup all the note sets (from file 'saved_loops.json') are loaded into memory.
+# A 'sero notes set' will be displayed at startup (state.notes_lst is defaulted to: '[0] * 16')
+# The script expects a 'zero notes set' to be at the end of the 'saved_loops.json' file.
+# If no 'zero note set' is in the saved_loops.json file, when saving them to the file, a 'zero notes set' will be added
+# to the end of the file.
+#
+# By pressing the Up button or the Down button one can load a next or a previous notes set.
 #
 # D-Pad buttons functions:
 #
@@ -45,11 +51,11 @@
 # - In mode "indx" or "file" this button loads the previous notes set from memory
 # - In mode "note", if one or more buttons is activated: decreases the note frequency
 # Left button:
-# - In mode "indx" if more than one button is activated, this button changes the selected index to the previous available index
-# - In mode "note, if one or more buttons is activated: decreases note frequency
+# - In mode "indx" or in mode "note" if more than one button is activated, 
+#   this button changes the selected index to the previous available index
 # Right button
-# - In mode "indx" if more than one button is activated, this button changes the selected index to the next available index
-# - In mode "note, if one or more buttons is activated: increases note frequency
+# - In mode "indx" or in mode "note" if more than one button is activated, 
+#   this button changes the selected index to the next available index
 #
 # ---------------------------------------------
 #

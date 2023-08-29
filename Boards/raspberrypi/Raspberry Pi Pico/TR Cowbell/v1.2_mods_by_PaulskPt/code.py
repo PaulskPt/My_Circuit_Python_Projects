@@ -865,16 +865,9 @@ async def read_buttons(state):
                     incn = "Increasing note" if state.mode == mode_dict[MODE_N] and btns_active >0 else ""
                     if my_debug:
                             print(TAG+f"BUTTON 2 (RIGHT) is pressed: {right_btn.pressed}.")
-                    if state.mode == mode_dict[MODE_I]:  # "index"
+                    if state.mode == mode_dict[MODE_I] or mode_dict[MODE_N]:  # "index" or "note"
                         if btns_active >0:
                             increment_selected(state)
-                    elif state.mode == mode_dict[MODE_N]:  # "note"
-                        if my_debug:
-                            print(TAG+f"{incn}")
-                            print(TAG+f"mode: \"{state.mode}\".")
-                        if btns_active>0:
-                            state.notes_lst[state.selected_index] += 1
-                            # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
                     elif state.mode == mode_dict[MODE_F]:  # "file"
                         if my_debug:
                             print(TAG+"BUTTON 2 (RIGHT) doing nothing")
@@ -887,18 +880,9 @@ async def read_buttons(state):
                     decn = "Decreasing note" if state.mode == mode_dict[MODE_N] and btns_active >0 else ""
                     if my_debug:
                             print(TAG+f"BUTTON 4 (LEFT) is pressed: {left_btn.pressed}.")
-                    if state.mode == mode_dict[MODE_I]:  # "index"
+                    if state.mode == mode_dict[MODE_I] or mode_dict[MODE_N]:  # "index" or "note"
                         if btns_active >0:
                             decrement_selected(state)
-                    elif state.mode == mode_dict[MODE_N]:  # "note"
-                        if my_debug:
-                            print(TAG+f"{decn}")
-                            print(TAG+f"mode: \"{state.mode}\".")
-                        if btns_active >0:
-                            state.notes_lst[state.selected_index] -= 1
-                            # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
-                        else:
-                            print("no buttons active")
                     elif state.mode == mode_dict[MODE_F]:  # "file"
                         if my_debug:
                             print(TAG+"BUTTON 4 (LEFT) doing nothing")
