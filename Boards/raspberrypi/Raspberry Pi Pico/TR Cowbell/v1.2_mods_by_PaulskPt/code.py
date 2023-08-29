@@ -1031,7 +1031,7 @@ async def read_buttons(state):
                                 if not state.write_msg_shown:
                                     if my_debug:
                                         print(TAG+"save complete")
-                                    msg = [TAG, "note sets (loops)", "saved to file", state.fn, "successfully"]
+                                    msg = [TAG, "note sets (loops)", "saved to file:", state.fn, "successfully"]
                                     pr_msg(state, msg)
                                     state.write_msg_shown = True
                             except OSError as e:
