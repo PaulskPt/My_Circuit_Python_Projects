@@ -1028,6 +1028,7 @@ async def read_buttons(state):
                             f_lst = None
                             fn_ren = None
                             fn_bak = None
+                            fn_bak2 = None
                         else:
                             if my_debug:
                                 print("Filesystem is readonly. Cannot save note sets to file")
