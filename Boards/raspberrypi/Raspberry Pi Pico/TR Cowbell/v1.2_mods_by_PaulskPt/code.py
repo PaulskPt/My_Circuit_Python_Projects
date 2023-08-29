@@ -26,7 +26,7 @@ from adafruit_mcp230xx.mcp23017 import MCP23017
 from mcp23017_scanner import McpKeysScanner
 from multi_macropad import MultiKeypad
 from adafruit_display_text import label
-import os
+import os, gc
 # Global flags
 my_debug = False
 # --- DISPLAY DRTIVER selection flags ---+
@@ -604,7 +604,7 @@ def load_all_note_sets(state, use_warnings):
         if use_warnings:
             if my_debug:
                 print(TAG+state.fn)
-                print(TAG+f"note sets: {state.saved_loops}\nloaded successfully")
+                print(TAG+f"saved_loops: {state.saved_loops}\nloaded successfully")
             msg = [TAG, "note sets", "have been", "read from file", state.fn, "successfully"]
             pr_msg(state, msg)
     except (OSError, KeyError) as e:
@@ -715,6 +715,37 @@ def mode_change(state):
             state.last_position = enc_pos
             break
         time.sleep(0.05)
+
+def fnd_empty_loop(state):
+    TAG = tag_adj("fnd_empty_loop(): ")
+    lps = state.saved_loops
+    k1 = 'loops'
+    k2 = 'notes'
+    cnt = 0
+    ret = -1
+    if isinstance(lps, dict):
+        le = len(lps['loops'])
+        if my_debug:
+            print(TAG)
+        for i in range(le):
+            en = lps['loops'][i]['notes']
+            le2 = len(en)
+            if my_debug:
+                print(TAG+f"checking set: {en}")
+            cnt = 0
+            for j in range(le2):
+                if en[j] == 0:
+                    cnt += 1
+                if cnt == 16:
+                    if not my_debug:
+                        id = lps['loops'][i]['id']
+                        if my_debug:
+                            print(TAG+f"id of the found empty set: {id}")
+                    ret = i
+                    break  # set of all zeros found
+            if cnt == 16:
+                break
+    return ret
 
 async def read_buttons(state):
     global ro_state
@@ -875,45 +906,118 @@ async def read_buttons(state):
                     elif state.mode == mode_dict[MODE_F]: # "file"
                         if ro_state == "Writeable":
                             f_lst = os.listdir("/")
-                            fn_bak = "/" + state.fn[:-4] + "bak"
+                            fn_bak = state.fn[:-4] + "bak"
+                            fn_bak2 = "/" + fn_bak
+                            fn_ren = "/"+state.fn   # e.g. "/saved_loops.json"
+                            print()  # make a line space
                             if fn_bak in f_lst:
                                 try:
-                                    os.remove(fn_bak)  # remove the file "saved_loops.bak"
-                                    print(TAG+f"removing file: \"{fn_bak}\"")
+                                    os.remove(fn_bak2)  # remove the file "saved_loops.bak"
+                                    time.sleep(0.5)
+                                    if my_debug:
+                                        print(TAG+f"removing file: \"{fn_bak}\"")
+                                    msg = [TAG, "removing file:", fn_bak]
+                                    pr_msg(state, msg)
+                                    f_lst2 = os.listdir("/")
+                                    if not fn_bak in f_lst2:
+                                        if my_debug:
+                                            print(TAG+f"file: \"{fn_bak}\" successfully removed")
+                                        msg = [TAG, "file:", fn_bak, "successfully removed"]
+                                        pr_msg(state, msg)
+                                    f_lst2 = None
                                 except OSError as e:
                                     print(TAG+f"OSError while trying to remove file \"{fn_bak}\". Error: {e}")
                             else:
-                                print(TAG+f"\nfile \"{fn_bak}\" not found")
+                                if my_debug:
+                                    print(TAG+f"file: \"{fn_bak}\" not found")
+                                msg = [TAG, "file:", fn_bak, "not found"]
+                                pr_msg(state, msg)
                             if state.fn in f_lst:  # rename existing saved_loops.json to saved_loops.bak
                                 try:
-                                    fn_ren = "/"+state.fn   # e.g. "/saved_loops.json"
-                                    os.rename(fn_ren, fn_bak)
-                                    print(TAG+f"file \"{fn_ren}\" renamed to \"{fn_bak}\"")
+                                    os.rename(fn_ren, fn_bak2)
+                                    time.sleep(0.5)
+                                    f_lst3 = os.listdir("/")
+                                    if (fn_bak in f_lst3) and (not state.fn in f_lst3):
+                                        if my_debug:
+                                            print(TAG+f"file: \"{state.fn}\" successfully renamed to: \"{fn_bak}\"")
+                                        msg = [TAG, "file:", state.fn, "successfully renamed to:", fn_bak]
+                                        pr_msg(state, msg)
+                                    else:
+                                        if my_debug:
+                                            print(TAG+f"failed rename file: \"{state.fn}\" to: \"{fn_bak}\"")
+                                        msg = [TAG, "failed rename file:", state.fn, "to:", fn_bak]
+                                        pr_msg(state, msg)
                                 except OSError as e:
-                                    print(TAG+f"OSError while trying to rename file \"{fn_ren}\" to \"{fn_bak}\". Error: {e}")
+                                    print(TAG+f"OSError while trying to rename file \"{state.fn}\" to \"{fn_bak}\". Error: {e}")
                             try:
                                 # save the current file
                                 if my_debug:
                                     print(TAG+f"saving note sets (loops) to: \"{state.fn}\"")
                                 msg = [TAG, "Saving", "note sets (loops)", "to file:", state.fn]
                                 pr_msg(state, msg)
+                                lps = state.saved_loops
+                                if my_debug:
+                                    print(TAG+f"loops of state.saved_loops= {lps}")
+                                s = 'loops'  # was: "loops"
+                                le1 = len(lps[s])
+                                le2 = 0
+                                le3 = 0
+                                set_nr = fnd_empty_loop(state)
+                                if set_nr > -1:
+                                    # set with all zeroes found
+                                    ne = lps[s][set_nr] # copy the empty notes set (the "empty" set)
+                                    if my_debug:
+                                        print(TAG+f"lps[\'{s}\'][{set_nr}]= {ne}")
+                                    gc.collect()
+                                    # 1) Delete the empty notes set from lp (it is already copied to var "ne"
+                                    # 2) Add the new notes set
+                                    # 3) Add the empty notes set.
+                                    # print(TAG+f"contents of lps b4 pop: {lps}. Length: {len(lps[s])}")
+                                    lps[s].pop(set_nr)  # delete the empty notes list
+                                    # print(TAG+f"contents of lps after pop: {lps}. Length: {len(lps[s])}")
+                                    # Add the new note list
 
-                                le = len(state.saved_loops["loops"])
-                                state.saved_loops["loops"].insert(le,
+                                # Insert the current notes set (state.notes_lst)
+                                le2 = len(lps[s])
+                                lps[s].insert(set_nr,
                                 {
                                 "notes": state.notes_lst,
+                                "id" : set_nr,
                                 "selected_index": state.selected_index
                                 })
+                                le3 = len(lps[s]) # calculate the new length
+                                if my_debug:
+                                    print(TAG+f"contents of lps after removing zero loop at {set_nr}")
+                                    print(TAG+f"and insert \'state.notes_lst\' at end: {lps}. new length: {le3}")
 
+                                if set_nr > -1:
+                                    # Add the saved empty notes set to the end
+                                    try:
+                                        if 'id' in ne.keys():
+                                            ne['id'] = le3  # update the id value
+                                        lps[s].insert(
+                                        le3,
+                                        ne
+                                        )
+                                    except KeyError as e:
+                                        print(TAG+f"Error: {e}")
+                                if my_debug:
+                                    print(TAG+f"contents of lps after insert at end: {lps}. new length: {len(lps[s])}")
+                                le1 = None
+                                le2 = None
+                                le3 = None
+                                state.saved_loops = lps
+                                # Write the changed saved loops to file on disk
                                 f = open(state.fn, "w")
-                                f.write("{\"loops\": ")
                                 tmp = json.dumps(state.saved_loops)
-                                print(TAG+f"saving to file: \"{tmp}\"")
+                                if my_debug:
+                                    print(TAG+f"saving to file: \"{tmp}\"")
                                 f.write(tmp)
-                                f.write("}")
                                 f.close()
+                                gc.collect()
                                 if not state.write_msg_shown:
-                                    print(TAG+"save complete")
+                                    if my_debug:
+                                        print(TAG+"save complete")
                                     msg = [TAG, "note sets (loops)", "saved to file", state.fn, "successfully"]
                                     pr_msg(state, msg)
                                     state.write_msg_shown = True
