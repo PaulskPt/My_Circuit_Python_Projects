@@ -11,8 +11,8 @@
 # A global flag "my_debug" has been added to control the majority of print statements in this script.
 # Added global flag "use_TAG". This flag controls if in calls to function tag_adj() tags received will be printed or not.
 # On a small display no function names (variable TAG) in print statements make the display more readable.
-# Sixteen functions added that are not found in the other repos for the TR-Cowbell board:
-#   count_btns_active(), clr_events(), clr_scrn(), pr_state(), pr_msg(), load_all_note_sets(), load_note_set(),
+# Seventeen functions added that are not found in the other repos for the TR-Cowbell board:
+#   count_btns_active(), clr_events(), clr_scrn(), pr_state(), pr_msg(), pr_loops(), load_all_note_sets(), load_note_set(),
 #   fifths_change(), key_change(), mode_change() fnd_empty_loop), chg_id(), tag_adj(), do_connect(), wifi_is_connected() and setup().
 import asyncio
 import time
@@ -533,6 +533,24 @@ def pr_msg(state, msg_lst=None):
             for j in range((max_lines-le)-1):
                 print()
         time.sleep(3)
+        
+def pr_loops(state):  # called from load_all_note_sets()
+    s = "-"*16
+    ln = "+----+----+"+s+"+"+s+"+"+s+"+"+s+"+"
+    TAG = tag_adj("pr_loops(): ")
+    print(ln)
+    print("| id |sIdx| notes red      |     yellow     |      blue      |     white      |")
+    print(ln)
+    for i in state.saved_loops['loops']:
+        s = "| {:2d} | {:2d} |".format(i['id'], i['selected_index'])
+        print(TAG+f"{s}", end='')
+        le = len(i['notes'])
+        for j in range(le):
+            if j > 0 and j % 4 == 0:
+                print("|", end='')
+            print("{:3d} ".format( i['notes'][j] ), end='')
+        print("|", end='\n')
+        print(ln)
 
 async def blink_the_leds(state, delay=0.125):
     TAG = tag_adj("blink_the_leds(): ")
@@ -589,6 +607,7 @@ def load_all_note_sets(state, use_warnings):
         f = open(state.fn, "r")
         sl = json.loads(f.read()) # ["loops"]
         f.close()
+        state.saved_loops = sl
         if my_debug:
             print(TAG+f"\nread fm file: {sl}")
 
@@ -597,12 +616,14 @@ def load_all_note_sets(state, use_warnings):
         # Check for an empty note set.
         # If not found, add one
         le = len(sl['loops'])
+        # print(TAG+f"sets: {sl['loops']}")
         set_nr = fnd_empty_loop(state)
+        # print(f"set_nr = {set_nr}")
         if set_nr < 0:
             # No empty notes set found. We're going to add one
-            ne = {"id": le, "notes": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "selected_index": -1}
+            ne = {"id": le, "selected_index": -1, "notes": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }
             sl['loops'].insert(set_nr, ne)
-        state.saved_loops = sl
+        state.saved_loops = sl  # update
         if my_debug:
             # Show result
             print(TAG+f"state.saved_loops after adding empty note set: {state.saved_loops}")
@@ -618,6 +639,8 @@ def load_all_note_sets(state, use_warnings):
                 print(TAG+f"saved_loops: {state.saved_loops}\nloaded successfully")
             msg = [TAG, "note sets", "have been", "read from file", state.fn, "successfully"]
             pr_msg(state, msg)
+            if my_debug:
+                pr_loops(state)
     except (OSError, KeyError) as e:
         print(TAG+f"Error occurred while reading from file {f}: {e}")
         state.saved_loops = []
@@ -730,6 +753,9 @@ def fnd_empty_loop(state):
     k2 = 'notes'
     cnt = 0
     ret = -1
+    id = 0
+    id_found = []
+    # print(TAG+f"type(lps)= {type(lps)}")
     if isinstance(lps, dict):
         le = len(lps['loops'])
         if my_debug:
@@ -744,14 +770,26 @@ def fnd_empty_loop(state):
                 if en[j] == 0:
                     cnt += 1
                 if cnt == 16:
+                    id = lps['loops'][i]['id']
+                    id_found.append(id)
                     if my_debug:
-                        id = lps['loops'][i]['id']
-                        if my_debug:
-                            print(TAG+f"id of the found empty set: {id}")
-                    ret = i
-                    break  # set of all zeros found
-            if cnt == 16:
-                break
+                        print(TAG+f"id of an empty notes set found: {id}")
+        le = len(id_found)
+        n = -1
+        if le > 1:
+            for i in range(le):
+                if i == 0:
+                    n = id_found[i]
+                elif i > 0:
+                    if id_found[i] < n:
+                        n = id_found[i]  # take the lowest value
+        else:
+            n = id_found[0]
+        if my_debug:
+            print(TAG+f"zeros count= {cnt}. id\'s found= {id_found}")
+            print(TAG+f"lowest id= {n}")
+        ret = n
+    # print(TAG+f"ret= {ret}")
     return ret
 
 def chg_id(lps, ne, s, le):  # Called from read_buttons()
@@ -763,6 +801,7 @@ def chg_id(lps, ne, s, le):  # Called from read_buttons()
         ne
         )
     return lps2
+
 
 async def read_buttons(state):
     global ro_state
