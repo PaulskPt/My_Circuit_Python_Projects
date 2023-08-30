@@ -1,0 +1,206 @@
+Wednesday 2023-08-30 20h00 utc+1
+
+Platform: @DJDevon3's TR=COWBELL with Raspberry Pi PicoW
+
+IDE: mu-editor
+
+NOTE: After adding code to receive ntp datetime and set builtin RTC
+      and after adding functions glob_flag_change(), dt_update() and pr_dt() and changing other parts to call the new functions.
+
+REPL output:     (Note: my_debug flag = False)
+
+
+
+soft reboot
+
+Auto-reload is on. Simply save files over USB to run them or enter REPL to disable.
+code.py output:
+]0;🐍192.168.x.yy | code.py | 8.2.3\
+
+TR-COWBELL test
+Board:
+raspberry_pi_pico_w
+Filesystem:Readonly
+OLED driver: SH1107
+--------------------
+connected to Vodafone-______
+IP address is 192.168.x.yy
+
+
+
+connected to       <<<=== When use_wifi global flag is True, this message will appear on the display
+Vodafone-______
+IP Address is:
+192.168.x.yy
+NTP date:
+Tue 8/30/2023
+07:23:08 PM
+
+
+
+note sets          <<<=== This message always appears on the display
+have been
+read from file
+saved_loops.json
+successfully
+
+
+
+0 button active     <<<===  The main screen appears
+------------------
+0/   0   0   0   0 
+     0   0   0   0 
+1/   0   0   0   0 
+     0   0   0   0 
+------------------
+No buttons active
+mode:indx.NoteSet:6
+
+
+
+|---- Mode -----|  <<<=== After a double click of the encoder button, the Mode change menu appears
+  >> indx 1 <<
+     note 2   
+     file 3   
+     midi 4   
+     fift 5   
+     nkey 6   
+     flag 7   
+| Exit=>Enc Btn |
+
+
+
+|---- Mode -----|
+     indx 1   
+     note 2   
+     file 3   
+     midi 4   
+     fift 5   
+     nkey 6   
+  >> flag 7 <<        <<<=== After the encoder control has been turned clockwise (CW) one time.
+| Exit=>Enc Btn |            Then, after encoder button click the function "glob_flag_change()" is called
+
+
+|---Glob Flag---|    <<<=== This menu appears (created by function glob_flag_change() )
+  >> debug 0 <<
+       TAG 0   
+      wifi 1   
+      dtUS 0   
+      none 0   
+| Exit=>Enc Btn |
+
+
+|---Glob Flag---|
+     debug 0   
+       TAG 0   
+      wifi 1       <<<=== The global use_wifi flag is True
+      dtUS 0   
+  >>  none 0 <<
+| Exit=>Enc Btn |
+
+
+|---Glob Flag---|
+     debug 0   
+       TAG 0   
+      wifi 1   
+  >>  dtUS 0 <<     <<<=== The dtUS (state.dt_str_usa) flag is False 
+      none 0   
+| Exit=>Enc Btn |
+
+
+NTP date:
+Tue 8/30/2023
+07:25:30 PM
+
+
+
+0 button active
+------------------
+0/   0   0   0   0 
+     0   0   0   0 
+1/   0   0   0   0 
+     0   0   0   0 
+------------------
+No buttons active
+mode:indx.NoteSet:6
+
+
+|---- Mode -----|   <<<=== After a double click of the encoder button, the Mode change menu appears
+  >> indx 1 <<
+     note 2   
+     file 3   
+     midi 4   
+     fift 5   
+     nkey 6   
+     flag 7   
+| Exit=>Enc Btn |
+
+
+|---- Mode -----|
+     indx 1   
+     note 2   
+     file 3   
+     midi 4   
+     fift 5   
+     nkey 6   
+  >> flag 7 <<        <<<=== After the encoder control has been turned counter clockwise (CCW) one time.
+| Exit=>Enc Btn |            Then, after encoder button click the function "glob_flag_change()" is called
+
+
+|---Glob Flag---|     <<<=== This menu appears (created by function glob_flag_change() )
+  >> debug 0 <<
+       TAG 0   
+      wifi 1   
+      dtUS 1   
+      none 0   
+| Exit=>Enc Btn |
+
+
+
+|---Glob Flag---|
+     debug 0   
+  >>   TAG 0 <<    <<<=== after the encoder control has been turned clockwise (CW) one time
+      wifi 1   
+      dtUS 1   
+      none 0   
+| Exit=>Enc Btn |
+
+
+
+|---Glob Flag---|
+     debug 0   
+       TAG 0   
+  >>  wifi 1 <<     <<<=== after the encoder control has been turned clockwise (CW) a second time
+      dtUS 1   
+      none 0   
+| Exit=>Enc Btn |
+
+
+
+|---Glob Flag---|
+     debug 0   
+       TAG 0   
+      wifi 1   
+  >>  dtUS 1 <<    <<<=== after the encoder control has been turned clockwise (CW) a third time
+      none 0                    Then, after encoder button click, the dtUS flag (state.dt_str_usa) was set to False
+| Exit=>Enc Btn |
+
+
+NTP date:          <<<=== To check: the function pr_dt() is called. Non-USA date and time format
+Tue 2023-08-30
+19:25:57
+
+
+0 button active       <<<=== back in the main screen
+------------------
+0/   0   0   0   0 
+     0   0   0   0 
+1/   0   0   0   0 
+     0   0   0   0 
+------------------
+No buttons active
+mode:indx.NoteSet:6  <<<=== mode back to 'indx'
+
+
+
+
