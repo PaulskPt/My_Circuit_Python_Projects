@@ -93,38 +93,38 @@ mode:indx.NoteSet:6
 
 
 
-|---- Mode -----|
-     mchg 1   
-  >> indx 2 <<   <<<=== mode change menu appeared after double click the encoder button
-     note 3   
-     file 4   
-     midi 5   
-     fift 6   
-     nkey 7   
+|---- Mode -----|  
+  >> indx 1 <<   <<<=== mode change menu appeared after double click the encoder button
+     note 2   
+     file 3   
+     midi 4   
+     fift 5   
+     nkey 6
+     flag 7	 
 | Exit=>Enc Btn |
 
 
 
 |---- Mode -----|
-     mchg 1   
-     indx 2   
-  >> note 3 <<   <<<=== mode change menu selector moved down one step after turning the encoder control clockwise (CW)
-     file 4   
-     midi 5   
-     fift 6   
-     nkey 7   
+     indx 1   
+  >> note 2 <<   <<<=== mode change menu selector moved down one step after turning the encoder control clockwise (CW)
+     file 3   
+     midi 4   
+     fift 5   
+     nkey 6
+	 flag 7
 | Exit=>Enc Btn |
 
 
 
-|---- Mode -----|
-     mchg 1   
-     indx 2   
-     note 3   
-  >> file 4 <<    <<<=== mode change menu selector moved down one more step after turning the encoder control clockwise (CW) a 2nd time
-     midi 5   
-     fift 6   
-     nkey 7   
+|---- Mode -----|   
+     indx 1   
+     note 2   
+  >> file 3 <<    <<<=== mode change menu selector moved down one more step after turning the encoder control clockwise (CW) a 2nd time
+     midi 4   
+     fift 5   
+     nkey 6
+     flag 7	 
 | Exit=>Enc Btn |
 
 

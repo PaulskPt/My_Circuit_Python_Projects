@@ -49,35 +49,35 @@ No buttons active
 mode:indx.NoteSet:5
 
 
-|---- Mode -----|
-     mchg 1   
-  >> indx 2 <<          <<<=== Mode change menu appears after encoder button double click
-     note 3   
-     file 4   
-     midi 5   
-     fift 6   
-     nkey 7   
+|---- Mode -----|  
+  >> indx 1 <<          <<<=== Mode change menu appears after encoder button double click
+     note 2   
+     file 3   
+     midi 4   
+     fift 5   
+     nkey 6
+     flag 7	 
 | Exit=>Enc Btn |
 
 
 |---- Mode -----|
-     mchg 1   
-     indx 2   
-  >> note 3 <<         <<<=== moved selection to mode "note" (by turning encoder control clockwise)
-     file 4   
-     midi 5   
-     fift 6   
-     nkey 7   
+     indx 1   
+  >> note 2 <<         <<<=== moved selection to mode "note" (by turning encoder control clockwise)
+     file 3   
+     midi 4   
+     fift 5   
+     nkey 6
+     flag 7	 
 | Exit=>Enc Btn |
 
 |---- Mode -----|
-     mchg 1   
-     indx 2   
-     note 3   
-  >> file 4 <<         <<<=== moved selection to mode "file" (by turning encoder control clockwise a 2nd time)
-     midi 5   
-     fift 6   
-     nkey 7   
+     indx 1   
+     note 2   
+  >> file 3 <<         <<<=== moved selection to mode "file" (by turning encoder control clockwise a 2nd time)
+     midi 4   
+     fift 5   
+     nkey 6
+     flag 7	 
 | Exit=>Enc Btn |      <<<=== Exited menu with selected mode: "file"
 
 

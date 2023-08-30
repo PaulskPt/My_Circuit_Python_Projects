@@ -43,14 +43,14 @@ mode:indx.NoteSet:5   <<<=== Default the 5th note set is loaded which has all va
                              It has no note button (key) selected.
 
 
-|---- Mode -----|     <<<=== Mode change menu. It appears after double clicking on the encoder button
-     mchg 1   
-  >> indx 2 <<
-     note 3   
-     file 4   
-     midi 5   
-     fift 6   
-     nkey 7   
+|---- Mode -----|     <<<=== Mode change menu. It appears after double clicking on the encoder button  
+  >> indx 1 <<
+     note 2   
+     file 3   
+     midi 4   
+     fift 5   
+     nkey 6
+     flag 7	 
 | Exit=>Enc Btn |     <<<=== Exit the menu with the indicated mode choice
                              by clicking another time once on the encoder button
 
