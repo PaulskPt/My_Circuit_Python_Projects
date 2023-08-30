@@ -1029,6 +1029,173 @@ def id_change(lps, ne, s, le):  # Called from read_buttons()
         )
     return lps2
 
+def wrt_to_fi(state):
+    TAG = tag_adj("wrt_to_f(): ")
+    # Initiate variables
+    f = None
+    f_lst = os.listdir("/")
+    f_lst2 = None
+    f_lst3 = None
+    fn_bak = state.fn[:-4] + "bak"
+    fn_bak2 = "/" + fn_bak
+    fn_ren = "/"+state.fn   # e.g. "/saved_loops.json"
+    # le1 = None
+    le2 = None
+    le3 = None
+    lps = None
+    msg = []
+    ne = None
+    nf = None
+    s = None
+    s2 = None
+    sf = "file:"
+    ssf = "successfully"
+    tmp = None
+    print()  # make a line space
+    if fn_bak in f_lst:
+        try:
+            s = "removing " + sf
+            os.remove(fn_bak2)  # remove the file "saved_loops.bak"
+            time.sleep(0.5)
+            if my_debug:
+                print(TAG+f"{s} \"{fn_bak}\"")
+            msg = [TAG, s, fn_bak]
+            pr_msg(state, msg)
+            f_lst2 = os.listdir("/")
+            if not fn_bak in f_lst2:
+                s = "removed " + ssf
+                if my_debug:
+                    print(TAG+f"{sf} \"{fn_bak}\" {s}")
+                msg = [TAG, sf, fn_bak, s]
+                pr_msg(state, msg)
+            f_lst2 = None
+        except OSError as e:
+            print(TAG+f"OSError while trying to remove file \"{fn_bak}\". Error: {e}")
+    else:
+        nf = "not found"
+        if my_debug:
+            print(TAG+f"{sf} \"{fn_bak}\" {nf}")
+        msg = [TAG, sf, fn_bak, nf]
+        pr_msg(state, msg)
+    if state.fn in f_lst:  # rename existing saved_loops.json to saved_loops.bak
+        try:
+            os.rename(fn_ren, fn_bak2)
+            time.sleep(0.5)
+            f_lst3 = os.listdir("/")
+            if (fn_bak in f_lst3) and (not state.fn in f_lst3):
+                s = "renamed to:"
+                if my_debug:
+                    print(TAG+f"{sf} \"{state.fn}\" {s} \"{fn_bak}\" {ssf}")
+                msg = [TAG, sf, state.fn, s, fn_bak, ssf]
+                pr_msg(state, msg)
+            else:
+                s = "failed rename file:"
+                t = "to:"
+                if my_debug:
+                    print(TAG+f"{s} \"{state.fn}\" {t} \"{fn_bak}\"")
+                msg = [TAG, s, state.fn, t, fn_bak]
+                pr_msg(state, msg)
+        except OSError as e:
+            print(TAG+f"OSError while trying to rename file \"{state.fn}\" to \"{fn_bak}\". Error: {e}")
+    try:
+        # save the current file
+        s = "saving"
+        s2 = "note sets (loops)"
+        if my_debug:
+            print(TAG+f"{s} {s2} to: \"{state.fn}\"")
+        msg = [TAG, s, s2, "to file:", state.fn]
+        pr_msg(state, msg)
+        lps = state.saved_loops
+        if my_debug:
+            print(TAG+f"loops of state.saved_loops= {lps}")
+        s = 'loops'  # was: "loops"
+        # le1 = len(lps[s])
+        set_nr = fnd_empty_loop(state)
+        if set_nr > -1:
+            # set with all zeroes found
+            ne = lps[s][set_nr] # copy the empty notes set (the "empty" set)
+            if my_debug:
+                print(TAG+f"lps[\'{s}\'][{set_nr}]= {ne}")
+            gc.collect()
+            # 1) Delete the empty notes set from lp (it is already copied to var "ne"
+            # 2) Add the new notes set
+            # 3) Add the empty notes set.
+            # print(TAG+f"contents of lps b4 pop: {lps}. Length: {len(lps[s])}")
+            lps[s].pop(set_nr)  # delete the empty notes list
+            # print(TAG+f"contents of lps after pop: {lps}. Length: {len(lps[s])}")
+        else:
+            # Create an empty notes set
+            ne = {"id": 4, "notes": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "selected_index": -1}
+        # Insert the current notes set (state.notes_lst)
+        le2 = len(lps[s])
+        if set_nr == -1:
+            set_nr = le2  # Correct in case no zero notes set was found
+        lps[s].insert(set_nr,
+        {
+        "notes": state.notes_lst,
+        "id" : set_nr,
+        "selected_index": state.selected_index
+        })
+        le3 = len(lps[s]) # calculate the new length
+        if my_debug:
+            print(TAG+f"contents of lps after removing zero loop at {set_nr}")
+            print(TAG+f"and insert \'state.notes_lst\' at end: {lps}. new length: {le3}")
+
+        if set_nr < 0:
+            # Add the newly created empty notes set to the end
+            try:
+                lps = id_change(lps, ne, s, le3)
+            except KeyError as e:
+                print(TAG+f"Error: {e}")
+        elif set_nr > -1:
+            # Add the saved empty notes set to the end
+            try:
+                lps = id_change(lps, ne, s, le3)
+            except KeyError as e:
+                print(TAG+f"Error: {e}")
+        if my_debug:
+            print(TAG+f"contents of lps after insert at end: {lps}. new length: {len(lps[s])}")
+        gc.collect()
+        state.saved_loops = lps
+        if my_debug:
+            print(TAG+f"state.saved_loops after change: {state.saved_loops}]")
+        lps = None
+        # Write the changed saved loops to file on disk
+        f = open(state.fn, "w")
+        tmp = json.dumps(state.saved_loops)
+        if my_debug:
+            print(TAG+f"saving to file: \"{tmp}\"")
+        f.write(tmp)
+        f.close()
+        gc.collect()
+        if not state.write_msg_shown:
+            if my_debug:
+                print(TAG+"save complete")
+            msg = [TAG, "note sets (loops)", "saved to file:", state.fn, "successfully"]
+            pr_msg(state, msg)
+            state.write_msg_shown = True
+    except OSError as e:
+        print(TAG+f"OSError while trying to save note sets to file. Error: {e}")
+    # Cleanup
+    f = None
+    f_lst = None
+    f_lst2 = None
+    f_lst3 = None
+    fn_bak = None
+    fn_bak2 = None
+    fn_ren = None
+    #
+    le2 = None
+    le3 = None
+    lps = None
+    msg = []
+    ne = None
+    nf = None
+    s = None
+    s2 = None
+    sf = None
+    ssf = None
+    tmp = None
 
 async def read_buttons(state):
     global ro_state
@@ -1082,77 +1249,66 @@ async def read_buttons(state):
 
         if state.mode != mode_dict[MODE_M]: # "midi_channel". Only change midi channel with Rotary Encoder control
             if state.btn_event == False:  # only if no other event is being processed
-
-                if up_btn.fell:
+                
+                if up_btn.fell or down_btn.fell:
+                    if up_btn.fell:
+                        ud = True
+                    elif down_btn.fell:
+                        ud = False
+                    
                     state.btn_event = True
                     btns_active = count_btns_active(state)
-                    incn = "Increasing note" if btns_active >0 else ""
+                    inc_dec = "{:s} note".format("increasing" if ud else "decreasing")
                     if my_debug:
-                        print(TAG+f"BUTTON 1 (UP) is pressed: {up_btn.pressed}.")
-                    #if state.mode == mode_dict[MODE_I]: # "index"
-                    #    if btns_active >0:
-                    #        increment_selected(state)
+                        sud = " 1 (UP)" if ud else "3 (DOWN)"
+                        ud_pr = up_btn.pressed if ud else down_btn.pressed
+                        print(TAG+f"BUTTON {sud} is pressed: {ud_pr}.")
+
                     if state.mode == mode_dict[MODE_N]: # "note"
                         if my_debug:
-                            print(TAG+f"{incn}")
+                            print(TAG+f"{inc_dec}")
                             print(TAG+f"mode: \"{state.mode}\".")
                         if btns_active>0:
-                            state.notes_lst[state.selected_index] += 1
+                            if ud:
+                                state.notes_lst[state.selected_index] += 1
+                            else:
+                                state.notes_lst[state.selected_index] -= 1
                             # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
+                                    
                     elif state.mode in ["index", "file"]:
-                        dir_up = True
+                        dir_up = True if ud else False
                         use_warnings = True
                         load_note_set(state, dir_up, use_warnings)
-
-                if down_btn.fell:
+                  
+                if right_btn.fell or left_btn.fell:
+                    if right_btn.fell:
+                        rl = True
+                    elif left_btn.fell:
+                        rl = False
                     state.btn_event = True
                     btns_active = count_btns_active(state)
-                    decn = "Decreasing note" if btns_active >0 else ""
-                    if my_debug:
-                            print(TAG+f"BUTTON 3 (DOWN) is pressed: {down_btn.pressed}")
-                    #if state.mode == mode_dict[MODE_I]:  # "index"
-                    #    if btns_active >0:
-                    #        decrement_selected(state)
-                    if state.mode == mode_dict[MODE_N]:  # "note"
-                        if my_debug:
-                            print(TAG+f"{decn}")
-                            print(TAG+f"mode: \"{state.mode}\".")
-                        if btns_active>0:
-                            state.notes_lst[state.selected_index] -= 1
-                            # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
-                    elif state.mode in ["index", "file"]:
-                        dir_up = False
-                        use_warnings = True
-                        load_note_set(state, dir_up, use_warnings)
+                    inc_dec = "{:s} note".format("increasing" if rl else "decreasing")
+                    inc_dec = inc_dec if state.mode == mode_dict[MODE_N] and btns_active >0 else ""
 
-                if right_btn.fell:
-                    state.btn_event = True
-                    btns_active = count_btns_active(state)
-                    incn = "Increasing note" if state.mode == mode_dict[MODE_N] and btns_active >0 else ""
-                    if my_debug:
-                            print(TAG+f"BUTTON 2 (RIGHT) is pressed: {right_btn.pressed}.")
+                    if my_debug:    
+                        srl = " 2 (RIGHT)" if ud else "4 (LEFT)"
+                        rl_pr = right_btn.pressed if ud else left_btn.pressed
+                        print(TAG+f"BUTTON {srl} is pressed: {rl_pr}.")
+                                     
                     if state.mode == mode_dict[MODE_I] or mode_dict[MODE_N]:  # "index" or "note"
                         if btns_active >0:
-                            increment_selected(state)
+                            if rl:
+                                increment_selected(state)
+                            else:
+                                decrement_selected(state)
                     elif state.mode == mode_dict[MODE_F]:  # "file"
                         if my_debug:
-                            print(TAG+"BUTTON 2 (RIGHT) doing nothing")
+                            srl = " 2 (RIGHT)" if ud else "4 (LEFT)"
+                            print(TAG+f"BUTTON {srl} doing nothing")
+           
                     # state.send_off = not state.send_off
-                    # print(f"send off: {state.send_off}")
-
-                if left_btn.fell:
-                    state.btn_event = True
-                    btns_active = count_btns_active(state)
-                    decn = "Decreasing note" if state.mode == mode_dict[MODE_N] and btns_active >0 else ""
-                    if my_debug:
-                            print(TAG+f"BUTTON 4 (LEFT) is pressed: {left_btn.pressed}.")
-                    if state.mode == mode_dict[MODE_I] or mode_dict[MODE_N]:  # "index" or "note"
-                        if btns_active >0:
-                            decrement_selected(state)
-                    elif state.mode == mode_dict[MODE_F]:  # "file"
-                        if my_debug:
-                            print(TAG+"BUTTON 4 (LEFT) doing nothing")
-
+                    # print(f"send off: {state.send_off}")  
+                
                 if middle_btn.long_press:
                     state.btn_event = True
                     state.longpress_event = True
@@ -1169,155 +1325,7 @@ async def read_buttons(state):
                         state.mode = mode_dict[MODE_F] # Change mode to "file"
                     elif state.mode == mode_dict[MODE_F]: # "file"
                         if ro_state == "Writeable":
-                            # Initiate variables
-                            f = None
-                            f_lst = os.listdir("/")
-                            f_lst2 = None
-                            f_lst3 = None
-                            fn_bak = state.fn[:-4] + "bak"
-                            fn_bak2 = "/" + fn_bak
-                            fn_ren = "/"+state.fn   # e.g. "/saved_loops.json"
-                            le1 = None
-                            le2 = None
-                            le3 = None
-                            lps = None
-                            msg = []
-                            ne = None
-                            s = None
-                            tmp = None
-                            print()  # make a line space
-                            if fn_bak in f_lst:
-                                try:
-                                    os.remove(fn_bak2)  # remove the file "saved_loops.bak"
-                                    time.sleep(0.5)
-                                    if my_debug:
-                                        print(TAG+f"removing file: \"{fn_bak}\"")
-                                    msg = [TAG, "removing file:", fn_bak]
-                                    pr_msg(state, msg)
-                                    f_lst2 = os.listdir("/")
-                                    if not fn_bak in f_lst2:
-                                        if my_debug:
-                                            print(TAG+f"file: \"{fn_bak}\" removed successfully")
-                                        msg = [TAG, "file:", fn_bak, "removed successfully"]
-                                        pr_msg(state, msg)
-                                    f_lst2 = None
-                                except OSError as e:
-                                    print(TAG+f"OSError while trying to remove file \"{fn_bak}\". Error: {e}")
-                            else:
-                                if my_debug:
-                                    print(TAG+f"file: \"{fn_bak}\" not found")
-                                msg = [TAG, "file:", fn_bak, "not found"]
-                                pr_msg(state, msg)
-                            if state.fn in f_lst:  # rename existing saved_loops.json to saved_loops.bak
-                                try:
-                                    os.rename(fn_ren, fn_bak2)
-                                    time.sleep(0.5)
-                                    f_lst3 = os.listdir("/")
-                                    if (fn_bak in f_lst3) and (not state.fn in f_lst3):
-                                        if my_debug:
-                                            print(TAG+f"file: \"{state.fn}\" renamed to: \"{fn_bak}\" successfully")
-                                        msg = [TAG, "file:", state.fn, "renamed to:", fn_bak, "successfully"]
-                                        pr_msg(state, msg)
-                                    else:
-                                        if my_debug:
-                                            print(TAG+f"failed rename file: \"{state.fn}\" to: \"{fn_bak}\"")
-                                        msg = [TAG, "failed rename file:", state.fn, "to:", fn_bak]
-                                        pr_msg(state, msg)
-                                except OSError as e:
-                                    print(TAG+f"OSError while trying to rename file \"{state.fn}\" to \"{fn_bak}\". Error: {e}")
-                            try:
-                                # save the current file
-                                if my_debug:
-                                    print(TAG+f"saving note sets (loops) to: \"{state.fn}\"")
-                                msg = [TAG, "Saving", "note sets (loops)", "to file:", state.fn]
-                                pr_msg(state, msg)
-                                lps = state.saved_loops
-                                if my_debug:
-                                    print(TAG+f"loops of state.saved_loops= {lps}")
-                                s = 'loops'  # was: "loops"
-                                le1 = len(lps[s])
-                                set_nr = fnd_empty_loop(state)
-                                if set_nr > -1:
-                                    # set with all zeroes found
-                                    ne = lps[s][set_nr] # copy the empty notes set (the "empty" set)
-                                    if my_debug:
-                                        print(TAG+f"lps[\'{s}\'][{set_nr}]= {ne}")
-                                    gc.collect()
-                                    # 1) Delete the empty notes set from lp (it is already copied to var "ne"
-                                    # 2) Add the new notes set
-                                    # 3) Add the empty notes set.
-                                    # print(TAG+f"contents of lps b4 pop: {lps}. Length: {len(lps[s])}")
-                                    lps[s].pop(set_nr)  # delete the empty notes list
-                                    # print(TAG+f"contents of lps after pop: {lps}. Length: {len(lps[s])}")
-                                else:
-                                    # Create an empty notes set
-                                    ne = {"id": 4, "notes": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "selected_index": -1}
-                                # Insert the current notes set (state.notes_lst)
-                                le2 = len(lps[s])
-                                if set_nr == -1:
-                                    set_nr = le2  # Correct in case no zero notes set was found
-                                lps[s].insert(set_nr,
-                                {
-                                "notes": state.notes_lst,
-                                "id" : set_nr,
-                                "selected_index": state.selected_index
-                                })
-                                le3 = len(lps[s]) # calculate the new length
-                                if my_debug:
-                                    print(TAG+f"contents of lps after removing zero loop at {set_nr}")
-                                    print(TAG+f"and insert \'state.notes_lst\' at end: {lps}. new length: {le3}")
-
-                                if set_nr < 0:
-                                    # Add the newly created empty notes set to the end
-                                    try:
-                                        lps = id_change(lps, ne, s, le3)
-                                    except KeyError as e:
-                                        print(TAG+f"Error: {e}")
-                                elif set_nr > -1:
-                                    # Add the saved empty notes set to the end
-                                    try:
-                                        lps = id_change(lps, ne, s, le3)
-                                    except KeyError as e:
-                                        print(TAG+f"Error: {e}")
-                                if my_debug:
-                                    print(TAG+f"contents of lps after insert at end: {lps}. new length: {len(lps[s])}")
-                                gc.collect()
-                                state.saved_loops = lps
-                                if my_debug:
-                                    print(TAG+f"state.saved_loops after change: {state.saved_loops}]")
-                                lps = None
-                                # Write the changed saved loops to file on disk
-                                f = open(state.fn, "w")
-                                tmp = json.dumps(state.saved_loops)
-                                if my_debug:
-                                    print(TAG+f"saving to file: \"{tmp}\"")
-                                f.write(tmp)
-                                f.close()
-                                gc.collect()
-                                if not state.write_msg_shown:
-                                    if my_debug:
-                                        print(TAG+"save complete")
-                                    msg = [TAG, "note sets (loops)", "saved to file:", state.fn, "successfully"]
-                                    pr_msg(state, msg)
-                                    state.write_msg_shown = True
-                            except OSError as e:
-                                print(TAG+f"OSError while trying to save note sets to file. Error: {e}")
-                            # Cleanup
-                            f = None
-                            f_lst = None
-                            f_lst2 = None
-                            f_lst3 = None
-                            fn_bak = None
-                            fn_bak2 = None
-                            fn_ren = None
-                            le1 = None
-                            le2 = None
-                            le3 = None
-                            lps = None
-                            msg = []
-                            ne = None
-                            s = None
-                            tmp = None
+                            wrt_to_fi(state)
                         else:
                             if my_debug:
                                 print("Filesystem is readonly. Cannot save note sets to file")
