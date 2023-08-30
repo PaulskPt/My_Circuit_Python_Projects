@@ -1,4 +1,5 @@
 # Based on TR-Cowbell Hardware Test by @DJDevon3
+# Based on TR-Cowbell Hardware Test by @DJDevon3
 # 2023/03/03 - Neradoc & DJDevon3
 # Based on PicoStepSeq by @todbot Tod Kurt
 # https://github.com/todbot/picostepseq/
@@ -11,9 +12,10 @@
 # A global flag "my_debug" has been added to control the majority of print statements in this script.
 # Added global flag "use_TAG". This flag controls if in calls to function tag_adj() tags received will be printed or not.
 # On a small display no function names (variable TAG) in print statements make the display more readable.
-# Seventeen functions added that are not found in the other repos for the TR-Cowbell board:
-#   count_btns_active(), clr_events(), clr_scrn(), pr_state(), pr_msg(), pr_loops(), load_all_note_sets(), load_note_set(),
-#   fifths_change(), key_change(), mode_change() fnd_empty_loop), chg_id(), tag_adj(), do_connect(), wifi_is_connected() and setup().
+# Twenty functions added that are not found in the other repos for the TR-Cowbell board:
+#   count_btns_active(), clr_events(), clr_scrn(), pr_state(), pr_msg(), pr_loops(), pr_dt(), load_all_note_sets(), load_note_set(),
+#   fifths_change(), key_change(), mode_change(), glob_flag_change(), fnd_empty_loop), id_change(), tag_adj(), do_connect(),
+#   dt_update(), wifi_is_connected() and setup().
 import asyncio
 import time
 import board
@@ -33,13 +35,25 @@ my_debug = False
 use_ssd1306 = False  #                   |
 use_sh1107 = True  #                     |
 # ---------------------------------------+
-use_wifi = False
+use_wifi = True
 use_TAG = False
 
 if use_wifi:
     import wifi
     import ipaddress
     import socketpool
+    import adafruit_ntp
+    import rtc
+    pool = socketpool.SocketPool(wifi.radio)
+    ntp = adafruit_ntp.NTP(pool, tz_offset=1)  # tz_offset utc+1
+    rtc.RTC().datetime = ntp.datetime
+else:
+    wifi = None
+    ipaddress = None
+    socketpool = None
+    pool = None
+    ntp = None
+    rtc = None
 
 import json
 import struct
@@ -148,6 +162,7 @@ led_pins = [(a, b) for a in range(2) for b in range(8)]
 for (m, x) in led_pins:
     led_pins_per_chip[m][x].direction = Direction.OUTPUT
 
+
 MODE_C = 0 # mchg  # mode change
 MODE_I = 1 # index
 MODE_N = 2 # note
@@ -155,11 +170,12 @@ MODE_F = 3 # file
 MODE_M = 4 # midi_channel
 MODE_D = 5 # fifths (circle of fifths) flag choose
 MODE_K = 6 # key of the notes: Major or Minor
-MODE_MIN = MODE_C
-MODE_MAX = MODE_K
+MODE_G = 7 # global flags change mode
+MODE_MIN = MODE_I # Don't show MODE_C
+MODE_MAX = MODE_G
 
 
-mode_lst = ["mode_change", "index", "note", "file", "midi_channel", "disp_fifths", "note_key"]
+mode_lst = ["mode_change", "index", "note", "file", "midi_channel", "disp_fifths", "note_key", "glob_flag_change"]
 
 mode_dict = {
     MODE_C : "mode_change",
@@ -168,7 +184,8 @@ mode_dict = {
     MODE_F : "file",
     MODE_M : "midi_channel",
     MODE_D : "fifths",   # Display as Fifths or 'Normal' number values
-    MODE_K : "note_key"  # When displaying as Fifths, display in Key C Major or C Minor
+    MODE_K : "note_key",  # When displaying as Fifths, display in Key C Major or C Minor
+    MODE_G : "glob_flag_change"  # For change of global flags: my_debug, use_TAG and use_wifi
     }
 
 mode_short_dict = {
@@ -178,7 +195,8 @@ mode_short_dict = {
     MODE_F : "file",
     MODE_M : "midi",
     MODE_D : "fift",
-    MODE_K : "nkey"
+    MODE_K : "nkey",
+    MODE_G : "flag"
     }
 
 mode_rv_dict = {
@@ -188,7 +206,8 @@ mode_rv_dict = {
     "file" : MODE_F,
     "midi_channel" : MODE_M,
     "fifths" : MODE_D,
-    "note_key" : MODE_K
+    "note_key" : MODE_K,
+    "glob_flag_change" : MODE_G
     }
 
 notes_C_dict = {
@@ -326,6 +345,9 @@ class State:
         self.display_fifths = False # "Normal" (number values) display
         self.key_major = True  # If False, the key is Minor
         self.encoder_btn_cnt = 0  # Counter for double press
+        self.rtc_is_set = False
+        self.ntp_datetime = None
+        self.dt_str_usa = True
 
         if saved_state_json:
             saved_state_obj = json.loads(saved_state_json)
@@ -533,7 +555,7 @@ def pr_msg(state, msg_lst=None):
             for j in range((max_lines-le)-1):
                 print()
         time.sleep(3)
-        
+
 def pr_loops(state):  # called from load_all_note_sets()
     s = "-"*16
     ln = "+----+----+"+s+"+"+s+"+"+s+"+"+s+"+"
@@ -551,6 +573,84 @@ def pr_loops(state):  # called from load_all_note_sets()
             print("{:3d} ".format( i['notes'][j] ), end='')
         print("|", end='\n')
         print(ln)
+
+def pr_dt(state, short, choice):
+    TAG = tag_adj("pr_dt(): ")
+    DT_DATE_L = 0
+    DT_DATE_S = 1
+    DT_TIME = 2
+    DT_ALL  = 3
+
+    if short is None:
+        short = False
+
+    if choice is None:
+        choice2 = DT_ALL
+
+    if choice == 0:
+        choice2 = DT_DATE_L  # With weekday
+    elif choice == 1:
+        choice2 = DT_DATE_S  # Without weekday
+    elif choice == 2:
+        choice2 = DT_TIME
+    elif choice == 3:
+        choice2 = DT_ALL
+
+    now = time.localtime()
+    yy = now[0]
+    mm = now[1]
+    dd = now[2]
+    hh = now[3]
+    mi = now[4]
+    ss = now[5]
+    wd = now[6]
+    yd = now[7]
+    dst = now[8]
+
+    dow = {0: 'Sunday',
+           1: 'Monday',
+           2: 'Tuesday',
+           3: 'Wednesday',
+           4: 'Thursday',
+           5: 'Friday',
+           6: 'Saturday'
+           }
+
+    swd = dow[wd][:3] if short else dow[wd]
+
+    dt0 = "{:s}".format(swd)
+    if my_debug:
+        print(TAG+f"state.dt_str_usa: {state.dt_str_usa}")
+    if state.dt_str_usa:
+        if hh >= 12:
+            hh -= 12
+            ampm = "PM"
+        else:
+            ampm = "AM"
+            
+        if hh == 0:
+            hh = 12
+
+        dt1 = "{:d}/{:02d}/{:02d}".format(mm, dd, yy)
+        dt2 = "{:02d}:{:02d}:{:02d} {:s}".format(hh, mi, ss, ampm)
+    else:
+        dt1 = "{:d}-{:02d}-{:02d}".format(yy, mm, dd)
+        dt2 = "{:02d}:{:02d}:{:02d}".format(hh, mi, ss)
+
+
+    if choice2 == DT_ALL:
+        ret = dt0 + " " + dt1 + ", "+ dt2
+    if choice2 == DT_DATE_L:
+        ret = dt0 + " " + dt1
+    if choice2 == DT_DATE_S:
+        ret = dt0 + " " + dt1
+    if choice == DT_TIME:
+        ret = dt2
+
+    if my_debug:
+        print(TAG+f"{ret}")
+
+    return ret
 
 async def blink_the_leds(state, delay=0.125):
     TAG = tag_adj("blink_the_leds(): ")
@@ -710,10 +810,12 @@ def mode_change(state):
         if not msg_shown:
             print(TAG+"\n|---- Mode -----|")
             for k, v in mode_short_dict.items():
+                if k == MODE_C:
+                    continue  # Don't show MODE_C
                 if m_idx == k:
-                    print(TAG+f"  >> {v} {k+1} <<")
+                    print(TAG+f"  >> {v} {k} <<")
                 else:
-                    print(TAG+f"     {v} {k+1}   ")
+                    print(TAG+f"     {v} {k}   ")
             print(TAG+"| Exit=>Enc Btn |", end= '')
             msg_shown = True
 
@@ -745,6 +847,131 @@ def mode_change(state):
             state.last_position = enc_pos
             break
         time.sleep(0.05)
+
+def glob_flag_change(state):  # Global flag change
+    global my_debug, use_TAG, use_wifi
+    TAG = tag_adj("gl_flag_change(): ")
+    old_pos = state.last_position
+    old_enc_pos = state.enc_sw_cnt
+    no_chg_flg = False
+    if use_wifi:
+        flags_dict = {0 : {'debug': my_debug}, 1: {'TAG': use_TAG}, 2: {'wifi' : use_wifi}, 3: {'dtUS' : state.dt_str_usa}, 4 : {'none' : no_chg_flg}}
+    else:
+        flags_dict = {0 : {'debug': my_debug}, 1: {'TAG': use_TAG}, 2: {'wifi' : use_wifi}, 3 : {'none' : no_chg_flg}}
+    F_MIN = 0
+    F_MAX = len(flags_dict)-1
+    m_idx = F_MIN
+    if use_wifi:
+        flag_chg_dict = {'debug': False, 'TAG': False, 'wifi' : False, 'dtUS' : False, 'none': False}
+        flag_idx_dict = {0: 'debug', 1: 'TAG', 2: 'wifi', 3: 'dtUS', 4: 'none'}
+    else:
+        flag_chg_dict = {'debug': False, 'TAG': False, 'wifi' : False, 'none': False}
+        flag_idx_dict = {0: 'debug', 1: 'TAG', 2: 'wifi', 3: 'none'}
+    msg_shown = False
+    while True:
+        if not msg_shown:
+            print("\n")
+            # print(flags_dict.items())
+            # print(list(flag_chg_dict.items()))
+            print(TAG+"\n|---Glob Flag---|")
+            
+            for k in flags_dict.items():
+                # print(f"k = {k}")
+                d = k[1]
+                for k2, v in d.items():
+                    if m_idx == k[0]:
+                        print(TAG+"  >> {:>5s} {:d} <<".format(k2, v))
+                    else:
+                        print(TAG+"     {:>5s} {:d}   ".format(k2, v ))
+            print(TAG+"| Exit=>Enc Btn |", end= '\n')
+            msg_shown = True
+
+        enc_pos = encoder.position
+        # print(TAG+f"state.lp: {state.last_position}, enc pos: {enc_pos}")
+
+        if state.last_position < enc_pos:
+            state.last_position = enc_pos
+            m_idx += 1
+            if m_idx > F_MAX:
+                m_idx = F_MIN
+            msg_shown = False
+        elif enc_pos < state.last_position:
+            state.last_position = enc_pos
+            m_idx -= 1
+            if m_idx < F_MIN:
+                m_idx = F_MAX
+            msg_shown = False
+        else:
+            pass
+
+        encoder_btn.update()
+
+        if encoder_btn.fell:
+            state.btn_event = False
+            
+            if m_idx == 0:
+                flags_dict[m_idx]['debug'] = False if my_debug == True else True
+                flag_chg_dict['debug'] = True
+            elif m_idx == 1:
+                flags_dict[m_idx]['TAG'] = False if use_TAG == True else True
+                flag_chg_dict['TAG'] = True
+            elif m_idx == 2:
+                flags_dict[m_idx]['wifi'] = False if use_wifi == True else True
+                flag_chg_dict['wifi'] = True
+        
+            if use_wifi:
+                if m_idx == 3:
+                    flags_dict[m_idx]['dtUS'] = False if state.dt_str_usa == True else True
+                    flag_chg_dict['dtUS'] = True
+                elif m_idx == 4:
+                    flags_dict[m_idx]['none'] = False if no_chg_flg == True else True
+                    flag_chg_dict['none'] = True
+            else:
+                if m_idx == 3:
+                    flags_dict[m_idx]['none'] = False if no_chg_flg == True else True
+                    flag_chg_dict['none'] = True
+
+                #if my_debug:
+                #    print(TAG+f"\nsaving global flag as: {flags_dict[m_idx]}")
+
+            break
+
+        time.sleep(0.05)
+    # Restore
+    state.enc_sw_cnt = old_enc_pos
+    state.mode = mode_dict[MODE_I] # return to mode "index"
+    state.last_position = old_pos
+    for i in range(len(flags_dict)):
+        if i == 0:
+            if flag_chg_dict['debug']:
+                my_debug = flags_dict[i]['debug']
+        if i == 1:
+            if flag_chg_dict['TAG']:
+                use_TAG = flags_dict[i]['TAG']
+        if i == 2:
+            if flag_chg_dict['wifi']:
+                use_wifi = flags_dict[i]['wifi']
+                # print(f"state of global wifi flag: {'True' if use_wifi else 'False'}")
+                if use_wifi:
+                    do_connect(state)
+        if use_wifi:
+            if i == 3:
+                if flag_chg_dict['dtUS']:
+                    # print(TAG+f"changing state.dt_str_USA to: {flags_dict[i]['dtUS']}")
+                    state.dt_str_usa = flags_dict[i]['dtUS']
+                    # check if it worked
+                    msg = [TAG, 'NTP date:', pr_dt(state, True, 0), pr_dt(state, True, 2)]
+                    pr_msg(state, msg)
+            if i == 4:
+                if flag_chg_dict['none']:
+                    pass
+        else:
+            if i == 3:
+                if flag_chg_dict['none']:
+                    pass
+            
+    if my_debug:
+        print(TAG+f"\ndebug: {my_debug}, TAG: {use_TAG}, wifi: {use_wifi}")
 
 def fnd_empty_loop(state):
     TAG = tag_adj("fnd_empty_loop(): ")
@@ -792,7 +1019,7 @@ def fnd_empty_loop(state):
     # print(TAG+f"ret= {ret}")
     return ret
 
-def chg_id(lps, ne, s, le):  # Called from read_buttons()
+def id_change(lps, ne, s, le):  # Called from read_buttons()
     lps2 = lps
     if 'id' in ne.keys():
         ne['id'] = le  # update the id value
@@ -1043,13 +1270,13 @@ async def read_buttons(state):
                                 if set_nr < 0:
                                     # Add the newly created empty notes set to the end
                                     try:
-                                        lps = chg_id(lps, ne, s, le3)
+                                        lps = id_change(lps, ne, s, le3)
                                     except KeyError as e:
                                         print(TAG+f"Error: {e}")
                                 elif set_nr > -1:
                                     # Add the saved empty notes set to the end
                                     try:
-                                        lps = chg_id(lps, ne, s, le3)
+                                        lps = id_change(lps, ne, s, le3)
                                     except KeyError as e:
                                         print(TAG+f"Error: {e}")
                                 if my_debug:
@@ -1146,6 +1373,8 @@ async def read_encoder(state):
                 fifths_change(state)
             elif state.mode == mode_dict[MODE_K]: # "note key Major or Minor
                 key_change(state)
+            #elif state.mode == mode_dict[MODE_G]: # "global flag change
+            #    glob_flag_change(state)
         elif cur_position < state.last_position:
             state.last_position = cur_position
             state.btn_event = True
@@ -1180,11 +1409,16 @@ async def read_encoder(state):
                 fifths_change(state)
             elif state.mode == mode_dict[MODE_K]: # "note key Major or Minor
                 key_change(state)
+            #elif state.mode == mode_dict[MODE_G]: # "global flag change
+            #    glob_flag_change(state)
         else:
             # same
             pass
 
         encoder_btn.update()
+
+        if state.mode == mode_dict[MODE_G]:
+            glob_flag_change(state)
 
         if encoder_btn.fell:
             state.encoder_btn_cnt += 1
@@ -1209,8 +1443,11 @@ async def read_encoder(state):
                 #state.mode = "note" if state.mode == "index" else "index"
                 state.mode = mode_dict[state.enc_sw_cnt]  # mode_lst[state.enc_sw_cnt]
                 if my_debug:
+                    # print(TAG+f"mode_dict[MODE_G]: {mode_dict[MODE_G]}, state.mode: {state.mode}")
                     print(TAG+"Encoder sw. pressed")
                     print(TAG+f"new mode:\n\"{state.mode}\"")
+
+
         # state.last_position = cur_position
         state.enc_sw_cnt = mode_rv_dict[state.mode]  # line-up the encoder switch count with that of the current state.mode
         if my_debug:
@@ -1290,8 +1527,8 @@ def tag_adj(t):
         return ret
     return ""
 
-def do_connect():
-    global ip, s_ip, pool
+def do_connect(state):
+    global ip, s_ip, pool, ntp, rtc
     TAG = tag_adj("do_connect(): ")
     # if my_debug:
     #    print(TAG+"wifi.radio.enabled=", wifi.radio.enabled)
@@ -1308,8 +1545,24 @@ def do_connect():
         except ConnectionError as e:
             if cnt == 0:
                 print(TAG+"WiFi connection try: {:2d}. Error: \'{}\'\n\tTrying max {} times.".format(cnt+1, e, timeout_cnt))
+        except NameError as e:
+            import wifi
+            import ipaddress
+            import socketpool
+            import adafruit_ntp
+            
+        if pool is None:
+            pool = socketpool.SocketPool(wifi.radio)
+        my_tz_offset = 1  # utc+1
+        if ntp is None:
+            ntp = adafruit_ntp.NTP(pool, tz_offset=my_tz_offset)
+        state.ntp_datetime = ntp.datetime
+        if rtc is None:
+            rtc.RTC().datetime = ntp.datetime  # Set the built-in RTC
+        state.rtc_is_set = True
+        dt = pr_dt(state, True, 3)  # Weekday, Date and Time
+
         dc_ip = wifi.radio.ipv4_address
-        pool = socketpool.SocketPool(wifi.radio)
         cnt += 1
         if cnt > timeout_cnt:
             print(TAG+"WiFi connection timed-out")
@@ -1319,10 +1572,13 @@ def do_connect():
         ip = dc_ip
         s_ip = str(ip)
     if s_ip is not None and s_ip != '0.0.0.0':
-        if my_debug:
+        if not my_debug:
             # print(TAG+"s_ip= \'{}\'".format(s_ip))
             print(TAG+f"connected to {os.getenv('CIRCUITPY_WIFI_SSID')}")
             print(TAG+"IP address is", ip)
+            msg = [TAG, "connected to", os.getenv('CIRCUITPY_WIFI_SSID'), "IP Address is:", ip,
+                   'NTP date:', pr_dt(state, True, 0), pr_dt(state, True, 2)]
+            pr_msg(state, msg)
         addr_idx = 0
         addr_dict = {0:'LAN gateway', 1:'google.com'}
         info = pool.getaddrinfo(addr_dict[1], 80)
@@ -1345,18 +1601,26 @@ def do_connect():
         #import microcontroller
         #microcontroller.reset()
 
+def dt_update(state):
+    state.ntp_datetime = ntp.datetime
+    state.rtc_is_set = True
+
 def wifi_is_connected():
     return True if s_ip is not None and s_ip != '0.0.0.0' else False
 
 def setup(state):
+    global ntp
     TAG = tag_adj("setup(): ")
     if use_wifi:
         if not wifi_is_connected():
             if my_debug:
                 print(TAG+f"Connecting WiFi to {os.getenv('CIRCUITPY_WIFI_SSID')}")
-            do_connect()
+            do_connect(state)
         else:
             print(TAG+f"WiFi is connected to {os.getenv('CIRCUITPY_WIFI_SSID')}")
+
+        dt_update(state)
+
     use_warnings = True
     load_all_note_sets(state, use_warnings)
 
