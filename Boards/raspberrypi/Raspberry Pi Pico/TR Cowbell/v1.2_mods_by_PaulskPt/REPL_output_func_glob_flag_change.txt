@@ -103,18 +103,18 @@ mode:indx.NoteSet:6
      debug 0   
        TAG 0   
       wifi 1   
-  >>  dtUS 0 <<     <<<=== The dtUS (state.dt_str_usa) flag is False 
+  >>  dtUS 1 <<     <<<=== The dtUS (state.dt_str_usa) flag is True 
       none 0   
 | Exit=>Enc Btn |
 
 
-NTP date:
+NTP date:          <<<=== Date and time in USA format when dtUS (state.dt_str_usa) is True
 Tue 8/30/2023
 07:25:30 PM
 
 
 
-0 button active
+0 button active     <<<=== bakc in the main screen
 ------------------
 0/   0   0   0   0 
      0   0   0   0 
