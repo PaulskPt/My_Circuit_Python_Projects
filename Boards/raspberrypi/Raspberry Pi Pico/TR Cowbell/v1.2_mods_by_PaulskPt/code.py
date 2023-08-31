@@ -12,10 +12,13 @@
 # A global flag "my_debug" has been added to control the majority of print statements in this script.
 # Added global flag "use_TAG". This flag controls if in calls to function tag_adj() tags received will be printed or not.
 # On a small display no function names (variable TAG) in print statements make the display more readable.
-# Twenty functions added that are not found in the other repos for the TR-Cowbell board:
+# Twentyone functions added that are not found in the other repos for the TR-Cowbell board:
 #   count_btns_active(), clr_events(), clr_scrn(), pr_state(), pr_msg(), pr_loops(), pr_dt(), load_all_note_sets(), load_note_set(),
-#   fifths_change(), key_change(), mode_change(), glob_flag_change(), fnd_empty_loop), id_change(), tag_adj(), do_connect(),
+#   fifths_change(), key_change(), mode_change(), glob_flag_change(), fnd_empty_loop), id_change(), wr_to_fi(), tag_adj(), do_connect(),
 #   dt_update(), wifi_is_connected() and setup().
+# 2023-08-31 to optimize code, reversed the use of state.mode. Before it contained the string of the mode, e.g.: "index".
+#   Now it contains an integer, representing the mode, e.g.: state.mode = MODE_I # (= 1). For this mode_klst was created
+#   and mode_lst was removed. In many places (52 ?) the code of this script has been changed accordingly.
 import asyncio
 import time
 import board
@@ -175,7 +178,8 @@ MODE_MIN = MODE_I # Don't show MODE_C
 MODE_MAX = MODE_G
 
 
-mode_lst = ["mode_change", "index", "note", "file", "midi_channel", "disp_fifths", "note_key", "glob_flag_change"]
+# mode_lst = ["mode_change", "index", "note", "file", "midi_channel", "disp_fifths", "note_key", "glob_flag_change"]
+mode_klst = [MODE_C, MODE_I, MODE_N, MODE_F, MODE_M, MODE_D, MODE_K, MODE_G]
 
 mode_dict = {
     MODE_C : "mode_change",
@@ -329,7 +333,7 @@ class State:
         self.notes_lst = [0] * 16
         self.latches = [False] * 16
         self.last_position = encoder.position
-        self.mode = mode_dict[MODE_I]
+        self.mode = MODE_I
         self.send_off = True
         self.received_ack = True
         self.selected_file = None
@@ -341,13 +345,15 @@ class State:
         self.longpress_event = False
         self.midi_channel = 2
         self.midi_ch_chg_event = False # Midi channel change event. See read_encoder() and play_note()
-        self.enc_sw_cnt = 0  # mode_lst[0] = index
+        self.enc_sw_cnt = MODE_I  # mode_klst[1] = index
         self.display_fifths = False # "Normal" (number values) display
         self.key_major = True  # If False, the key is Minor
-        self.encoder_btn_cnt = 0  # Counter for double press
+        self.enc_btn_cnt = 0  # Counter for double press
+        self.enc_btn_tm_trigger = 7 # double press trigger time was: 7
         self.rtc_is_set = False
         self.ntp_datetime = None
         self.dt_str_usa = True
+
 
         if saved_state_json:
             saved_state_obj = json.loads(saved_state_json)
@@ -523,7 +529,7 @@ def pr_state(state):
                 if i == 7:
                     print()
             print("\n"+"-"*18)
-        if state.mode == mode_dict[MODE_M]:  # "midi_channel"
+        if state.mode == MODE_M:  # "midi_channel"
             print(TAG+f"midi channel: {state.midi_channel}")
         else:
             if org_cnt > 0:
@@ -533,7 +539,7 @@ def pr_state(state):
             nba1 = "No buttons active"
             nba2 = nba1 if lStart else nba1
             print(TAG+f"{nba2}")
-        print(TAG+f"mode:{mode_short_dict[mode_rv_dict[state.mode]]}.NoteSet:{ns}", end = '')
+        print(TAG+f"mode:{mode_short_dict[state.mode]}.NoteSet:{ns}", end = '')
 
         if lStart: lStart = False
         clr_events(state)  # Clear events
@@ -627,7 +633,7 @@ def pr_dt(state, short, choice):
             ampm = "PM"
         else:
             ampm = "AM"
-            
+
         if hh == 0:
             hh = 12
 
@@ -700,7 +706,7 @@ def load_all_note_sets(state, use_warnings):
     TAG = tag_adj("load_all_note_sets(): ")
     state.selected_file = None
     original_mode = state.mode
-    state.mode = mode_dict[MODE_F] # "file"
+    state.mode = MODE_F # "file"
     ret = True
     f = None
     try:
@@ -780,7 +786,7 @@ def load_note_set(state, dir_up, use_warnings):
             pr_msg(state, msg)
         #print(TAG+f"loading: {state.selected_file}")
     state.load_state_obj(state.saved_loops['loops'][state.selected_file])
-    state.mode = mode_dict[MODE_I] # Change mode to "index"
+    state.mode = MODE_I # Change mode to "index"
 
 def fifths_change(state):
     TAG = tag_adj("fifths_change(): ")
@@ -843,7 +849,7 @@ def mode_change(state):
             if my_debug:
                 print(TAG+f"\nsaving mode as: {mode_dict[m_idx]}")
             state.enc_sw_cnt = m_idx
-            state.mode = mode_dict[m_idx]
+            state.mode = m_idx
             state.last_position = enc_pos
             break
         time.sleep(0.05)
@@ -855,18 +861,18 @@ def glob_flag_change(state):  # Global flag change
     old_enc_pos = state.enc_sw_cnt
     no_chg_flg = False
     if use_wifi:
-        flags_dict = {0 : {'debug': my_debug}, 1: {'TAG': use_TAG}, 2: {'wifi' : use_wifi}, 3: {'dtUS' : state.dt_str_usa}, 4 : {'none' : no_chg_flg}}
+        flags_dict = {0 : {'none' : no_chg_flg}, 1 : {'debug': my_debug}, 2: {'TAG': use_TAG}, 3: {'wifi' : use_wifi}, 4: {'dtUS' : state.dt_str_usa}}
     else:
-        flags_dict = {0 : {'debug': my_debug}, 1: {'TAG': use_TAG}, 2: {'wifi' : use_wifi}, 3 : {'none' : no_chg_flg}}
+        flags_dict = {0 : {'none' : no_chg_flg}, 1 : {'debug': my_debug}, 2: {'TAG': use_TAG}, 3: {'wifi' : use_wifi}}
     F_MIN = 0
     F_MAX = len(flags_dict)-1
     m_idx = F_MIN
     if use_wifi:
-        flag_chg_dict = {'debug': False, 'TAG': False, 'wifi' : False, 'dtUS' : False, 'none': False}
-        flag_idx_dict = {0: 'debug', 1: 'TAG', 2: 'wifi', 3: 'dtUS', 4: 'none'}
+        flag_chg_dict = {'none': False, 'debug': False, 'TAG': False, 'wifi' : False, 'dtUS' : False}
+        flag_idx_dict = { 0: 'none', 1: 'debug', 2: 'TAG', 3: 'wifi', 4: 'dtUS'}
     else:
-        flag_chg_dict = {'debug': False, 'TAG': False, 'wifi' : False, 'none': False}
-        flag_idx_dict = {0: 'debug', 1: 'TAG', 2: 'wifi', 3: 'none'}
+        flag_chg_dict = {'none': False, 'debug': False, 'TAG': False, 'wifi' : False}
+        flag_idx_dict = {0: 'none', 1: 'debug', 2: 'TAG', 3: 'wifi'}
     msg_shown = False
     while True:
         if not msg_shown:
@@ -874,7 +880,7 @@ def glob_flag_change(state):  # Global flag change
             # print(flags_dict.items())
             # print(list(flag_chg_dict.items()))
             print(TAG+"\n|---Glob Flag---|")
-            
+
             for k in flags_dict.items():
                 # print(f"k = {k}")
                 d = k[1]
@@ -908,28 +914,24 @@ def glob_flag_change(state):  # Global flag change
 
         if encoder_btn.fell:
             state.btn_event = False
-            
+
             if m_idx == 0:
+                flags_dict[m_idx]['none'] = False if no_chg_flg == True else True
+                flag_chg_dict['none'] = True
+            elif m_idx == 1:
                 flags_dict[m_idx]['debug'] = False if my_debug == True else True
                 flag_chg_dict['debug'] = True
-            elif m_idx == 1:
+            elif m_idx == 2:
                 flags_dict[m_idx]['TAG'] = False if use_TAG == True else True
                 flag_chg_dict['TAG'] = True
-            elif m_idx == 2:
+            elif m_idx == 3:
                 flags_dict[m_idx]['wifi'] = False if use_wifi == True else True
                 flag_chg_dict['wifi'] = True
-        
+
             if use_wifi:
-                if m_idx == 3:
+                if m_idx == 4:
                     flags_dict[m_idx]['dtUS'] = False if state.dt_str_usa == True else True
                     flag_chg_dict['dtUS'] = True
-                elif m_idx == 4:
-                    flags_dict[m_idx]['none'] = False if no_chg_flg == True else True
-                    flag_chg_dict['none'] = True
-            else:
-                if m_idx == 3:
-                    flags_dict[m_idx]['none'] = False if no_chg_flg == True else True
-                    flag_chg_dict['none'] = True
 
                 #if my_debug:
                 #    print(TAG+f"\nsaving global flag as: {flags_dict[m_idx]}")
@@ -939,37 +941,33 @@ def glob_flag_change(state):  # Global flag change
         time.sleep(0.05)
     # Restore
     state.enc_sw_cnt = old_enc_pos
-    state.mode = mode_dict[MODE_I] # return to mode "index"
+    state.mode = MODE_I # return to mode "index"
     state.last_position = old_pos
     for i in range(len(flags_dict)):
         if i == 0:
+            if flag_chg_dict['none']:
+                pass
+        if i == 1:
             if flag_chg_dict['debug']:
                 my_debug = flags_dict[i]['debug']
-        if i == 1:
+        if i == 2:
             if flag_chg_dict['TAG']:
                 use_TAG = flags_dict[i]['TAG']
-        if i == 2:
+        if i == 3:
             if flag_chg_dict['wifi']:
                 use_wifi = flags_dict[i]['wifi']
                 # print(f"state of global wifi flag: {'True' if use_wifi else 'False'}")
                 if use_wifi:
                     do_connect(state)
         if use_wifi:
-            if i == 3:
+            if i == 4:
                 if flag_chg_dict['dtUS']:
                     # print(TAG+f"changing state.dt_str_USA to: {flags_dict[i]['dtUS']}")
                     state.dt_str_usa = flags_dict[i]['dtUS']
                     # check if it worked
                     msg = [TAG, 'NTP date:', pr_dt(state, True, 0), pr_dt(state, True, 2)]
                     pr_msg(state, msg)
-            if i == 4:
-                if flag_chg_dict['none']:
-                    pass
-        else:
-            if i == 3:
-                if flag_chg_dict['none']:
-                    pass
-            
+
     if my_debug:
         print(TAG+f"\ndebug: {my_debug}, TAG: {use_TAG}, wifi: {use_wifi}")
 
@@ -1247,15 +1245,15 @@ async def read_buttons(state):
         #     print(down_btn.current_duration)
         #pr_state(state)  # This also clears events
 
-        if state.mode != mode_dict[MODE_M]: # "midi_channel". Only change midi channel with Rotary Encoder control
+        if state.mode != MODE_M: # "midi_channel". Only change midi channel with Rotary Encoder control
             if state.btn_event == False:  # only if no other event is being processed
-                
+
                 if up_btn.fell or down_btn.fell:
                     if up_btn.fell:
                         ud = True
                     elif down_btn.fell:
                         ud = False
-                    
+
                     state.btn_event = True
                     btns_active = count_btns_active(state)
                     inc_dec = "{:s} note".format("increasing" if ud else "decreasing")
@@ -1264,7 +1262,7 @@ async def read_buttons(state):
                         ud_pr = up_btn.pressed if ud else down_btn.pressed
                         print(TAG+f"BUTTON {sud} is pressed: {ud_pr}.")
 
-                    if state.mode == mode_dict[MODE_N]: # "note"
+                    if state.mode == MODE_N: # "note"
                         if my_debug:
                             print(TAG+f"{inc_dec}")
                             print(TAG+f"mode: \"{state.mode}\".")
@@ -1274,12 +1272,12 @@ async def read_buttons(state):
                             else:
                                 state.notes_lst[state.selected_index] -= 1
                             # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
-                                    
-                    elif state.mode in ["index", "file"]:
+
+                    elif state.mode in [MODE_I, MODE_F]:
                         dir_up = True if ud else False
                         use_warnings = True
                         load_note_set(state, dir_up, use_warnings)
-                  
+
                 if right_btn.fell or left_btn.fell:
                     if right_btn.fell:
                         rl = True
@@ -1288,27 +1286,27 @@ async def read_buttons(state):
                     state.btn_event = True
                     btns_active = count_btns_active(state)
                     inc_dec = "{:s} note".format("increasing" if rl else "decreasing")
-                    inc_dec = inc_dec if state.mode == mode_dict[MODE_N] and btns_active >0 else ""
+                    inc_dec = inc_dec if state.mode == MODE_N and btns_active >0 else ""
 
-                    if my_debug:    
+                    if my_debug:
                         srl = " 2 (RIGHT)" if ud else "4 (LEFT)"
                         rl_pr = right_btn.pressed if ud else left_btn.pressed
                         print(TAG+f"BUTTON {srl} is pressed: {rl_pr}.")
-                                     
-                    if state.mode == mode_dict[MODE_I] or mode_dict[MODE_N]:  # "index" or "note"
+
+                    if state.mode == MODE_I or mode_dict[MODE_N]:  # "index" or "note"
                         if btns_active >0:
                             if rl:
                                 increment_selected(state)
                             else:
                                 decrement_selected(state)
-                    elif state.mode == mode_dict[MODE_F]:  # "file"
+                    elif state.mode == MODE_F:  # "file"
                         if my_debug:
                             srl = " 2 (RIGHT)" if ud else "4 (LEFT)"
                             print(TAG+f"BUTTON {srl} doing nothing")
-           
+
                     # state.send_off = not state.send_off
-                    # print(f"send off: {state.send_off}")  
-                
+                    # print(f"send off: {state.send_off}")
+
                 if middle_btn.long_press:
                     state.btn_event = True
                     state.longpress_event = True
@@ -1321,9 +1319,9 @@ async def read_buttons(state):
                     state.btn_event = True
                     if my_debug:
                         print(TAG+f"BUTTON 5 (MIDDLE) is pressed: {middle_btn.pressed}")
-                    if state.mode  in ["index", "note"]:
-                        state.mode = mode_dict[MODE_F] # Change mode to "file"
-                    elif state.mode == mode_dict[MODE_F]: # "file"
+                    if state.mode  in [MODE_I, MODE_N]:
+                        state.mode = MODE_F # Change mode to "file"
+                    elif state.mode == MODE_F: # "file"
                         if ro_state == "Writeable":
                             wrt_to_fi(state)
                         else:
@@ -1337,14 +1335,14 @@ async def read_buttons(state):
 
 async def read_encoder(state):
     TAG = tag_adj("read_encoder(): ")
-    # print("\n"+TAG+f"mode: {state.mode}")
+    # print("\n"+TAG+f"mode: {mode_dict[state.mode]}")
     pr_state(state)
     tm_start = int(time.monotonic())
-    tm_trigger = 7
+    tm_trigger = state.enc_btn_tm_trigger
 
-    state.enc_sw_cnt = mode_rv_dict[state.mode]  # line-up the encoder switch count with that of the current state.mode
+    state.enc_sw_cnt = state.mode  # line-up the encoder switch count with that of the current state.mode
     if my_debug:
-        print(TAG+f"mode_rv_dict[\"{state.mode}\"]= {mode_rv_dict[state.mode]}")
+        print(TAG+f"mode_rv_dict[\"{mode_dict[state.mode]}\"]= {mode_rv_dict[mode_dict[state.mode]]}")
 
     while True:
         cur_position = encoder.position
@@ -1354,57 +1352,57 @@ async def read_encoder(state):
             state.btn_event = True
             if my_debug:
                 print("\n"+TAG+"Encoder turned CW")
-            if state.mode == mode_dict[MODE_C]:  # "chgm"
+            if state.mode == MODE_C:  # "chgm"
                 pass # mode_change(state)
-            elif state.mode == mode_dict[MODE_I]:  # "index"
+            elif state.mode == MODE_I:  # "index"
                 increment_selected(state)
-            elif state.mode == mode_dict[MODE_N]:  # "note"
+            elif state.mode == MODE_N:  # "note"
                 if state.selected_index != -1:
                     if my_debug:
                         print(TAG+f"{state.last_position} -> {cur_position}")
                     state.notes_lst[state.selected_index] += 1
-            elif state.mode == mode_dict[MODE_M]:  # "midi_channel"
+            elif state.mode == MODE_M:  # "midi_channel"
                 state.midi_channel += 1
                 state.midi_ch_chg_event = True
                 if state.midi_channel > midi_channel_max:
                     state.midi_channel = midi_channel_min
                 if my_debug:
                     print(f"new midi channel: {state.midi_channel}")
-            elif state.mode == mode_dict[MODE_F]:  # "file"
+            elif state.mode == MODE_F:  # "file"
                 if state.selected_file is None:
                     state.selected_file = 0
                 else:
                     state.selected_file += 1
                 if my_debug:
                     print(TAG+f"state.selected_file= {state.selected_file}")
-            elif state.mode == mode_dict[MODE_D]: # "fifths"
+            elif state.mode == MODE_D: # "fifths"
                 fifths_change(state)
-            elif state.mode == mode_dict[MODE_K]: # "note key Major or Minor
+            elif state.mode == MODE_K: # "note key Major or Minor
                 key_change(state)
-            #elif state.mode == mode_dict[MODE_G]: # "global flag change
+            #elif state.mode == MODE_G: # "global flag change
             #    glob_flag_change(state)
         elif cur_position < state.last_position:
             state.last_position = cur_position
             state.btn_event = True
             if my_debug:
                 print("\n"+TAG+"Encoder turned CCW")
-            if state.mode == mode_dict[MODE_C]:  # "chgm"
+            if state.mode == MODE_C:  # "chgm"
                 pass # mode_change(state)
-            elif state.mode == mode_dict[MODE_I]:  # "index"
+            elif state.mode == MODE_I:  # "index"
                 decrement_selected(state)
-            elif state.mode == mode_dict[MODE_N]:  # "note"
+            elif state.mode == MODE_N:  # "note"
                 if state.selected_index != -1:
                     if my_debug:
                         print(TAG+f"{state.last_position} -> {cur_position}")
                     state.notes_lst[state.selected_index] -= 1
-            elif state.mode == mode_dict[MODE_M]:  # "midi_channel"
+            elif state.mode == MODE_M:  # "midi_channel"
                 state.midi_channel -= 1
                 state.midi_ch_chg_event = True
                 if state.midi_channel < midi_channel_min:
                     state.midi_channel = midi_channel_max
                 if my_debug:
                     print(f"new midi channel: {state.midi_channel}")
-            elif state.mode == mode_dict[MODE_F]:  # "file"
+            elif state.mode == MODE_F:  # "file"
                 if state.selected_file is None:
                     state.selected_file = 0
                 else:
@@ -1413,11 +1411,11 @@ async def read_encoder(state):
                         state.selected_file = 0
                 if my_debug:
                     print(TAG+f"state.selected_file= {state.selected_file}")
-            elif state.mode == mode_dict[MODE_D]: # "fifths"
+            elif state.mode == MODE_D: # "fifths"
                 fifths_change(state)
-            elif state.mode == mode_dict[MODE_K]: # "note key Major or Minor
+            elif state.mode == MODE_K: # "note key Major or Minor
                 key_change(state)
-            #elif state.mode == mode_dict[MODE_G]: # "global flag change
+            #elif state.mode == MODE_G: # "global flag change
             #    glob_flag_change(state)
         else:
             # same
@@ -1425,41 +1423,86 @@ async def read_encoder(state):
 
         encoder_btn.update()
 
-        if state.mode == mode_dict[MODE_G]:
+        if state.mode == MODE_G:
             glob_flag_change(state)
-
+            
         if encoder_btn.fell:
-            state.encoder_btn_cnt += 1
+            state.enc_btn_cnt += 1
             tm_current = int(time.monotonic())
             tm_diff = tm_current - tm_start
-            if state.encoder_btn_cnt > 1:
-                if my_debug:
+            if tm_diff >= 0 and tm_diff <= tm_trigger and state.enc_btn_cnt == 2:
+                if not my_debug:
                     print(TAG+f"\ntm_start: {tm_start}. tm_trigger: {tm_trigger}, tm_diff: {tm_diff}")
-                if tm_diff >= tm_trigger:
-                    state.encoder_btn_cnt = 0
-                    tm_start = tm_current
+                
+                    #if tm_diff >= tm_trigger:
+                    state.enc_btn_cnt = 0
+                    tm_start = int(time.monotonic())
+                    #tm_diff = 0
                     mode_change(state)
             #if state.mode == mode_dict[MODE_C]:  # "chgm"
             #    mode_change(state)
             else:
                 state.btn_event = True
+                if state.enc_btn_cnt >= 2:
+                    state.enc_btn_cnt = 0
+                    tm_start = int(time.monotonic())
+                    #tm_diff = 0
+                state.enc_sw_cnt += 1
+                if state.enc_sw_cnt > MODE_MAX-1:  # Do not allow to go to MODE_G (glob_flag_change) from this location (only from mode_change())
+                    state.enc_sw_cnt = MODE_MIN
+                if my_debug:
+                    print(TAG+f"len(mode_klst): {len(mode_klst)}. New enc_sw_cnt: {state.enc_sw_cnt}")
+                #state.mode = "note" if state.mode == "index" else "index"
+                state.mode = state.enc_sw_cnt  # mode_lst[state.enc_sw_cnt]
+                if my_debug:
+                    # print(TAG+f"mode_dict[MODE_G]: {mode_dict[MODE_G]}, state.mode: {state.mode}")
+                    print(TAG+"Encoder sw. pressed")
+                    print(TAG+f"new mode:\n\"{mode_dict[state.mode]}\"")
+
+        """
+        if encoder_btn.fell:
+            state.enc_btn_cnt += 1
+            dbl_clk_cnt = state.enc_btn_cnt # make copy
+            print(TAG+f"dbl_clk_cnt: {dbl_clk_cnt}")
+            tm_current = int(time.monotonic())
+            tm_diff = tm_current - tm_start
+            
+            #if state.mode == MODE_C:  # "chgm"
+            #    mode_change(state)
+            if dbl_clk_cnt > 1:   # = 0 and dbl_clk_cnt < 2:
+                state.btn_event = True
                 state.enc_sw_cnt += 1
                 if state.enc_sw_cnt > MODE_MAX:
                     state.enc_sw_cnt = MODE_MIN
                 if my_debug:
-                    print(TAG+f"len(mode_lst): {len(mode_lst)}. New enc_sw_cnt: {state.enc_sw_cnt}")
-                #state.mode = "note" if state.mode == "index" else "index"
-                state.mode = mode_dict[state.enc_sw_cnt]  # mode_lst[state.enc_sw_cnt]
+                    print(TAG+f"len(mode_klst): {len(mode_klst)}. New enc_sw_cnt: {state.enc_sw_cnt}")
+                #state.mode = MODE_N if state.mode == MODE_I else MODE_I
+                state.mode = state.enc_sw_cnt  # mode_klst[state.enc_sw_cnt]
                 if my_debug:
                     # print(TAG+f"mode_dict[MODE_G]: {mode_dict[MODE_G]}, state.mode: {state.mode}")
                     print(TAG+"Encoder sw. pressed")
-                    print(TAG+f"new mode:\n\"{state.mode}\"")
-
-
+                    print(TAG+f"new mode:\n\"{mode_dict[state.mode]}\"")
+                #elif dbl_clk_cnt == 2:
+                state.enc_btn_cnt = 0
+                dbl_clk_cnt = state.enc_btn_cnt
+                if my_debug:
+                    print(TAG+f"\ntm_start: {tm_start}. tm_trigger: {tm_trigger}, tm_diff: {tm_diff}, double-click cnt: {dbl_clk_cnt}")
+                if tm_diff >= 0 and tm_diff <= tm_trigger:
+                    tm_diff = 0
+                    tm_start = tm_current
+                    mode_change(state)
+                else:
+                    tm_diff = 0
+                    tm_start = int(time.monotonic())
+            else:
+                    state.enc_btn_cnt = 0
+                    tm_diff = 0
+                    tm_start = int(time.monotonic())
+        """
         # state.last_position = cur_position
-        state.enc_sw_cnt = mode_rv_dict[state.mode]  # line-up the encoder switch count with that of the current state.mode
+        state.enc_sw_cnt = state.mode  # line-up the encoder switch count with that of the current state.mode
         if my_debug:
-            print(TAG+f"mode_rv_dict[\"{state.mode}\"]= {mode_rv_dict[state.mode]}")
+            print(TAG+f"mode_rv_dict[\"{mode_dict[state.mode]}\"]= {mode_rv_dict[mode_dict[state.mode]]}")
         await asyncio.sleep(0.05)
 
 async def play_note(state, note, delay):
@@ -1488,7 +1531,7 @@ async def update_display(state, delay=0.125):
         b = BytesIO()
         msgpack.pack({"notes": state.notes_lst,
                       "selected_index": state.selected_index,
-                      "mode": state.mode}, b)
+                      "mode": state.mode}, b)#  "mode": mode_rv_dict[state.mode]}, b)
         b.seek(0)
         # print(b.read())
         # b.seek(0)
@@ -1558,7 +1601,7 @@ def do_connect(state):
             import ipaddress
             import socketpool
             import adafruit_ntp
-            
+
         if pool is None:
             pool = socketpool.SocketPool(wifi.radio)
         my_tz_offset = 1  # utc+1
@@ -1567,7 +1610,7 @@ def do_connect(state):
         state.ntp_datetime = ntp.datetime
         if rtc is None:
             rtc.RTC().datetime = ntp.datetime  # Set the built-in RTC
-        state.rtc_is_set = True
+            state.rtc_is_set = True
         dt = pr_dt(state, True, 3)  # Weekday, Date and Time
 
         dc_ip = wifi.radio.ipv4_address
