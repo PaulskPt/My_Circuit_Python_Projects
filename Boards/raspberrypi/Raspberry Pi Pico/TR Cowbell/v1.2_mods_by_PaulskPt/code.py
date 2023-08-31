@@ -1430,7 +1430,7 @@ async def read_encoder(state):
             state.enc_btn_cnt += 1
             tm_current = int(time.monotonic())
             tm_diff = tm_current - tm_start
-            if tm_diff >= 0 and tm_diff <= tm_trigger and state.enc_btn_cnt == 2:
+            if state.enc_btn_cnt == 2 and tm_diff >= 0 and tm_diff <= tm_trigger:
                 if not my_debug:
                     print(TAG+f"\ntm_start: {tm_start}. tm_trigger: {tm_trigger}, tm_diff: {tm_diff}")
                 
@@ -1459,46 +1459,6 @@ async def read_encoder(state):
                     print(TAG+"Encoder sw. pressed")
                     print(TAG+f"new mode:\n\"{mode_dict[state.mode]}\"")
 
-        """
-        if encoder_btn.fell:
-            state.enc_btn_cnt += 1
-            dbl_clk_cnt = state.enc_btn_cnt # make copy
-            print(TAG+f"dbl_clk_cnt: {dbl_clk_cnt}")
-            tm_current = int(time.monotonic())
-            tm_diff = tm_current - tm_start
-            
-            #if state.mode == MODE_C:  # "chgm"
-            #    mode_change(state)
-            if dbl_clk_cnt > 1:   # = 0 and dbl_clk_cnt < 2:
-                state.btn_event = True
-                state.enc_sw_cnt += 1
-                if state.enc_sw_cnt > MODE_MAX:
-                    state.enc_sw_cnt = MODE_MIN
-                if my_debug:
-                    print(TAG+f"len(mode_klst): {len(mode_klst)}. New enc_sw_cnt: {state.enc_sw_cnt}")
-                #state.mode = MODE_N if state.mode == MODE_I else MODE_I
-                state.mode = state.enc_sw_cnt  # mode_klst[state.enc_sw_cnt]
-                if my_debug:
-                    # print(TAG+f"mode_dict[MODE_G]: {mode_dict[MODE_G]}, state.mode: {state.mode}")
-                    print(TAG+"Encoder sw. pressed")
-                    print(TAG+f"new mode:\n\"{mode_dict[state.mode]}\"")
-                #elif dbl_clk_cnt == 2:
-                state.enc_btn_cnt = 0
-                dbl_clk_cnt = state.enc_btn_cnt
-                if my_debug:
-                    print(TAG+f"\ntm_start: {tm_start}. tm_trigger: {tm_trigger}, tm_diff: {tm_diff}, double-click cnt: {dbl_clk_cnt}")
-                if tm_diff >= 0 and tm_diff <= tm_trigger:
-                    tm_diff = 0
-                    tm_start = tm_current
-                    mode_change(state)
-                else:
-                    tm_diff = 0
-                    tm_start = int(time.monotonic())
-            else:
-                    state.enc_btn_cnt = 0
-                    tm_diff = 0
-                    tm_start = int(time.monotonic())
-        """
         # state.last_position = cur_position
         state.enc_sw_cnt = state.mode  # line-up the encoder switch count with that of the current state.mode
         if my_debug:
