@@ -1,5 +1,4 @@
 # Based on TR-Cowbell Hardware Test by @DJDevon3
-# Based on TR-Cowbell Hardware Test by @DJDevon3
 # 2023/03/03 - Neradoc & DJDevon3
 # Based on PicoStepSeq by @todbot Tod Kurt
 # https://github.com/todbot/picostepseq/
@@ -263,10 +262,12 @@ notes_minor_dict = {
 midi_channel_min = 1
 midi_channel_max = 2
 encoder = rotaryio.IncrementalEncoder(board.GP18, board.GP19)
+
 encoder_btn_pin = digitalio.DigitalInOut(board.GP20)
 encoder_btn_pin.direction = digitalio.Direction.INPUT
 encoder_btn_pin.pull = digitalio.Pull.UP
 encoder_btn = Debouncer(encoder_btn_pin)
+encoder_dbl_btn = Button(encoder_btn_pin)
 
 up_btn_pin = digitalio.DigitalInOut(board.GP21)  # BUTTON 1
 up_btn_pin.direction = digitalio.Direction.INPUT
@@ -348,8 +349,6 @@ class State:
         self.enc_sw_cnt = MODE_I  # mode_klst[1] = index
         self.display_fifths = False # "Normal" (number values) display
         self.key_major = True  # If False, the key is Minor
-        self.enc_btn_cnt = 0  # Counter for double press
-        self.enc_btn_tm_trigger = 7 # double press trigger time was: 7
         self.rtc_is_set = False
         self.ntp_datetime = None
         self.dt_str_usa = True
@@ -377,6 +376,7 @@ class State:
             else:
                 self.latches[i] = False
 
+            
 def increment_selected(state):
     _checked = 0
     _checking_index = (state.selected_index + 1) % 16
@@ -913,7 +913,7 @@ def glob_flag_change(state):  # Global flag change
         encoder_btn.update()
 
         if encoder_btn.fell:
-            state.btn_event = False
+            state.btn_event = True  # So the pr_stat() screen will be shown after leaving this function
 
             if m_idx == 0:
                 flags_dict[m_idx]['none'] = False if no_chg_flg == True else True
@@ -1337,14 +1337,55 @@ async def read_encoder(state):
     TAG = tag_adj("read_encoder(): ")
     # print("\n"+TAG+f"mode: {mode_dict[state.mode]}")
     pr_state(state)
-    tm_start = int(time.monotonic())
-    tm_trigger = state.enc_btn_tm_trigger
+
 
     state.enc_sw_cnt = state.mode  # line-up the encoder switch count with that of the current state.mode
+    
     if my_debug:
-        print(TAG+f"mode_rv_dict[\"{mode_dict[state.mode]}\"]= {mode_rv_dict[mode_dict[state.mode]]}")
+            print(TAG+f"mode_rv_dict[\"{mode_dict[state.mode]}\"]= {mode_rv_dict[mode_dict[state.mode]]}")
 
     while True:
+
+        # ---------------------------------------------------------------------------------------------------
+        #  Read the encoder button (switch)
+        # ---------------------------------------------------------------------------------------------------
+        
+        if state.mode == MODE_G:
+            glob_flag_change(state)
+        
+        encoder_dbl_btn.update()
+
+        if encoder_dbl_btn.short_count >=2 :  # We have an encoder button double press
+            mode_change(state)
+
+            #if state.mode == mode_dict[MODE_C]:  # "chgm"
+            #    mode_change(state)
+        else:
+            encoder_btn.update()
+            if encoder_btn.fell:
+                state.btn_event = True
+                state.enc_sw_cnt += 1
+                if state.enc_sw_cnt > MODE_MAX-1:  # Do not allow to go to MODE_G (glob_flag_change) from this location (only from mode_change())
+                    state.enc_sw_cnt = MODE_MIN
+                if my_debug:
+                    print(TAG+f"len(mode_klst): {len(mode_klst)}. New enc_sw_cnt: {state.enc_sw_cnt}")
+                #state.mode = "note" if state.mode == "index" else "index"
+                state.mode = state.enc_sw_cnt  # mode_lst[state.enc_sw_cnt]
+                if my_debug:
+                    # print(TAG+f"mode_dict[MODE_G]: {mode_dict[MODE_G]}, state.mode: {state.mode}")
+                    print(TAG+"Encoder sw. pressed")
+                    print(TAG+f"new mode:\n\"{mode_dict[state.mode]}\"")
+
+        # state.last_position = cur_position
+        state.enc_sw_cnt = state.mode  # line-up the encoder switch count with that of the current state.mode
+        if my_debug:
+            print(TAG+f"mode_rv_dict[\"{mode_dict[state.mode]}\"]= {mode_rv_dict[mode_dict[state.mode]]}")
+        await asyncio.sleep(0.02)  # was 0.05
+    
+        # ---------------------------------------------------------------------------------------------------
+        #  Read the encoder rotary control
+        # ---------------------------------------------------------------------------------------------------
+
         cur_position = encoder.position
         # print(cur_position)
         if state.last_position < cur_position:
@@ -1421,49 +1462,6 @@ async def read_encoder(state):
             # same
             pass
 
-        encoder_btn.update()
-
-        if state.mode == MODE_G:
-            glob_flag_change(state)
-            
-        if encoder_btn.fell:
-            state.enc_btn_cnt += 1
-            tm_current = int(time.monotonic())
-            tm_diff = tm_current - tm_start
-            if state.enc_btn_cnt == 2 and tm_diff >= 0 and tm_diff <= tm_trigger:
-                if not my_debug:
-                    print(TAG+f"\ntm_start: {tm_start}. tm_trigger: {tm_trigger}, tm_diff: {tm_diff}")
-                
-                    #if tm_diff >= tm_trigger:
-                    state.enc_btn_cnt = 0
-                    tm_start = int(time.monotonic())
-                    #tm_diff = 0
-                    mode_change(state)
-            #if state.mode == mode_dict[MODE_C]:  # "chgm"
-            #    mode_change(state)
-            else:
-                state.btn_event = True
-                if state.enc_btn_cnt >= 2:
-                    state.enc_btn_cnt = 0
-                    tm_start = int(time.monotonic())
-                    #tm_diff = 0
-                state.enc_sw_cnt += 1
-                if state.enc_sw_cnt > MODE_MAX-1:  # Do not allow to go to MODE_G (glob_flag_change) from this location (only from mode_change())
-                    state.enc_sw_cnt = MODE_MIN
-                if my_debug:
-                    print(TAG+f"len(mode_klst): {len(mode_klst)}. New enc_sw_cnt: {state.enc_sw_cnt}")
-                #state.mode = "note" if state.mode == "index" else "index"
-                state.mode = state.enc_sw_cnt  # mode_lst[state.enc_sw_cnt]
-                if my_debug:
-                    # print(TAG+f"mode_dict[MODE_G]: {mode_dict[MODE_G]}, state.mode: {state.mode}")
-                    print(TAG+"Encoder sw. pressed")
-                    print(TAG+f"new mode:\n\"{mode_dict[state.mode]}\"")
-
-        # state.last_position = cur_position
-        state.enc_sw_cnt = state.mode  # line-up the encoder switch count with that of the current state.mode
-        if my_debug:
-            print(TAG+f"mode_rv_dict[\"{mode_dict[state.mode]}\"]= {mode_rv_dict[mode_dict[state.mode]]}")
-        await asyncio.sleep(0.05)
 
 async def play_note(state, note, delay):
     TAG = tag_adj("play_note(): ")
