@@ -1,0 +1,179 @@
+Friay 2023-09-01 12h05 PT (utc +1)
+
+Platform: @DJDevon3's TR-COWBELL with Raspberry Pi PicoW
+
+IDE: mu-editor
+
+REPL output:     (Note: my_debug flag = False)
+
+
+
+soft reboot
+
+Auto-reload is on. Simply save files over USB to run them or enter REPL to disable.
+code.py output:
+]0;🐍192.168.x.yy | code.py | 8.2.3\
+
+TR-COWBELL test
+Board:
+raspberry_pi_pico_w
+Filesystem:Readonly
+OLED driver: SH1107
+--------------------
+connected to Vodafone-xxxxx
+IP address is 192.168.x.yy
+
+
+
+connected to
+Vodafone-xxxxx
+IP Address is:
+192.168.x.yy
+NTP date:
+Thu 9/01/2023
+12:05:41 PM
+
+
+
+note sets
+have been
+read from file
+saved_loops.json
+successfully
+
+
+
+0 button active      <<<=== the main screen appears
+------------------
+0/   0   0   0   0 
+     0   0   0   0 
+1/   0   0   0   0 
+     0   0   0   0 
+------------------
+No buttons active
+mode:indx.NoteSet:8
+
+
+
+|---- Mode -----|    <<<=== After encoder button double-press, the 'mode-menu' appears
+  >> indx 1 <<
+     note 2   
+     file 3   
+     midi 4   
+     fift 5   
+     nkey 6   
+     flag 7   
+| Exit=>Enc Btn |
+
+|---- Mode -----|
+     indx 1   
+  >> note 2 <<      <<<=== After encoder control turned clockwise
+     file 3   
+     midi 4   
+     fift 5   
+     nkey 6   
+     flag 7   
+| Exit=>Enc Btn |
+
+|---- Mode -----|
+     indx 1   
+     note 2   
+  >> file 3 <<      <<<=== After encoder control turned clockwise a 2nd time
+     midi 4   
+     fift 5   
+     nkey 6   
+     flag 7   
+| Exit=>Enc Btn |
+
+|---- Mode -----|
+     indx 1   
+     note 2   
+     file 3   
+  >> midi 4 <<      <<<=== After encoder control turned clockwise a 3rd time
+     fift 5   
+     nkey 6   
+     flag 7   
+| Exit=>Enc Btn |
+0 button active
+------------------
+0/   0   0   0   0 
+     0   0   0   0 
+1/   0   0   0   0 
+     0   0   0   0 
+------------------
+midi channel: 2        <<=== current midi channel = 2
+No buttons active
+mode:midi.NoteSet:8    <<<=== mode = 'midi'
+
+
+
+new midi channel 1        <<<=== After encoder control turned clockwise or counter clockwise, the midi-channel now is 1.
+
+
+
+0 button active
+------------------
+0/   0   0   0   0 
+     0   0   0   0 
+1/   0   0   0   0 
+     0   0   0   0 
+------------------
+midi channel: 1          <<<=== midi channel: 1
+No buttons active
+mode:midi.NoteSet:8
+
+
+
+new midi channel 2        <<<=== After encoder control turned clockwise or counter clockwise, the midi-channel now is 2.
+
+
+
+0 button active
+------------------
+0/   0   0   0   0 
+     0   0   0   0 
+1/   0   0   0   0 
+     0   0   0   0 
+------------------
+midi channel: 2          <<<=== midi channel: 2
+No buttons active
+mode:midi.NoteSet:8
+
+
+
+new midi channel 1        <<<=== After encoder control turned clockwise or counter clockwise, the midi-channel now is 1.
+
+
+
+0 button active
+------------------
+0/   0   0   0   0 
+     0   0   0   0 
+1/   0   0   0   0 
+     0   0   0   0 
+------------------
+midi channel: 1          <<<=== midi channel: 1
+No buttons active
+mode:midi.NoteSet:8
+
+
+|---- Mode -----|       <<<=== After encoder button double-press, the 'mode-menu' re-appears
+  >> indx 1 <<
+     note 2   
+     file 3   
+     midi 4   
+     fift 5   
+     nkey 6   
+     flag 7   
+| Exit=>Enc Btn |
+
+
+0 button active     <<<=== After pressing the encoder button once again, the main window appears
+------------------
+0/   0   0   0   0 
+     0   0   0   0 
+1/   0   0   0   0 
+     0   0   0   0 
+------------------
+No buttons active
+mode:indx.NoteSet:8   <<<=== mode 'indx' (= 'index')
