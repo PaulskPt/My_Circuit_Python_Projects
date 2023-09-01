@@ -18,6 +18,7 @@
 # 2023-08-31 to optimize code, reversed the use of state.mode. Before it contained the string of the mode, e.g.: "index".
 #   Now it contains an integer, representing the mode, e.g.: state.mode = MODE_I # (= 1). For this mode_klst was created
 #   and mode_lst was removed. In many places (52 ?) the code of this script has been changed accordingly.
+# 2023-09-01 In this version added encoder_dbl_btn. I managed a reliable catch of an encoder button doubble press.
 import asyncio
 import time
 import board
