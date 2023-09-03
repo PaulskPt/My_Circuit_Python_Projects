@@ -86,7 +86,6 @@ if use_sh1107:
     WIDTH = 128
     HEIGHT = 128
     ROTATION = 0 # Was: 90
-
     # Border width
     BORDER = 2
 
@@ -871,29 +870,65 @@ def mode_change(state):
     state.btn_event = True
     m_idx = MODE_I
     msg_shown = False
+    show_all = False
+    scrn_lst = []
+    scrn_lst.append(TAG+"\n|---- Mode -----|")
+    for k, v in mode_short_dict.items():
+        if k == MODE_C:  # don't show mode mchg 0
+            continue
+        scrn_lst.append("     "+v+" "+str(k)+"   ")
+    scrn_lst.append(TAG+"| Exit=>Enc Btn |")
+    le = len(scrn_lst)
+    if my_debug:
+        print(TAG+f"scrn_lst: {scrn_lst}")
+        print(TAG+f"len(scrn_lst): {len(scrn_lst)}")
+    n = -1
+    show_hdg = True
+    # The next loop displays a heading line and a bottom line
+    # In between a scrolling list if the number of mode items
+    # don't fit (max 7 mode items)
     while True:
         if not msg_shown:
-            print(TAG+"\n|---- Mode -----|")
-            for k, v in mode_short_dict.items():
-                if k == MODE_C:
-                    continue  # Don't show MODE_C
-                if m_idx == k:
-                    print(TAG+f"  >> {v} {k} <<")
+            if m_idx < (le - 3):  #not part1_shown:
+                show_hdg = True
+            else:
+                show_hdg = False
+
+            if show_hdg:
+                n_start = 1
+                n_stop = le-2
+            else:
+                n_start = 2
+                n_stop = le-1
+                
+            print(scrn_lst[0])  # print hdg
+            
+            for i in range(n_start, n_stop): 
+                t = (scrn_lst[i])
+                t2 = t.rstrip()[-1] # extract the MODE value
+                if t2.isdigit():  # 0-9 ?
+                    n = int(t2)   # yes, convert to integer
                 else:
-                    print(TAG+f"     {v} {k}   ")
-            print(TAG+"| Exit=>Enc Btn |", end= '')
+                    n = -1
+                if n == m_idx:
+                    s = "  >> "+scrn_lst[i][5:-3]+ " << "
+                    print(s)
+                else:
+                    print(scrn_lst[i])
+                
+            print(scrn_lst[le-1], end='')  # print the bottom line
+
             msg_shown = True
-
+        
         enc_pos = encoder.position
-        # print(TAG+f"state.lp: {state.last_position}, enc pos: {enc_pos}")
-
-        if state.last_position < enc_pos:
+        # print(TAG+f"state.lp: {state.last_position}, enc pos: {enc_pos}") 
+        if state.last_position < enc_pos:  # Control turned CW
             state.last_position = enc_pos
             m_idx += 1
             if m_idx > MODE_MAX:
                 m_idx = MODE_MIN
             msg_shown = False
-        elif enc_pos < state.last_position:
+        elif enc_pos < state.last_position:   # Control turned CCW
             state.last_position = enc_pos
             m_idx -= 1
             if m_idx < MODE_MIN:
