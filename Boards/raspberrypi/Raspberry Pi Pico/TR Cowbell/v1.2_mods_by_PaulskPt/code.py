@@ -6,19 +6,7 @@
 # Partly also based on TR_Cowbell_Sequencer_Software repo by @Foamyguy
 # 2023-08-20
 # More info about buttons and controls, see file: README_buttons_and_controls.md (work-in-progress)
-# To choose your display driver: set the global flags "use_ssd1306" and "use_sh1107" (only one can be "True")
-# If you want to use WiFi set the "use_wifi" flag to "True" and fill in your WiFi SSID and Password in the file "settings.toml"
-# A global flag "my_debug" has been added to control the majority of print statements in this script.
-# Added global flag "use_TAG". This flag controls if in calls to function tag_adj() tags received will be printed or not.
-# On a small display no function names (variable TAG) in print statements make the display more readable.
-# Twentyone functions added that are not found in the other repos for the TR-Cowbell board:
-#   count_btns_active(), clr_events(), clr_scrn(), pr_state(), pr_msg(), pr_loops(), pr_dt(), load_all_note_sets(), load_note_set(),
-#   fifths_change(), key_change(), mode_change(), glob_flag_change(), fnd_empty_loop), id_change(), wr_to_fi(), tag_adj(), do_connect(),
-#   dt_update(), wifi_is_connected() and setup().
-# 2023-08-31 to optimize code, reversed the use of state.mode. Before it contained the string of the mode, e.g.: "index".
-#   Now it contains an integer, representing the mode, e.g.: state.mode = MODE_I # (= 1). For this mode_klst was created
-#   and mode_lst was removed. In many places (52 ?) the code of this script has been changed accordingly.
-# 2023-09-01 In this version added encoder_dbl_btn. I managed a reliable catch of an encoder button doubble press.
+# For list of changes see file: changes_log.md 
 import asyncio
 import time
 import board
@@ -65,6 +53,10 @@ from io import BytesIO
 import msgpack
 from adafruit_midi.note_off import NoteOff
 from adafruit_midi.note_on import NoteOn
+# PitchBend is a special MIDI message, with a range of 0 to 16383. 
+# Since pitch can be bent up or down, the midpoint (no pitch bend) is 8192.
+from adafruit_midi.pitch_bend import PitchBend
+
 import adafruit_midi
 import usb_midi
 import rotaryio
@@ -173,13 +165,14 @@ MODE_F = 3 # file
 MODE_M = 4 # midi_channel
 MODE_D = 5 # fifths (circle of fifths) flag choose
 MODE_K = 6 # key of the notes: Major or Minor
-MODE_G = 7 # global flags change mode
+MODE_T = 7 # tempo (or BPM)
+MODE_G = 8 # global flags change mode
 MODE_MIN = MODE_I # Don't show MODE_C
 MODE_MAX = MODE_G
 
 
-# mode_lst = ["mode_change", "index", "note", "file", "midi_channel", "disp_fifths", "note_key", "glob_flag_change"]
-mode_klst = [MODE_C, MODE_I, MODE_N, MODE_F, MODE_M, MODE_D, MODE_K, MODE_G]
+# mode_lst = ["mode_change", "index", "note", "file", "midi_channel", "disp_fifths", "note_key", "tempo (bpm)", "glob_flag_change"]
+mode_klst = [MODE_C, MODE_I, MODE_N, MODE_F, MODE_M, MODE_D, MODE_K,MODE_T, MODE_G]
 
 mode_dict = {
     MODE_C : "mode_change",
@@ -189,6 +182,7 @@ mode_dict = {
     MODE_M : "midi_channel",
     MODE_D : "fifths",   # Display as Fifths or 'Normal' number values
     MODE_K : "note_key",  # When displaying as Fifths, display in Key C Major or C Minor
+    MODE_T : "tempo (bpm)",
     MODE_G : "glob_flag_change"  # For change of global flags: my_debug, use_TAG and use_wifi
     }
 
@@ -200,6 +194,7 @@ mode_short_dict = {
     MODE_M : "midi",
     MODE_D : "fift",
     MODE_K : "nkey",
+    MODE_T : "tmpo",
     MODE_G : "flag"
     }
 
@@ -211,6 +206,7 @@ mode_rv_dict = {
     "midi_channel" : MODE_M,
     "fifths" : MODE_D,
     "note_key" : MODE_K,
+    "tempo (bpm)" : MODE_T,
     "glob_flag_change" : MODE_G
     }
 
@@ -327,7 +323,13 @@ notes_lst = [None] * 16
 SELECTED_INDEX = -1
 
 TEMPO = 120 # Beats Per Minute (approximation)
+TEMPO_DELTA = 10
 BPM = TEMPO / 60 / 16
+pb_max = 16383 # bend up value
+pb_default = 8192 # bend center value
+pb_min = 0 # bend down value
+pb_change_rate = 100 # interval for pitch bend, lower number is slower
+pb_return_rate = 100 # interval for pitch bend release
 
 class State:
     def __init__(self, saved_state_json=None):
@@ -353,6 +355,12 @@ class State:
         self.rtc_is_set = False
         self.ntp_datetime = None
         self.dt_str_usa = True
+        self.tempo_default = 120
+        self.tempo = self.tempo_default
+        self.tempo_shown = self.tempo_default
+        self.tempo_delta = 10
+        self.bpm = self.tempo / 60 / 16  # 120 / 60 / 16 = 0.125
+        self.tempo_reset = False
 
 
         if saved_state_json:
@@ -377,7 +385,7 @@ class State:
             else:
                 self.latches[i] = False
 
-            
+
 def increment_selected(state):
     _checked = 0
     _checking_index = (state.selected_index + 1) % 16
@@ -532,6 +540,10 @@ def pr_state(state):
             print("\n"+"-"*18)
         if state.mode == MODE_M:  # "midi_channel"
             print(TAG+f"midi channel: {state.midi_channel}")
+        elif state.mode == MODE_T: # "tempo"
+            if org_cnt > 0:
+                s_bpm = "tempo:{:3d},dly:{:5.3f}".format(state.tempo_shown, float(round(state.bpm, 3)))
+                print(TAG+f"{s_bpm}")
         else:
             if org_cnt > 0:
                 print(TAG+f"selected idx: {state.selected_index+1}")
@@ -766,6 +778,10 @@ def load_note_set(state, dir_up, use_warnings):
                 msg = [TAG, "Please", "long press", "middle button", "to load note sets", "from file"]
                 pr_msg(state, msg)
             return
+
+    # All notes zero (to prevent a "hang" between switching key  )
+    # Prevent a "hang" of the last send note when calling this load_note_set() function
+    send_midi_panic()
     if dir_up is None:
         dir_up = True
     if state.selected_file is None:
@@ -807,6 +823,48 @@ def key_change(state):
     k = "{:s}".format("Major" if state.key_major else "Minor")
     msg = [TAG, "The key", "of the notes", "changed to:", k]
     pr_msg(state, msg)
+    
+def tempo_change(state, rl):
+    TAG = tag_adj("tempo_change(): ")
+    global TEMPO, TEMPO_DELTA, BPM
+    # print(TAG+f"rl: {rl}, type(rl): {type(rl)}")
+    state.tempo_shown = state.tempo_default
+    if rl is not None and isinstance(rl, bool):
+        # rl stands for right or left
+        if state.tempo_reset:
+            state.tempo = state.tempo_default
+            state.bpm = state.tempo / 60 / 16
+            state.tempo_shown = state.tempo 
+        else:
+            if rl:  # button right pressed. Increase tempo
+                state.tempo -= state.tempo_delta # Beats Per Minute (approximation)
+            else: # button left pressed. Decrease tempo
+                state.tempo += state.tempo_delta
+
+            state.bpm = state.tempo / 60 / 16
+            
+            if state.tempo < state.tempo_default:
+                diff = state.tempo_default - state.tempo
+                state.tempo_shown = state.tempo + (diff * 2)
+            elif state.tempo > state.tempo_default:
+                diff = state.tempo - state.tempo_default
+                state.tempo_shown = state.tempo - (diff * 2)
+            else:
+                state.tempo_shown = state.tempo
+                
+        if state.tempo_reset:
+            state.tempo_reset = False
+        else:
+            send_midi_panic()
+            if rl:
+                send_bend(pb_default, pb_min, state.tempo, 0) # was: pb_change_rate, 0)
+            else:
+                send_bend(pb_default, pb_max, state.tempo, 1)  # was: pb_change_rate, 1)
+    
+            # s = "Tempo {}creased (bpm delay {:s}creased to {:f})".format("in" if rl else "de", "de" if rl else "in", state.bpm)
+            # print(TAG+f"{s}")
+            #msg = [TAG, s]
+            #pr_msg(state, msg)
 
 def mode_change(state):
     TAG = tag_adj("mode_change(): ")
@@ -972,6 +1030,17 @@ def glob_flag_change(state):  # Global flag change
     if my_debug:
         print(TAG+f"\ndebug: {my_debug}, TAG: {use_TAG}, wifi: {use_wifi}")
 
+        
+def id_change(lps, ne, s, le):  # Called from read_buttons()
+    lps2 = lps
+    if 'id' in ne.keys():
+        ne['id'] = le  # update the id value
+        lps2[s].insert(
+        le,
+        ne
+        )
+    return lps2
+
 def fnd_empty_loop(state):
     TAG = tag_adj("fnd_empty_loop(): ")
     lps = state.saved_loops
@@ -1017,16 +1086,23 @@ def fnd_empty_loop(state):
         ret = n
     # print(TAG+f"ret= {ret}")
     return ret
-
-def id_change(lps, ne, s, le):  # Called from read_buttons()
-    lps2 = lps
-    if 'id' in ne.keys():
-        ne['id'] = le  # update the id value
-        lps2[s].insert(
-        le,
-        ne
-        )
-    return lps2
+        
+def send_bend(bend_start, bend_val, rate, bend_dir):
+    TAG = tag_adj("send_bend(): ")
+    b = bend_start
+    if bend_dir == 0:
+        while b > bend_val + rate:
+            # print(b)
+            b = b - rate
+            midi.send(PitchBend(b))
+            # midi_serial.send(PitchBend(b))
+            
+    if bend_dir == 1:
+        while b < bend_val - rate:
+            # print(b)
+            b = b + rate
+            midi.send(PitchBend(b))
+            # midi_serial.send(PitchBend(b))
 
 def wrt_to_fi(state):
     TAG = tag_adj("wrt_to_f(): ")
@@ -1280,6 +1356,8 @@ async def read_buttons(state):
                         load_note_set(state, dir_up, use_warnings)
 
                 if right_btn.fell or left_btn.fell:
+                    if my_debug:
+                        print(TAG+f"\nstate.mode: {mode_dict[state.mode]}")
                     if right_btn.fell:
                         rl = True
                     elif left_btn.fell:
@@ -1291,10 +1369,10 @@ async def read_buttons(state):
 
                     if my_debug:
                         srl = " 2 (RIGHT)" if ud else "4 (LEFT)"
-                        rl_pr = right_btn.pressed if ud else left_btn.pressed
+                        rl_pr = right_btn.pressed if rl else left_btn.pressed
                         print(TAG+f"BUTTON {srl} is pressed: {rl_pr}.")
 
-                    if state.mode == MODE_I or mode_dict[MODE_N]:  # "index" or "note"
+                    if state.mode in [MODE_I, MODE_N]:  # "index" or "note"
                         if btns_active >0:
                             if rl:
                                 increment_selected(state)
@@ -1304,6 +1382,9 @@ async def read_buttons(state):
                         if my_debug:
                             srl = " 2 (RIGHT)" if ud else "4 (LEFT)"
                             print(TAG+f"BUTTON {srl} doing nothing")
+                    elif state.mode ==  MODE_T:  # "tempo change"
+                        if btns_active >0:
+                            tempo_change(state, rl)
 
                     # state.send_off = not state.send_off
                     # print(f"send off: {state.send_off}")
@@ -1330,7 +1411,9 @@ async def read_buttons(state):
                                 print("Filesystem is readonly. Cannot save note sets to file")
                             msg = [TAG, "Filesystem is", "readonly.", "Unable to save", "note sets","to file:", state.fn]
                             pr_msg(state, msg)
-
+                    elif state.mode == MODE_T:  # "tempo". Reset tempo to default
+                        state.tempo_reset = True
+                        tempo_change(state, rl)
         # slow down the loop a little bit, can be adjusted
         await asyncio.sleep(0.15)  # Was: 0.05 or BPM -- has to be longer to avoid double hit
 
@@ -1341,7 +1424,7 @@ async def read_encoder(state):
 
 
     state.enc_sw_cnt = state.mode  # line-up the encoder switch count with that of the current state.mode
-    
+
     if my_debug:
             print(TAG+f"mode_rv_dict[\"{mode_dict[state.mode]}\"]= {mode_rv_dict[mode_dict[state.mode]]}")
 
@@ -1350,13 +1433,14 @@ async def read_encoder(state):
         # ---------------------------------------------------------------------------------------------------
         #  Read the encoder button (switch)
         # ---------------------------------------------------------------------------------------------------
-        
+
         if state.mode == MODE_G:
             glob_flag_change(state)
-        
+
         encoder_dbl_btn.update()
 
         if encoder_dbl_btn.short_count >=2 :  # We have an encoder button double press
+            send_midi_panic()
             mode_change(state)
 
             #if state.mode == mode_dict[MODE_C]:  # "chgm"
@@ -1382,7 +1466,7 @@ async def read_encoder(state):
         if my_debug:
             print(TAG+f"mode_rv_dict[\"{mode_dict[state.mode]}\"]= {mode_rv_dict[mode_dict[state.mode]]}")
         await asyncio.sleep(0.02)  # was 0.05
-    
+
         # ---------------------------------------------------------------------------------------------------
         #  Read the encoder rotary control
         # ---------------------------------------------------------------------------------------------------
@@ -1410,6 +1494,10 @@ async def read_encoder(state):
                     state.midi_channel = midi_channel_min
                 if my_debug:
                     print(f"new midi channel: {state.midi_channel}")
+                s = "new midi channel {:d}".format(state.midi_channel)
+                msg = [TAG, s]
+                pr_msg(state, msg)
+                s = None
             elif state.mode == MODE_F:  # "file"
                 if state.selected_file is None:
                     state.selected_file = 0
@@ -1444,6 +1532,9 @@ async def read_encoder(state):
                     state.midi_channel = midi_channel_max
                 if my_debug:
                     print(f"new midi channel: {state.midi_channel}")
+                s = "new midi channel {:d}".format(state.midi_channel)
+                msg = [TAG, s]
+                pr_msg(state, msg)
             elif state.mode == MODE_F:  # "file"
                 if state.selected_file is None:
                     state.selected_file = 0
@@ -1463,7 +1554,6 @@ async def read_encoder(state):
             # same
             pass
 
-
 async def play_note(state, note, delay):
     TAG = tag_adj("play_note(): ")
     if state.midi_ch_chg_event:  # was: if note == 61 and midi_ch_chg_event
@@ -1475,15 +1565,22 @@ async def play_note(state, note, delay):
             #if my_debug:
             #    print(TAG+f"playing other channel? {note_on.channel}")
             midi.send(note_on, channel=state.midi_channel)
-            await asyncio.sleep(delay)
+            await asyncio.sleep(state.bpm)  # was: delay)
             if state.send_off:
                 midi.send(NoteOff(note, 0), channel=state.midi_channel)
         else:
             note_on = NoteOn(note, 127)
             midi.send(note_on)
-            await asyncio.sleep(delay)
+            await asyncio.sleep(state.bpm)  # was: delay)
             if state.send_off:
                 midi.send(NoteOff(note, 0))
+
+# Added after suggestion of @DJDevon3
+# Function found in: https://learn.adafruit.com/midi-cyber-cat-keyboard/code-the-cyber-cat-midi-keyboard
+def send_midi_panic():
+    for x in range(128):
+        midi.send(NoteOff(x, 0))
+        midi.send(NoteOff(x, 0))
 
 async def update_display(state, delay=0.125):
     while True:
@@ -1621,6 +1718,7 @@ def wifi_is_connected():
 def setup(state):
     global ntp
     TAG = tag_adj("setup(): ")
+    send_midi_panic() # switch off any notes
     if use_wifi:
         if not wifi_is_connected():
             if my_debug:

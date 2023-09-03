@@ -30,6 +30,8 @@
 #      --- changes mode to "file", so one can: 
 #          a) load all saved note sets (aka: saved loops) using a Middle button long press;
 #          b) next: read a next or previous notes set using the Up or Down button
+#   -- In mode "tempo".
+#       --- Resets the tempo to the default value (120) and resets the bpm delay acordingly (= tempo / 60 / 16.)
 #   -- In mode = "file":
 #      If the filesystem is "Writeable":
 #       --- The following six actions will be performed:
@@ -57,9 +59,13 @@
 # Left button:
 # - In mode "indx" or in mode "note" if more than one button is activated, 
 #   this button changes the selected index to the previous available index
+# - In mode "tempo"
+#   this button decreases the Tempo (increases the bpm delay). Default tempo is 120. The bpm = tempo / 60 / 16
 # Right button
 # - In mode "indx" or in mode "note" if more than one button is activated, 
 #   this button changes the selected index to the next available index
+# - In mode "tempo"
+#   this button increases the Tempo (decreases the bpm delay). Default tempo is 120. The bpm = tempo / 60 / 16
 #
 # ---------------------------------------------
 #
@@ -67,15 +73,15 @@
 #
 # -- After a double press of the encoder button, the menu below appears:
 ```
-   |---- Mode ----|
-     >> indx 1 <<
-        note 2
-        file 3
-        midi 4
-        fift 5
-        nkey 6
-        flag 7
-   | Exit=> Enc Btn |
+   !---- Mode ----|
+        mchg 1
+     >> indx 2 <<
+        note 3
+        file 4
+        midi 5
+        fift 6
+        nkey 7
+   ! Exit=> Enc Btn |
 ```
 # turning the rotary encoder control clockwise moves the selector indicator down to the next mode in the list.
 # turning the rotary encoder control counter clockwise moves the selector indicator up to the previous mode in the list.
@@ -84,20 +90,19 @@
 # In the table below the available modes and their abbreviations:
 
 ```
-   +--------------------+---------------+
-   | Mode               |  Displayed as |
-   +--------------------+---------------+
-   ! "mode_change"      |   "mchg"      |   Note: this mode is not shown in the mode change menu
-   | "index"            |   "indx"      |
-   | "note"             |   "note"      |
-   | "file"             |   "file"      |
-   | "midi_channel"     |   "midi"      |
-   | "display_fifths"   |   "fift"      |
-   | "note_key"         |   "nkey"      |
-   | "glob_flag_change" |   "flag"      |
-   +--------------------+---------------+
+   +------------------+---------------+
+   | Mode             |  Displayed as |
+   +------------------+---------------+
+   ! "mode change"    |   "mchg"      |
+   | "index"          |   "indx"      |
+   | "note"           |   "note"      |
+   | "file"           |   "file"      |
+   | "midi_channel"   |   "midi"      |
+   | "display_fifths" |   "fift"      |
+   | "note_key_major" |   "nkey"      |
+   +------------------+---------------+
 ```
-# -- mode "mchg" (see above) not shown
+# -- in mode "mchg" (see above)
 # -- in mode "indx" turning the rotary encoder control clockwise will increase the selected index value to the next selected note.
 # -- in mode "indx" turning the rotary encoder control counter clockwise will decrease the selected index value to the previous selected note.
 # -- In mode "note", if one or more buttons is activated, 
@@ -113,36 +118,6 @@
 #    (normal number values)
 # -- In mode "nkey", turning the rotary encoder control clockwise or coounter clockwise will change the key of the notes display between
 #    Major and Minor
-# -- When menu item 'flag' is chosen, followed by an encoder button click, the "Glob Flag" menu will appear.
-#    In case the use_wifi flag is True, the following menu appears:
-```
-   |---Glob Flag---|
-     >> debug 0 <<
-          TAG 0
-         wifi 1
-         dtUS 1
-         none 0
-   | Exit=> Enc Btn |
-```
-
-# In case the use_wifi flag is False, the dtUS (date and time in USA format flag) flag will not be shown 
-# because the built-in realtime clock (RTC) will only be updated from an NTP server when wifi is active.
-# If dtUS is True the date will be shown as (example): "Tue 8/30/2023". The time will be shown as (example): "07:25:30 PM"
-# If dtUS is False the date will be shown as (example): "Tue 2023-08-30". The time will be shown as (example): "19:25:30"
-# dtUS is not really a global variable but is part of the state class (state.dt_str_usa).
-
-```
-   |---Glob Flag---|
-     >> debug 0 <<
-          TAG 0
-         wifi 0
-         none 0
-   | Exit=> Enc Btn |
-```
-
-# When you select 'none' and press the encoder control button, the global flag menu will be left without 
-# changing any of the shown flags.
-#
 #
 # NOTE: At startup the flag for "display of fifths" is set to False. The flag for the Key of notes is set to True (Major)
 # NOTE: It is advised to use the D-Pad (middle, Up and Down keys) to perform file actions.
