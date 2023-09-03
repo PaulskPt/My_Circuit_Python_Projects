@@ -870,7 +870,8 @@ def mode_change(state):
     state.btn_event = True
     m_idx = MODE_I
     msg_shown = False
-    show_all = False
+    scrolled = False
+    nr_items = 7  # Number of mode items between heading and bottom lines
     scrn_lst = []
     scrn_lst.append(TAG+"\n|---- Mode -----|")
     for k, v in mode_short_dict.items():
@@ -889,32 +890,21 @@ def mode_change(state):
     # don't fit (max 7 mode items)
     while True:
         if not msg_shown:
-            if m_idx < (le - 3):  #not part1_shown:
-                show_hdg = True
-            else:
-                show_hdg = False
+            scrolled = False if m_idx < (le - 3) else True
+            n_stop = le-1 if scrolled else le-2
+            n_start = n_stop - nr_items
 
-            if show_hdg:
-                n_start = 1
-                n_stop = le-2
-            else:
-                n_start = 2
-                n_stop = le-1
-                
-            print(scrn_lst[0])  # print hdg
+            print(scrn_lst[0])  # print heading line
             
             for i in range(n_start, n_stop): 
                 t = (scrn_lst[i])
                 t2 = t.rstrip()[-1] # extract the MODE value
-                if t2.isdigit():  # 0-9 ?
-                    n = int(t2)   # yes, convert to integer
-                else:
-                    n = -1
+                n = int(t2) if t2.isdigit() else -1  # 0-9 ? Yes, convert to integer else -1
                 if n == m_idx:
                     s = "  >> "+scrn_lst[i][5:-3]+ " << "
-                    print(s)
+                    print(s)  # print indexed mode item
                 else:
-                    print(scrn_lst[i])
+                    print(scrn_lst[i]) # print normal, not indexed mode item
                 
             print(scrn_lst[le-1], end='')  # print the bottom line
 
@@ -922,17 +912,17 @@ def mode_change(state):
         
         enc_pos = encoder.position
         # print(TAG+f"state.lp: {state.last_position}, enc pos: {enc_pos}") 
-        if state.last_position < enc_pos:  # Control turned CW
+        if state.last_position < enc_pos:  # Rotary control turned CW
             state.last_position = enc_pos
             m_idx += 1
             if m_idx > MODE_MAX:
-                m_idx = MODE_MIN
+                m_idx = MODE_MIN  # roll to first mode item
             msg_shown = False
-        elif enc_pos < state.last_position:   # Control turned CCW
+        elif enc_pos < state.last_position:   # Rotary control turned CCW
             state.last_position = enc_pos
             m_idx -= 1
             if m_idx < MODE_MIN:
-                m_idx = MODE_MAX
+                m_idx = MODE_MAX  # roll to last mode item
             msg_shown = False
         else:
             pass
