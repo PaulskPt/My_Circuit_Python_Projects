@@ -214,13 +214,13 @@
 ```
   Using D-pad BUTTON 2 (right_btn) increases the tempo. Using BUTTON 4 (left_btn) decreases the tempo.
 
-   To enable this functionality made appropriate changes in the state class (added attributes). Made changes in functions read_button() and pr_state().
-   Also made appropriate changes in file: README_buttons_and_controls.md.
-   Created an updated images of the script outline made by MS VSCode. See folder Pictures_mod_PaulskPt/IMG_09.png. Added pictures: IMG_18.png and IMG_19.png.
+   To enable this functionality made appropriate changes in the state class (added attributes). Made changes in functions ```read_button()``` and ```pr_state()```.
+   Also made appropriate changes in file: ```README_buttons_and_controls.md```.
+   Created an updated image of the ```script outline``` made using MS VSCode. See folder/file: ```Pictures_mod_PaulskPt/IMG_09.png```. Added pictures: ```IMG_18.png``` and ```IMG_19.png```.
 
  2023-09-03
  Modified function ```mode_change()```
- in such a way that the list of mode items will scroll between the heading line and the bottom line. Each moment there will fit only 7 mode items on the screen
+ in such a way that the list of mode items will scroll between the ```heading line``` and the ```bottom line```. Each moment there will fit only 7 mode items on the screen
  between heading line and bottom line.
  See the images below:
 
