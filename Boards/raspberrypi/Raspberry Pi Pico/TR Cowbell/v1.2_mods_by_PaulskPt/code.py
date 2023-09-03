@@ -871,7 +871,7 @@ def mode_change(state):
     m_idx = MODE_I
     msg_shown = False
     scrolled = False
-    nr_items = 7  # Number of mode items between heading and bottom lines
+    nr_items = len(mode_dict)-1  # Number of mode items (except MODE_C (mchg) between heading and bottom lines
     scrn_lst = []
     scrn_lst.append(TAG+"\n|---- Mode -----|")
     for k, v in mode_short_dict.items():
