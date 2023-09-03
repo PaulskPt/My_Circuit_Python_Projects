@@ -1,8 +1,8 @@
- file: changes_log.md
- This file contains changes made to code.py by @PaulskPt (non exhaustive list)
+ File: ```changes_log.md```
+ This file contains changes made to ```code.py``` by @PaulskPt (non exhaustive list).
 
- To choose your display driver: set the global flags ```use_ssd1306``` and ```use_sh1107``` (only one can be "True")
- If you want to use WiFi set the ```use_wifi``` flag to "True" and fill in your WiFi SSID and Password in the file ```settings.toml```-
+ To choose your ```display driver```: set the global flags ```use_ssd1306``` and ```use_sh1107``` (only one can be "True")
+ If you want to use WiFi, set the ```use_wifi``` flag to "True" and fill in your ```CIRCUITPY_WIFI_SSID``` and ```CIRCUITPY_WIFI_PASSWORD``` in the file ```settings.toml```-
  A global flag ```my_debug``` has been added to control the majority of print statements in this script.
  Added global flag ```use_TAG```. This flag controls if in calls to function ```tag_adj()``` tags received will be printed or not.
  On a small display no function names (variable TAG) in print statements make the display more readable.
