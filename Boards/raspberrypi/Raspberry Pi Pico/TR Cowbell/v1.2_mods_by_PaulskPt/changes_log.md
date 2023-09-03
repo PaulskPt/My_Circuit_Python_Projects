@@ -39,7 +39,32 @@
 # 2023-09-01 In this version added encoder_dbl_btn. I managed a reliable catch of an encoder button doubble press.
 # 3034-09-03 Thanks advice @DJDevon3 added and use function send_midi_panic() to silence unwanted sound blocking during calls to load_note_set() and other actions.
 # 3034-09-03 Added functionality to alter tempo: added "MODE_T". Added functions tempo_change(), send_bend().
-#   Made appropriate changes in the state class (added attributes). Made changes in functions read_button() and pr_state().
+#
+# |---- Mode -----|     <<<<=== This menu shown after an encoder button double-click (TODO: because added mode "tmpo" this top line is scrolled off-screen)
+#      indx 1   
+#      note 2   
+#      file 3   
+#      midi 4   
+#      fift 5   
+#      nkey 6   
+#   >> tmpo 7 <<
+#      flag 8   
+# | Exit=>Enc Btn |
+#
+#
+#  8 buttons active       <<<=== default screen in "mode tempo"
+#  ------------------
+#  0/  69  74  77   0 
+#       0  67   0  67 
+#  1/   0   0   0  79 
+#      76  69   0   0 
+#  ------------------
+#  tempo:120,dly:0.125     <<<=== Mode "tempo" status line #1 showing default tempo 120  (state.tempo) and showing "delay" (written as "dly" (= state.bpm) )
+#  mode:tmpo.NoteSet:1     <<<=== Mode "tempo" status line #2 showing "mode:tmpo" (=  MODE_T or "mode tempo")
+#
+#  Using D-pad BUTTON 2 (right_btn) increases the tempo. Using BUTTON 4 (left_btn) decreases the tempo.
+#
+#   To enable this functionality made appropriate changes in the state class (added attributes). Made changes in functions read_button() and pr_state().
 #   Also made appropriate changes in file: README_buttons_and_controls.md.
-#   Created an updated images of the script outline made by MS VSCode. Se folder Pictures_mod_PaulskPt/IMG_09.png
+#   Created an updated images of the script outline made by MS VSCode. See folder Pictures_mod_PaulskPt/IMG_09.png. Added pictures: IMG_18.png and IMG_19.png.
 #
