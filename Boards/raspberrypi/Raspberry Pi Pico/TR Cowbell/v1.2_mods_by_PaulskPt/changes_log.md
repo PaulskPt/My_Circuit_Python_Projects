@@ -83,7 +83,7 @@
                               mode changed to "fift" (= "fifths")
 
  Display fifths   <<<=== After turning the Encoder control clockwise (CW) or counter clockwise (CCW)
- changed to:             changes the value between "Display fifths" ON or OFF (= OFF is the default display)
+ changed to:             changes the value between "Display fifths" True (ON) or False (OFF) (= False (OFF) is the default display)
  True
 
  8 buttons active
