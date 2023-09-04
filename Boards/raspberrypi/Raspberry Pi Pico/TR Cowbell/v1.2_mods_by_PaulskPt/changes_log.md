@@ -186,6 +186,15 @@
    and besides creating a Debouncer object: ```encoder_btn = Debouncer(encoder_btn_pin)```
    also creating a Button object: ```encoder_dbl_btn = Button(encoder_btn_pin)```
 
+   Then, in function ```read_encoder()``` a double press of the encoder button is catched as follows:
+   ```
+        encoder_dbl_btn.update()
+
+        if encoder_dbl_btn.short_count >=2 :  # We have an encoder button double press
+            send_midi_panic()
+            mode_change(state)
+ ```
+
  2023-09-03 Thanks advice @DJDevon3 added and use function ```send_midi_panic()``` to silence unwanted sound blocking during calls to ```load_note_set()``` and other actions.
 
  2023-09-03 Added functionality to alter tempo: added ```MODE_T```. Added functions ```tempo_change()```, ```send_bend()```.
