@@ -235,7 +235,7 @@
  See the images below:
 
 ```
- |---- Mode -----|
+ |---- Mode -----|   <<<=== Heading line
   >> indx 1 <<       <<<=== Start position of the index pointer.
      note 2   
      file 3   
@@ -243,7 +243,7 @@
      fift 5   
      nkey 6   
      tmpo 7   
- | Exit=>Enc Btn |
+ | Exit=>Enc Btn |  <<<=== Bottom line
 
  |---- Mode -----|
       indx 1   
