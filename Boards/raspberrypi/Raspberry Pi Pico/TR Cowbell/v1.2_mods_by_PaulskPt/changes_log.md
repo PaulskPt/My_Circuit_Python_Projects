@@ -181,7 +181,10 @@
    Now it contains an integer, representing the mode, e.g.: state.mode = ```MODE_I```  (= 1). For this ```mode_klst``` was created
    and mode_lst was removed. In many places (52 ?) the code of this script has been changed accordingly.
 
- 2023-09-01 In this version added encoder_dbl_btn. I managed a reliable catch of an encoder button doubble press.
+ 2023-09-01 In this version added ```encoder_dbl_btn```. I managed a reliable catch of an encoder button doubble press. 
+   Achieved by beside importing ```Debouncer```, also importing ```Button``` (```from adafruit_debouncer import Debouncer, Button```) and
+   and besides creating a Debouncer object: ```encoder_btn = Debouncer(encoder_btn_pin)```
+   also creating a Button object: ```encoder_dbl_btn = Button(encoder_btn_pin)```
 
  2023-09-03 Thanks advice @DJDevon3 added and use function ```send_midi_panic()``` to silence unwanted sound blocking during calls to ```load_note_set()``` and other actions.
 
