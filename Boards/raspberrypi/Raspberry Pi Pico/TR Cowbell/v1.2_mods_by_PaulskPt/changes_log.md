@@ -80,7 +80,7 @@
  ------------------
  selected idx: 14
  mode:fift.NoteSet:1   <<<=== After pressing Encoder switch a 4th time
-                             mode changed to "fift" (= "fifths")
+                              mode changed to "fift" (= "fifths")
 
  Display fifths   <<<=== After turning the Encoder control clockwise (CW) or counter clockwise (CCW)
  changed to:             changes the value between "Display fifths" ON or OFF (= OFF is the default display)
@@ -116,10 +116,8 @@
  E Eb C C 
  ------------------
  selected idx: 14
- mode:nkey.NoteSet:1   <<<=== After pressing Encoder switch
-                              mode changed to "nkey" (= "note key")
-                              In this mode the key of the notes can be
-                              changed between "Major" or "Minor"
+ mode:nkey.NoteSet:1   <<<=== After pressing Encoder switch mode changed to "nkey" (= "note key")
+                              In this mode the key of the notes can be changed between "Major" or "Minor"
 
 
  The key	             <<<=== After turning the Encoder rotary control clockwise (CW) or counter clockwise (CCW)
