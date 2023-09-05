@@ -209,51 +209,12 @@ mode_rv_dict = {
     "glob_flag_change" : MODE_G
     }
 
-notes_C_dict = {
-    12 : "C0",
-    24 : "C1",
-    36 : "C2",
-    48 : "C3",
-    60 : "C4",
-    72 : "C5",
-    84 : "C6",
-    96 : "C7"
-    }
+from midi_note_nrs import * # import the midi_notes_dict
+# To check the import:
+# print(f"MIDI_NOTE= {MIDI_NOTE}, MIDI_ORGAN= {MIDI_ORGAN}, MIDI_PIANO= {MIDI_PIANO}, MIDI_FREQ= {MIDI_FREQ}")
 
-# See https://en.wikipedia.org/wiki/Circle_of_fifths
-# Circle of fifths is a way of organizing the 12 chromatic pitches
-# as a sequence of perfect fifths.
-# Key of C Major:
-notes_major_dict = {
-    60 : "C",
-    61 : "G",
-    62 : "D",
-    63 : "A",
-    64 : "E",
-    65 : "B/Cb",
-    66 : "F#/Gb",
-    67 : "C#/Db",
-    68 : "Ab",
-    69 : "Eb",
-    70 : "Bb",
-    71 : "F"
-    }
 
-# Key of C Minor
-notes_minor_dict = {
-    60 : "a",
-    61 : "e",
-    62 : "b",
-    63 : "f#",
-    64 : "c#",
-    65 : "g#",
-    66 : "d#/cb",
-    67 : "bb",
-    68 : "f",
-    69 : "c",
-    70 : "g",
-    71 : "d"
-    }
+
 
 midi_channel_min = 1
 midi_channel_max = 2
@@ -495,8 +456,8 @@ def pr_state(state):
                 #if i > 0 and i % 4 == 0:
                 #    print("\n   ", end='')
                 sn = state.notes_lst[i]
-                if sn in notes_C_dict.keys():
-                    sn = notes_C_dict[sn]
+                if sn >= 21 and  sn < len(midi_notes_dict) and sn in midi_notes_dict.keys():  # 21 = A0
+                    sn = midi_notes_dict[sn][MIDI_NOTE] 
                     print("{:>3s} ".format(sn), end='')
                 else:
                     print("{:>3d} ".format(sn), end='')
@@ -512,25 +473,19 @@ def pr_state(state):
                 #if i > 0 and i % 4 == 0:
                 #    print("\n   ", end='')
 
-                n = state.notes_lst[i] % 12
+                n = state.notes_lst[i] % 12 # index for notes_major_minor_dict
                 idx = 60 + n # Value 60 represents the "Central C" or C4
-                if state.key_major:
-                    if idx in notes_major_dict.keys():
-                        sn = notes_major_dict[idx]
-                    else:
-                        sn = state.notes_lst[i]
-                        if sn == 60:
-                            sn = notes_C_dict[sn]
+
+                n2 = FIFTHS_NOTES_MAJOR if state.key_major else FIFTHS_NOTES_MINOR
+                if idx in notes_major_minor_dict.keys():
+                    sn = notes_major_minor_dict[idx][n2]
                 else:
-                    if idx in notes_minor_dict.keys():
-                        sn = notes_minor_dict[idx]
-                    else:
-                        sn = state.notes_lst[i]
-                        if sn == 60:
-                            sn = notes_C_dict[sn]
+                    sn = state.notes_lst[i]
+                    if sn == 60:
+                        sn = notes_C_dict[sn]
                 le = len(sn)
-                if le > 5:
-                    sn = sn[:5]
+                if le > 7:
+                    sn = sn[:7]  # was [:5]
                 print("{:s} ".format(sn), end='')
                 #else:
                 #    print("{:>3d} ".format(state.notes_lst[i]), end='')
@@ -868,7 +823,7 @@ def tempo_change(state, rl):
 def mode_change(state):
     TAG = tag_adj("mode_change(): ")
     state.btn_event = True
-    m_idx = MODE_I
+    m_idx = state.mode # was: MODE_I
     msg_shown = False
     scrolled = False
     nr_items = len(mode_short_dict)-1  # Number of mode items (except MODE_C (mchg) between heading and bottom lines
@@ -1442,6 +1397,13 @@ async def read_buttons(state):
         # slow down the loop a little bit, can be adjusted
         await asyncio.sleep(0.15)  # Was: 0.05 or BPM -- has to be longer to avoid double hit
 
+def reset_encoder(state):
+    global encoder
+    # encoder = rotaryio.IncrementalEncoder(board.GP18, board.GP19)
+    
+    encoder.position = 0  # This works OK!
+    state.last_position = 0 # Also reset the last position.
+
 async def read_encoder(state):
     TAG = tag_adj("read_encoder(): ")
     # print("\n"+TAG+f"mode: {mode_dict[state.mode]}")
@@ -1453,6 +1415,9 @@ async def read_encoder(state):
     if my_debug:
             print(TAG+f"mode_rv_dict[\"{mode_dict[state.mode]}\"]= {mode_rv_dict[mode_dict[state.mode]]}")
 
+    tm_interval = 10
+    tm_start = int(time.monotonic()) # Start time keeping track of last encoder rotary control action
+    
     while True:
 
         # ---------------------------------------------------------------------------------------------------
@@ -1496,9 +1461,22 @@ async def read_encoder(state):
         #  Read the encoder rotary control
         # ---------------------------------------------------------------------------------------------------
 
-        cur_position = encoder.position
-        # print(cur_position)
-        if state.last_position < cur_position:
+        cur_position = encoder.position  # read the rotary encoder control position
+        tm_curr = int(time.monotonic())
+        tm_elapsed = tm_curr - tm_start
+        if my_debug:
+            print(TAG+f"tm_elapsed = {tm_elapsed}")
+        if (tm_elapsed >= tm_interval) or (cur_position < -127 or cur_position > 127):
+            if (tm_elapsed >= tm_interval):
+                tm_start = tm_curr  # reset the encoder rotary control value to 0 when passing tm_elapsed
+            #                         we want to prevent that the tone value will be changed too much 
+            #                         at each couple of turns of the encoder rotary control
+            #                         or reset the encoder rotary control value when passing limits for note values
+            reset_encoder(state)
+            cur_position = encoder.position # re-read the encoder rotary control position
+            if my_debug:
+                print(TAG+f"encoder_btn re-initiated. cur_position= {cur_position}")
+        if state.last_position < cur_position:   # turned CW
             state.last_position = cur_position
             state.btn_event = True
             if my_debug:
@@ -1509,9 +1487,16 @@ async def read_encoder(state):
                 increment_selected(state)
             elif state.mode == MODE_N:  # "note"
                 if state.selected_index != -1:
-                    if my_debug:
-                        print(TAG+f"{state.last_position} -> {cur_position}")
-                    state.notes_lst[state.selected_index] += 1
+                    n = state.notes_lst[state.selected_index] + cur_position
+                    if not my_debug:
+                        print(TAG+f"\nstate.notes_lst[state.selected_index] = {state.notes_lst[state.selected_index]}")
+                        print(TAG+f"n= {n}, Encoder rotary control last pos: {state.last_position} -> curr pos: {cur_position}")
+                    if n >= 0 and n < len(midi_notes_dict):
+                        state.notes_lst[state.selected_index] += cur_position # make big note value changes possible
+                    else:
+                        n = state.notes_lst[state.selected_index] + 1
+                        if n >= 0 and n < len(midi_notes_dict):
+                            state.notes_lst[state.selected_index] += 1
             elif state.mode == MODE_M:  # "midi_channel"
                 state.midi_channel += 1
                 state.midi_ch_chg_event = True
@@ -1536,7 +1521,7 @@ async def read_encoder(state):
                 key_change(state)
             #elif state.mode == MODE_G: # "global flag change
             #    glob_flag_change(state)
-        elif cur_position < state.last_position:
+        elif cur_position < state.last_position:   # turned CCW
             state.last_position = cur_position
             state.btn_event = True
             if my_debug:
@@ -1547,9 +1532,22 @@ async def read_encoder(state):
                 decrement_selected(state)
             elif state.mode == MODE_N:  # "note"
                 if state.selected_index != -1:
-                    if my_debug:
-                        print(TAG+f"{state.last_position} -> {cur_position}")
-                    state.notes_lst[state.selected_index] -= 1
+                    if cur_position < 0:
+                        n = state.notes_lst[state.selected_index] + cur_position  # add a negative value
+                    else:
+                        n = state.notes_lst[state.selected_index] - cur_position  # subtract a positive value
+                    if not my_debug:
+                        print(TAG+f"\nstate.notes_lst[state.selected_index] = {state.notes_lst[state.selected_index]}")
+                        print(TAG+f"n= {n}, Encoder rotary control last pos: {state.last_position} -> curr pos: {cur_position}")
+                    if n >= 0 and n < len(midi_notes_dict):
+                        if cur_position < 0:
+                            state.notes_lst[state.selected_index] += cur_position  # add a negative value. Make big note value changes possible
+                        else:
+                            state.notes_lst[state.selected_index] -= cur_position  # subtract a positive value. Make big note value changes possible
+                    else:
+                        n = state.notes_lst[state.selected_index] - 1
+                        if n >= 0 and n < len(midi_notes_dict):
+                            state.notes_lst[state.selected_index] -= 1
             elif state.mode == MODE_M:  # "midi_channel"
                 state.midi_channel -= 1
                 state.midi_ch_chg_event = True
@@ -1581,24 +1579,33 @@ async def read_encoder(state):
 
 async def play_note(state, note, delay):
     TAG = tag_adj("play_note(): ")
-    if state.midi_ch_chg_event:  # was: if note == 61 and midi_ch_chg_event
-        state.midi_ch_chg_event = False  # Clear event flag
-    if (note != 0):
-        if not state.send_off:
-            midi.send(NoteOff(note, 0))
-            note_on = NoteOn(note, 127)
-            #if my_debug:
-            #    print(TAG+f"playing other channel? {note_on.channel}")
-            midi.send(note_on, channel=state.midi_channel)
-            await asyncio.sleep(state.bpm)  # was: delay)
-            if state.send_off:
-                midi.send(NoteOff(note, 0), channel=state.midi_channel)
-        else:
-            note_on = NoteOn(note, 127)
-            midi.send(note_on)
-            await asyncio.sleep(state.bpm)  # was: delay)
-            if state.send_off:
+    try:
+        if state.midi_ch_chg_event:  # was: if note == 61 and midi_ch_chg_event
+            state.midi_ch_chg_event = False  # Clear event flag
+        if (note > 0 and note < 128 ):
+            if note >= 21 and  note < len(midi_notes_dict) and note in midi_notes_dict.keys():  # 21 = A0
+                sn = midi_notes_dict[note][MIDI_NOTE]
+            else:
+                sn = ""
+            if my_debug:
+                print(TAG+f"\nnote to play: {note} = {sn}")
+            if not state.send_off:
                 midi.send(NoteOff(note, 0))
+                note_on = NoteOn(note, 127)
+                #if my_debug:
+                #    print(TAG+f"playing other channel? {note_on.channel}")
+                midi.send(note_on, channel=state.midi_channel)
+                await asyncio.sleep(state.bpm)  # was: delay)
+                if state.send_off:
+                    midi.send(NoteOff(note, 0), channel=state.midi_channel)
+            else:
+                note_on = NoteOn(note, 127)
+                midi.send(note_on)
+                await asyncio.sleep(state.bpm)  # was: delay)
+                if state.send_off:
+                    midi.send(NoteOff(note, 0))
+    except ValueError as e:
+        print(TAG+f"Error {e} occurred when note value was: {note}")
 
 # Added after suggestion of @DJDevon3
 # Function found in: https://learn.adafruit.com/midi-cyber-cat-keyboard/code-the-cyber-cat-midi-keyboard

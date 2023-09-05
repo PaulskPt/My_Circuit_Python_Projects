@@ -7,7 +7,7 @@
  Added global flag ```use_TAG```. This flag controls if in calls to function ```tag_adj()``` tags received will be printed or not.
  On a small display no function names (variable TAG) in print statements make the display more readable.
 
- Twentfour functions added that are not found in the other repos for the TR-Cowbell board:
+ Twentfive functions added that are not found in the other repos for the TR-Cowbell board:
  ```
  count_btns_active(), 
  clr_events(), 
@@ -26,7 +26,8 @@
  fnd_empty_loop(), 
  id_change(), 
  send_bend(), 
- wr_to_fi(), 
+ wr_to_fi(),
+ reset_encoder(),
  send_midi_panic(), 
  tag_adj(), 
  do_connect(), 
@@ -327,3 +328,16 @@
  | Exit=>Enc Btn |
 ```
 
+2023-09-04. 
+- Moved various textual information from the top of the script code.py to this file
+- Created file: ```midi_note_nrs.py```. In it I created a dictionary called: ```midi_notes_dict``` containing 128 keys,
+- e.g.: ``` 96: ("C7", 61, 76, 2093.00),       # Midi Organ starts here```. The first element of the tuple is the note representation for the key value.
+- the second element is the note value for an ```Organ```. The third element is the note value for a ```Piano```. The fourth element is the frequency of the tone.
+- I moved the ```notes_C_dict``` and the ```notes_major_minor_dict``` from the script ```code.py``` to the file ```midi_note_nrs.py```
+- I applied changes to functions pr_state(), read_encoder(), play_note(). I created the function encoder_reset(), to reset the encoder.position to 0 whenever its
+- position value exceeds + or - 127.
+- In ```read_encoder()``` added functionality to add ```encoder.position``` value instead in/decrementing with just 1 unit. This needs limit checking. It also lead to the
+- creation of the function ```encoder_reset()```. Also added an ```elapsed time``` calculation. After passing ```tm_interval``` (currently: 10) the ```encoder.position``` 
+- will be reset to 0 as well as- ```state.last_position```. This prevents that the ```encoder.position``` reach too high values.
+- 
+- 
