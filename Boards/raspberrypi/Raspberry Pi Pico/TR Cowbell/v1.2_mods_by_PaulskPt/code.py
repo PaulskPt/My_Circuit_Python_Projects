@@ -1109,7 +1109,6 @@ def wrt_to_fi(state):
     sf = "file:"
     ssf = "successfully"
     tmp = None
-    send_midi_panic()  # Kill sound output
     print()  # make a line space
     if fn_bak in f_lst:
         try:
@@ -1388,6 +1387,7 @@ async def read_buttons(state):
                     if state.mode  in [MODE_I, MODE_N]:
                         state.mode = MODE_F # Change mode to "file"
                     elif state.mode == MODE_F: # "file"
+                        send_midi_panic()  # Kill sound output
                         if ro_state == "Writeable":
                             wrt_to_fi(state)
                         else:
