@@ -457,8 +457,11 @@ def pr_state(state):
                 #    print("\n   ", end='')
                 sn = state.notes_lst[i]
                 if sn >= 21 and  sn < len(midi_notes_dict) and sn in midi_notes_dict.keys():  # 21 = A0
-                    sn = midi_notes_dict[sn][MIDI_NOTE] 
-                    print("{:>3s} ".format(sn), end='')
+                    sn = midi_notes_dict[sn][MIDI_NOTE][:3]  # cut e.g. F#6/Gb6 to F#6
+                    if i == state.selected_index:
+                        print(">{:>2s}<".format(sn), end='')  # put a marker for the selected note ---- state.notes_lst[state.selected_index]
+                    else:
+                        print("{:>3s} ".format(sn), end='')
                 else:
                     print("{:>3d} ".format(sn), end='')
                 if i == 7:
@@ -1488,7 +1491,7 @@ async def read_encoder(state):
             elif state.mode == MODE_N:  # "note"
                 if state.selected_index != -1:
                     n = state.notes_lst[state.selected_index] + cur_position
-                    if not my_debug:
+                    if my_debug:
                         print(TAG+f"\nstate.notes_lst[state.selected_index] = {state.notes_lst[state.selected_index]}")
                         print(TAG+f"n= {n}, Encoder rotary control last pos: {state.last_position} -> curr pos: {cur_position}")
                     if n >= 0 and n < len(midi_notes_dict):
