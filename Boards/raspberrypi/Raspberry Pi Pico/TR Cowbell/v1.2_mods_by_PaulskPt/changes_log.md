@@ -340,4 +340,6 @@
 - creation of the function ```encoder_reset()```. Also added an ```elapsed time``` calculation. After passing ```tm_interval``` (currently: 10) the ```encoder.position``` 
 - will be reset to 0 as well as- ```state.last_position```. This prevents that the ```encoder.position``` reach too high values.
 - 
+- 2023-09-05.
+- In function pr_state() changed to present the selected note by chevrons " >  <".
 - 
