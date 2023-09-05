@@ -1109,6 +1109,7 @@ def wrt_to_fi(state):
     sf = "file:"
     ssf = "successfully"
     tmp = None
+    send_midi_panic()  # Kill sound output
     print()  # make a line space
     if fn_bak in f_lst:
         try:
@@ -1539,7 +1540,7 @@ async def read_encoder(state):
                         n = state.notes_lst[state.selected_index] + cur_position  # add a negative value
                     else:
                         n = state.notes_lst[state.selected_index] - cur_position  # subtract a positive value
-                    if not my_debug:
+                    if my_debug:
                         print(TAG+f"\nstate.notes_lst[state.selected_index] = {state.notes_lst[state.selected_index]}")
                         print(TAG+f"n= {n}, Encoder rotary control last pos: {state.last_position} -> curr pos: {cur_position}")
                     if n >= 0 and n < len(midi_notes_dict):
