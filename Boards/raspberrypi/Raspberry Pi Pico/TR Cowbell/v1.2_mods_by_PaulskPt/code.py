@@ -213,9 +213,6 @@ from midi_note_nrs import * # import the midi_notes_dict
 # To check the import:
 # print(f"MIDI_NOTE= {MIDI_NOTE}, MIDI_ORGAN= {MIDI_ORGAN}, MIDI_PIANO= {MIDI_PIANO}, MIDI_FREQ= {MIDI_FREQ}")
 
-
-
-
 midi_channel_min = 1
 midi_channel_max = 2
 encoder = rotaryio.IncrementalEncoder(board.GP18, board.GP19)
@@ -280,11 +277,6 @@ latches = [False] * 16
 #
 notes_lst = [None] * 16
 #
-SELECTED_INDEX = -1
-
-TEMPO = 120 # Beats Per Minute (approximation)
-TEMPO_DELTA = 10
-BPM = TEMPO / 60 / 16
 pb_max = 16383 # bend up value
 pb_default = 8192 # bend center value
 pb_min = 0 # bend down value
