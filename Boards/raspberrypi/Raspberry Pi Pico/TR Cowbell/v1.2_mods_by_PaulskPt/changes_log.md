@@ -7,14 +7,13 @@
  Added global flag ```use_TAG```. This flag controls if in calls to function ```tag_adj()``` tags received will be printed or not.
  On a small display no function names (variable TAG) in print statements make the display more readable.
 
- Twentfive functions added that are not found in the other repos for the TR-Cowbell board:
+ Twentfour functions added that are not found in the other repos for the TR-Cowbell board:
  ```
  count_btns_active(), 
  clr_events(), 
  clr_scrn(), 
  pr_state(), 
  pr_msg(), 
- pr_loops(), 
  pr_dt(), 
  load_all_note_sets(), 
  load_note_set(),

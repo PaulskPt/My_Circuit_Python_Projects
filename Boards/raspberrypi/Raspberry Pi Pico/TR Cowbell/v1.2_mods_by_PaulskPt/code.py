@@ -508,7 +508,7 @@ def pr_state(state):
         if state.longpress_event:
             state.longpress_event = False
 
-def pr_msg(state, msg_lst=None):
+def pr_msg(msg_lst=None):
     TAG = tag_adj("pr_msg(): ")
     if msg_lst is None:
         msg_lst = ["pr_msg", "test message", "param rcvd:", "None"]
@@ -520,27 +520,9 @@ def pr_msg(state, msg_lst=None):
         for i in range(nr_lines):
             print(TAG+f"{msg_lst[i]}")
         if le < max_lines:
-            for j in range((max_lines-le)-1):
+            for _ in range((max_lines-le)-1):
                 print()
         time.sleep(3)
-
-def pr_loops(state):  # called from load_all_note_sets()
-    s = "-"*16
-    ln = "+----+----+"+s+"+"+s+"+"+s+"+"+s+"+"
-    TAG = tag_adj("pr_loops(): ")
-    print(ln)
-    print("| id |sIdx| notes red      |     yellow     |      blue      |     white      |")
-    print(ln)
-    for i in state.saved_loops['loops']:
-        s = "| {:2d} | {:2d} |".format(i['id'], i['selected_index'])
-        print(TAG+f"{s}", end='')
-        le = len(i['notes'])
-        for j in range(le):
-            if j > 0 and j % 4 == 0:
-                print("|", end='')
-            print("{:3d} ".format( i['notes'][j] ), end='')
-        print("|", end='\n')
-        print(ln)
 
 def pr_dt(state, short, choice):
     TAG = tag_adj("pr_dt(): ")
@@ -572,8 +554,8 @@ def pr_dt(state, short, choice):
     mi = now[4]
     ss = now[5]
     wd = now[6]
-    yd = now[7]
-    dst = now[8]
+    # yd = now[7]
+    # dst = now[8]
 
     dow = {0: 'Sunday',
            1: 'Monday',
@@ -706,9 +688,8 @@ def load_all_note_sets(state, use_warnings):
                 print(TAG+state.fn)
                 print(TAG+f"saved_loops: {state.saved_loops}\nloaded successfully")
             msg = [TAG, "note sets", "have been", "read from file", state.fn, "successfully"]
-            pr_msg(state, msg)
-            if my_debug:
-                pr_loops(state)
+            pr_msg(msg)
+
     except (OSError, KeyError) as e:
         print(TAG+f"Error occurred while reading from file {f}: {e}")
         state.saved_loops = []
@@ -725,7 +706,7 @@ def load_note_set(state, dir_up, use_warnings):
             # failed to load
             if use_warnings:
                 msg = [TAG, "Please", "long press", "middle button", "to load note sets", "from file"]
-                pr_msg(state, msg)
+                pr_msg(msg)
             return
 
     # All notes zero (to prevent a "hang" between switching key  )
@@ -746,11 +727,11 @@ def load_note_set(state, dir_up, use_warnings):
             if state.selected_file < 0:
                 state.selected_file = len(state.saved_loops['loops'])-1 # wrap to last
         if use_warnings:
+            s = "notes set nr: "
             if my_debug:
-                print(TAG+f"loading notes set nr: {state.selected_file+1} (from memory) successful")
-            msg = [TAG, "loading:", "from", "notes set nr: "+str(state.selected_file+1)]
-            pr_msg(state, msg)
-        #print(TAG+f"loading: {state.selected_file}")
+                print(TAG+f"\nloading {s}{state.selected_file+1} (from memory) successful")
+            msg = [TAG, "loading:", "from", s+str(state.selected_file+1)]
+            pr_msg(msg)
     state.load_state_obj(state.saved_loops['loops'][state.selected_file])
     state.mode = MODE_I # Change mode to "index"
 
@@ -761,7 +742,7 @@ def fifths_change(state):
     else:
         state.display_fifths = True
     msg = [TAG, "Display fifths", "changed to:", state.display_fifths]
-    pr_msg(state, msg)
+    pr_msg(msg)
 
 def key_change(state):
     TAG = tag_adj("key_change(): ")
@@ -771,11 +752,12 @@ def key_change(state):
         state.key_major = True
     k = "{:s}".format("Major" if state.key_major else "Minor")
     msg = [TAG, "The key", "of the notes", "changed to:", k]
-    pr_msg(state, msg)
+    pr_msg(msg)
     
 def tempo_change(state, rl):
     TAG = tag_adj("tempo_change(): ")
-    global TEMPO, TEMPO_DELTA, BPM
+    diff = None
+    rl = None
     # print(TAG+f"rl: {rl}, type(rl): {type(rl)}")
     state.tempo_shown = state.tempo_default
     if rl is not None and isinstance(rl, bool):
@@ -809,21 +791,27 @@ def tempo_change(state, rl):
                 send_bend(pb_default, pb_min, state.tempo, 0) # was: pb_change_rate, 0)
             else:
                 send_bend(pb_default, pb_max, state.tempo, 1)  # was: pb_change_rate, 1)
-    
-            # s = "Tempo {}creased (bpm delay {:s}creased to {:f})".format("in" if rl else "de", "de" if rl else "in", state.bpm)
-            # print(TAG+f"{s}")
-            #msg = [TAG, s]
-            #pr_msg(state, msg)
+    gc.collect()
 
 def mode_change(state):
-    TAG = tag_adj("mode_change(): ")
-    state.btn_event = True
+    TAG = tag_adj("mode_change(): ")  
+    i = None
+    le = None
+    k = None
     m_idx = state.mode # was: MODE_I
     msg_shown = False
-    scrolled = False
+    n = None
+    n_start = None
+    n_stop = None
     nr_items = len(mode_short_dict)-1  # Number of mode items (except MODE_C (mchg) between heading and bottom lines
     scrn_lst = []
     scrn_lst.append(TAG+"\n|---- Mode -----|")
+    scrolled = False
+    s = None
+    t = None
+    t2 = None
+    v = None
+
     for k, v in mode_short_dict.items():
         if k == MODE_C:  # don't show mode mchg 0
             continue
@@ -855,11 +843,8 @@ def mode_change(state):
                     print(s)  # print indexed mode item
                 else:
                     print(scrn_lst[i]) # print normal, not indexed mode item
-                
             print(scrn_lst[le-1], end='')  # print the bottom line
-
             msg_shown = True
-        
         enc_pos = encoder.position
         # print(TAG+f"state.lp: {state.last_position}, enc pos: {enc_pos}") 
         if state.last_position < enc_pos:  # Rotary control turned CW
@@ -887,32 +872,43 @@ def mode_change(state):
             state.last_position = enc_pos
             break
         time.sleep(0.05)
+    gc.collect()
 
 def glob_flag_change(state):  # Global flag change
     global my_debug, use_TAG, use_wifi
     TAG = tag_adj("gl_flag_change(): ")
+    d = None
+    enc_pos = None
+    flags_dict = None
+    flag_chg_dict = None
+    F_MIN = None
+    F_MAX = None
+    i = None
+    k = None 
+    k2 = None
+    m_idx = None
+    msg = None 
+    msg_shown = None
+    no_chg_flg = False
     old_pos = state.last_position
     old_enc_pos = state.enc_sw_cnt
-    no_chg_flg = False
+    v = None 
+
+    flags_dict = {0 : {'none' : no_chg_flg}, 1 : {'debug': my_debug}, 2: {'TAG': use_TAG}, 3: {'wifi' : use_wifi}}
+    le = len(flags_dict)
     if use_wifi:
-        flags_dict = {0 : {'none' : no_chg_flg}, 1 : {'debug': my_debug}, 2: {'TAG': use_TAG}, 3: {'wifi' : use_wifi}, 4: {'dtUS' : state.dt_str_usa}}
-    else:
-        flags_dict = {0 : {'none' : no_chg_flg}, 1 : {'debug': my_debug}, 2: {'TAG': use_TAG}, 3: {'wifi' : use_wifi}}
+        flags_dict[le] = {'dtUS' : state.dt_str_usa} # add a key and item
     F_MIN = 0
     F_MAX = len(flags_dict)-1
     m_idx = F_MIN
+    flag_chg_dict = {'none': False, 'debug': False, 'TAG': False, 'wifi' : False}
     if use_wifi:
-        flag_chg_dict = {'none': False, 'debug': False, 'TAG': False, 'wifi' : False, 'dtUS' : False}
-        flag_idx_dict = { 0: 'none', 1: 'debug', 2: 'TAG', 3: 'wifi', 4: 'dtUS'}
-    else:
-        flag_chg_dict = {'none': False, 'debug': False, 'TAG': False, 'wifi' : False}
-        flag_idx_dict = {0: 'none', 1: 'debug', 2: 'TAG', 3: 'wifi'}
+        flag_chg_dict['dtUS'] = False  # add a key and value
+
     msg_shown = False
     while True:
         if not msg_shown:
             print("\n")
-            # print(flags_dict.items())
-            # print(list(flag_chg_dict.items()))
             print(TAG+"\n|---Glob Flag---|")
 
             for k in flags_dict.items():
@@ -969,9 +965,7 @@ def glob_flag_change(state):  # Global flag change
 
                 #if my_debug:
                 #    print(TAG+f"\nsaving global flag as: {flags_dict[m_idx]}")
-
             break
-
         time.sleep(0.05)
     # Restore
     state.enc_sw_cnt = old_enc_pos
@@ -1000,11 +994,11 @@ def glob_flag_change(state):  # Global flag change
                     state.dt_str_usa = flags_dict[i]['dtUS']
                     # check if it worked
                     msg = [TAG, 'NTP date:', pr_dt(state, True, 0), pr_dt(state, True, 2)]
-                    pr_msg(state, msg)
+                    pr_msg(msg)
 
     if my_debug:
         print(TAG+f"\ndebug: {my_debug}, TAG: {use_TAG}, wifi: {use_wifi}")
-
+    gc.collect()
         
 def id_change(lps, ne, s, le):  # Called from read_buttons()
     lps2 = lps
@@ -1060,6 +1054,7 @@ def fnd_empty_loop(state):
             print(TAG+f"lowest id= {n}")
         ret = n
     # print(TAG+f"ret= {ret}")
+    gc.collect()
     return ret
         
 def send_bend(bend_start, bend_val, rate, bend_dir):
@@ -1110,14 +1105,14 @@ def wrt_to_fi(state):
             if my_debug:
                 print(TAG+f"{s} \"{fn_bak}\"")
             msg = [TAG, s, fn_bak]
-            pr_msg(state, msg)
+            pr_msg(msg)
             f_lst2 = os.listdir("/")
             if not fn_bak in f_lst2:
                 s = "removed " + ssf
                 if my_debug:
                     print(TAG+f"{sf} \"{fn_bak}\" {s}")
                 msg = [TAG, sf, fn_bak, s]
-                pr_msg(state, msg)
+                pr_msg(msg)
             f_lst2 = None
         except OSError as e:
             print(TAG+f"OSError while trying to remove file \"{fn_bak}\". Error: {e}")
@@ -1126,7 +1121,7 @@ def wrt_to_fi(state):
         if my_debug:
             print(TAG+f"{sf} \"{fn_bak}\" {nf}")
         msg = [TAG, sf, fn_bak, nf]
-        pr_msg(state, msg)
+        pr_msg(msg)
     if state.fn in f_lst:  # rename existing saved_loops.json to saved_loops.bak
         try:
             os.rename(fn_ren, fn_bak2)
@@ -1137,14 +1132,14 @@ def wrt_to_fi(state):
                 if my_debug:
                     print(TAG+f"{sf} \"{state.fn}\" {s} \"{fn_bak}\" {ssf}")
                 msg = [TAG, sf, state.fn, s, fn_bak, ssf]
-                pr_msg(state, msg)
+                pr_msg(msg)
             else:
                 s = "failed rename file:"
                 t = "to:"
                 if my_debug:
                     print(TAG+f"{s} \"{state.fn}\" {t} \"{fn_bak}\"")
                 msg = [TAG, s, state.fn, t, fn_bak]
-                pr_msg(state, msg)
+                pr_msg(msg)
         except OSError as e:
             print(TAG+f"OSError while trying to rename file \"{state.fn}\" to \"{fn_bak}\". Error: {e}")
     try:
@@ -1154,7 +1149,7 @@ def wrt_to_fi(state):
         if my_debug:
             print(TAG+f"{s} {s2} to: \"{state.fn}\"")
         msg = [TAG, s, s2, "to file:", state.fn]
-        pr_msg(state, msg)
+        pr_msg(msg)
         lps = state.saved_loops
         if my_debug:
             print(TAG+f"loops of state.saved_loops= {lps}")
@@ -1222,30 +1217,12 @@ def wrt_to_fi(state):
             if my_debug:
                 print(TAG+"save complete")
             msg = [TAG, "note sets (loops)", "saved to file:", state.fn, "successfully"]
-            pr_msg(state, msg)
+            pr_msg(msg)
             state.write_msg_shown = True
     except OSError as e:
         print(TAG+f"OSError while trying to save note sets to file. Error: {e}")
     # Cleanup
-    f = None
-    f_lst = None
-    f_lst2 = None
-    f_lst3 = None
-    fn_bak = None
-    fn_bak2 = None
-    fn_ren = None
-    #
-    le2 = None
-    le3 = None
-    lps = None
-    msg = []
-    ne = None
-    nf = None
-    s = None
-    s2 = None
-    sf = None
-    ssf = None
-    tmp = None
+    gc.collect()
 
 async def read_buttons(state):
     global ro_state
@@ -1283,6 +1260,7 @@ async def read_buttons(state):
                         increment_selected(state)
 
             # make sure to yield during the reading of the buttons
+            gc.collect()
             await asyncio.sleep(0)
 
         # d-pad
@@ -1291,11 +1269,6 @@ async def read_buttons(state):
         right_btn.update()
         left_btn.update()
         middle_btn.update()
-        # if down_btn.long_press:
-        #     print("down longpress")
-        # if not down_btn.value:
-        #     print(down_btn.current_duration)
-        #pr_state(state)  # This also clears events
 
         if state.mode != MODE_M: # "midi_channel". Only change midi channel with Rotary Encoder control
             if state.btn_event == False:  # only if no other event is being processed
@@ -1386,11 +1359,12 @@ async def read_buttons(state):
                             if my_debug:
                                 print("Filesystem is readonly. Cannot save note sets to file")
                             msg = [TAG, "Filesystem is", "readonly.", "Unable to save", "note sets","to file:", state.fn]
-                            pr_msg(state, msg)
+                            pr_msg(msg)
                     elif state.mode == MODE_T:  # "tempo". Reset tempo to default
                         state.tempo_reset = True
                         tempo_change(state, rl)
         # slow down the loop a little bit, can be adjusted
+        gc.collect()
         await asyncio.sleep(0.15)  # Was: 0.05 or BPM -- has to be longer to avoid double hit
 
 def reset_encoder(state):
@@ -1502,7 +1476,7 @@ async def read_encoder(state):
                     print(f"new midi channel: {state.midi_channel}")
                 s = "new midi channel {:d}".format(state.midi_channel)
                 msg = [TAG, s]
-                pr_msg(state, msg)
+                pr_msg(msg)
                 s = None
             elif state.mode == MODE_F:  # "file"
                 if state.selected_file is None:
@@ -1553,7 +1527,7 @@ async def read_encoder(state):
                     print(f"new midi channel: {state.midi_channel}")
                 s = "new midi channel {:d}".format(state.midi_channel)
                 msg = [TAG, s]
-                pr_msg(state, msg)
+                pr_msg(msg)
             elif state.mode == MODE_F:  # "file"
                 if state.selected_file is None:
                     state.selected_file = 0
@@ -1572,7 +1546,8 @@ async def read_encoder(state):
         else:
             # same
             pass
-
+        gc.collect()
+    
 async def play_note(state, note, delay):
     TAG = tag_adj("play_note(): ")
     try:
@@ -1713,7 +1688,7 @@ def do_connect(state):
             print(TAG+"IP address is", ip)
             msg = [TAG, "connected to", os.getenv('CIRCUITPY_WIFI_SSID'), "IP Address is:", ip,
                    'NTP date:', pr_dt(state, True, 0), pr_dt(state, True, 2)]
-            pr_msg(state, msg)
+            pr_msg(msg)
         addr_idx = 0
         addr_dict = {0:'LAN gateway', 1:'google.com'}
         info = pool.getaddrinfo(addr_dict[1], 80)
@@ -1735,6 +1710,7 @@ def do_connect(state):
         time.sleep(2)  # wait a bit to show the user the message
         #import microcontroller
         #microcontroller.reset()
+    gc.collect()
 
 def dt_update(state):
     state.ntp_datetime = ntp.datetime
@@ -1744,21 +1720,19 @@ def wifi_is_connected():
     return True if s_ip is not None and s_ip != '0.0.0.0' else False
 
 def setup(state):
-    global ntp
     TAG = tag_adj("setup(): ")
     send_midi_panic() # switch off any notes
+    s = "{}".format(os.getenv('CIRCUITPY_WIFI_SSID'))
+    s2 = "Connecting WiFi to {:s}".format(s) if not wifi_is_connected() else "WiFi is connected to {:s}".format(s)
     if use_wifi:
+        print(TAG+s2)
         if not wifi_is_connected():
-            if my_debug:
-                print(TAG+f"Connecting WiFi to {os.getenv('CIRCUITPY_WIFI_SSID')}")
             do_connect(state)
-        else:
-            print(TAG+f"WiFi is connected to {os.getenv('CIRCUITPY_WIFI_SSID')}")
-
         dt_update(state)
-
-    use_warnings = True
-    load_all_note_sets(state, use_warnings)
+    s = None
+    s2 = None
+    load_all_note_sets(state, True) # Use warnings
+    gc.collect()
 
 async def main():
     # state = State(saved_loops.LOOP1)
@@ -1772,5 +1746,6 @@ async def main():
         asyncio.create_task(update_display(state, delay=0.125)),
         asyncio.create_task(read_encoder(state))
     )
+    gc.collect()
 
 asyncio.run(main())
