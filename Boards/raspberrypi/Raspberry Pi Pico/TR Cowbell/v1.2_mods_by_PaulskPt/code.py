@@ -441,7 +441,7 @@ def pr_state(state):
         if not state.display_fifths:
             for i in range(len(state.notes_lst)):
                 if i % 4 == 0:
-                    print("{:02d} ".format(i+1), end='')
+                    print("{:2d} ".format(i+1), end='')
                 sn = state.notes_lst[i]
                 if sn >= 21 and  sn < len(midi_notes_dict) and sn in midi_notes_dict.keys():  # 21 = A0
                     sn = midi_notes_dict[sn][MIDI_NOTE][:3]  # cut e.g. F#6/Gb6 to F#6
@@ -752,7 +752,7 @@ def key_change(state):
 def tempo_change(state, rl):
     TAG = tag_adj("tempo_change(): ")
     diff = None
-    rl = None
+    tempo_old = state.tempo
     # print(TAG+f"rl: {rl}, type(rl): {type(rl)}")
     state.tempo_shown = state.tempo_default
     if rl is not None and isinstance(rl, bool):
@@ -768,7 +768,8 @@ def tempo_change(state, rl):
                 state.tempo += state.tempo_delta
 
             state.bpm = state.tempo / 60 / 16
-            
+            if my_debug:
+                print(TAG+f"tempo old: {tempo_old}. Tempo new: {state.tempo}")
             if state.tempo < state.tempo_default:
                 diff = state.tempo_default - state.tempo
                 state.tempo_shown = state.tempo + (diff * 2)
