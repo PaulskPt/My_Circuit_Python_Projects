@@ -435,7 +435,7 @@ def pr_state(state):
                 cnt = len(my_lst)
         #if cnt > 0:
         btn = "button" if org_cnt in [0, 1] else "buttons"
-        print(TAG+f"\n{org_cnt} {btn} active")
+        print(TAG+"\n{:2d} {:s} active".format(org_cnt, btn))
         print("-"*18)
         grp = 0
         if not state.display_fifths:
