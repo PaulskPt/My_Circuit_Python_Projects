@@ -440,13 +440,8 @@ def pr_state(state):
         grp = 0
         if not state.display_fifths:
             for i in range(len(state.notes_lst)):
-                if i == 0 or i == 8:
-                    print(f"{grp}/ ", end='')
-                    grp += 1
-                if i == 4 or i == 12:
-                    print("\n   ", end='')
-                #if i > 0 and i % 4 == 0:
-                #    print("\n   ", end='')
+                if i % 4 == 0:
+                    print("{:02d} ".format(i+1), end='')
                 sn = state.notes_lst[i]
                 if sn >= 21 and  sn < len(midi_notes_dict) and sn in midi_notes_dict.keys():  # 21 = A0
                     sn = midi_notes_dict[sn][MIDI_NOTE][:3]  # cut e.g. F#6/Gb6 to F#6
@@ -456,7 +451,7 @@ def pr_state(state):
                         print("{:>3s} ".format(sn), end='')
                 else:
                     print("{:>3d} ".format(sn), end='')
-                if i == 7:
+                if i in [3, 7, 11]:
                     print()
             print("\n"+"-"*18)
         else:
