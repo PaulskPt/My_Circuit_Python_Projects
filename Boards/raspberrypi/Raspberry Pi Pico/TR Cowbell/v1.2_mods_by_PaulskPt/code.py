@@ -431,7 +431,7 @@ def pr_state(state):
         if org_cnt == 0:
             my_lst = state.notes_lst
             if len(my_lst) == 0:
-                my_lst = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+                my_lst = [0] * 16
                 cnt = len(my_lst)
         #if cnt > 0:
         btn = "button" if org_cnt in [0, 1] else "buttons"
