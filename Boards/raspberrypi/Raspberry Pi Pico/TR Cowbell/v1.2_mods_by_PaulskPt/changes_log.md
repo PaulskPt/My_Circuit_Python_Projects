@@ -341,4 +341,8 @@
 - 
 - 2023-09-05.
 - In function pr_state() changed to present the selected note by chevrons " >  <".
-- 
+
+- 202-09-06
+- In function pr_state() changed the "/1" and "/2" in the left column to " 1", "5", "9" and "13". Replaced IMG_09.png with images IMG_08a.jpg and IMG_08b.jpg which show the new
+- situation.
+
