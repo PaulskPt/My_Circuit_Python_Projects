@@ -1,0 +1,52 @@
+Monday 2023-09-11 13h55 PT (utc +1)
+
+Platform: @DJDevon3's TR-COWBELL with Raspberry Pi PicoW
+
+IDE: mu-editor
+
+REPL output:     (Note: my_debug flag = False)
+
+soft reboot
+
+Auto-reload is on. Simply save files over USB to run them or enter REPL to disable.
+code.py output:
+]0;🐍192.168.1.79 | code.py | 8.2.3\
+
+TR-COWBELL test
+Board:
+raspberry_pi_pico_w
+Filesystem:Readonly
+OLED driver: SH1107
+--------------------
+Connecting WiFi to Vodafone-8D96F1
+connected to Vodafone-8D96F1
+IP address is 192.168.1.79
+
+
+connected to
+Vodafone-8D96F1
+IP Address is:
+192.168.1.79
+NTP date:
+Sun 9/11/2023
+01:51:52 PM
+
+
+note sets
+have been
+read from file
+saved_loops.json
+successfully
+nr (ultimate) note sets not loaded: 2           <<<=== These two lines added in case there are more than 10 note sets
+only 10 note sets can be loaded                         in the file "saved_loops.json"
+
+ 0 button active
+------------------
+ 1   0   0   0   0 
+ 5   0   0   0   0 
+ 9   0   0   0   0 
+13   0   0   0   0 
+------------------
+No buttons active
+mode:indx.NoteSet:8
+
