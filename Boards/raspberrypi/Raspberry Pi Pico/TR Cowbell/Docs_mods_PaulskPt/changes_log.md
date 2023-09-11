@@ -343,8 +343,18 @@
 - In function pr_state() changed to present the selected note by chevrons " >  <".
 
 - 202-09-06
-- In function pr_state() changed the "/1" and "/2" in the left column to " 1", "5", "9" and "13". Replaced IMG_09.png with images IMG_08a.jpg and IMG_08b.jpg which show the new
-- situation.
+- In function pr_state() changed the "/1" and "/2" in the left column to " 1", "5", "9" and "13" (See image below).
+- Replaced IMG_09.png with images IMG_08a.jpg and IMG_08b.jpg which show the new situation.
+- 
+-   8 buttons active
+ ------------------
+  1 >A4< D5  F5   0
+  5   0  64   0  64
+  9   0   0   0  65
+ 13  E5  A4   0   0
+ --------------------
+ selected idx: 1
+ mode:indx.NoteSet:1
 
 2023-09-11.
 - In function load_all_note_sets() added functionality to limit the number of note sets to be loaded to 10.
