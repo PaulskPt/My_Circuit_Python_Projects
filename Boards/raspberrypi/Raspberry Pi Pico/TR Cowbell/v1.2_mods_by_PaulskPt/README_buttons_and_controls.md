@@ -122,7 +122,7 @@
    | "glob flag"      |   "flag"      |
    +------------------+---------------+
 ```
-# -- in mode "mchg" (see above)
+# -- in mode "mchg" (not shown). Internally used.
 # -- in mode "indx" turning the rotary encoder control clockwise will increase the selected index value to the next selected note.
 # -- in mode "indx" turning the rotary encoder control counter clockwise will decrease the selected index value to the previous selected note.
 # -- In mode "note", if one or more buttons is activated, 
