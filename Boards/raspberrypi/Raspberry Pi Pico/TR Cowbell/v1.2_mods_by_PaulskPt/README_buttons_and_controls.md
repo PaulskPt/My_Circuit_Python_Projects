@@ -24,7 +24,7 @@
 #
 # D-Pad buttons functions:
 #
-# Middle button:
+# Middle button (BUTTON 5):
 # - If normal press:
 #   -- In modes "indx" or "note"   ("indx" stands for "index". Due to small display we decided to display only 4 characters for the mode status)
 #      --- changes mode to "file", so one can: 
@@ -50,18 +50,19 @@
 #   -- tries to open file "saved_loops.json";
 #   -- reads all the previously saved note sets (aka: "loops") into memory (state class: object.item "state.saved_loops)"
 #
-# Up button:
+# Up button (BUTTON 1):
 # - In mode "indx" or "file" this button loads the next notes set from memory
 # - In mode "note", if one or more buttons is activated: increases the note frequency
-# Down button:
+# Down button (BUTTON 3):
 # - In mode "indx" or "file" this button loads the previous notes set from memory
 # - In mode "note", if one or more buttons is activated: decreases the note frequency
-# Left button:
+# Left button (BUTTON 4):
 # - In mode "indx" or in mode "note" if more than one button is activated, 
 #   this button changes the selected index to the previous available index
 # - In mode "tempo"
-#   this button decreases the Tempo (increases the bpm delay). Default tempo is 120. The bpm = tempo / 60 / 16
-# Right button
+#   this button decreases the Tempo (increases the bpm delay). Default tempo is 120. The bpm = tempo / 60 / 16. 
+#     In case of default: 120 / 60 / 16 = 0.125.
+# Right button (BUTTON 2):
 # - In mode "indx" or in mode "note" if more than one button is activated, 
 #   this button changes the selected index to the next available index
 # - In mode "tempo"
@@ -71,20 +72,23 @@
 #
 # Rotary encoder: has 1 control and 1 button (switch)
 #
-# -- After a double press of the encoder button, the menu below appears:
+# -- After a double press of the encoder button, the menu (left) below appears:
+# -- When scrolling down to "tmpo 7" the displayed menu will scroll up (see menu on the right).
 ```
-   !---- Mode ----|
-        mchg 1
-     >> indx 2 <<
-        note 3
-        file 4
-        midi 5
-        fift 6
-        nkey 7
-   ! Exit=> Enc Btn |
+   !---- Mode ----|               !---- Mode ----|
+     >> indx 1 <<                   >> note 2 <<
+        note 2                         file 3
+        file 3                         midi 4
+        midi 4                         fift 5
+        fift 5                         nkey 6
+        nkey 6                         tmpo 7
+        tmpo 7                         flag 8
+   ! Exit=>Enc Btn |              ! Exit=>Enc Btn |
 ```
 # turning the rotary encoder control clockwise moves the selector indicator down to the next mode in the list.
 # turning the rotary encoder control counter clockwise moves the selector indicator up to the previous mode in the list.
+# The selection "rolls" forward (from last to first item) or backward (from first to last item) 
+# depending on the turning direction of the rotary encoder control.
 # To exit with the selected mode press the encoder button once again.
 
 # In the table below the available modes and their abbreviations:
@@ -93,13 +97,15 @@
    +------------------+---------------+
    | Mode             |  Displayed as |
    +------------------+---------------+
-   ! "mode change"    |   "mchg"      |
+   ! "mode change"    |   "mchg"      |  (not shown)
    | "index"          |   "indx"      |
    | "note"           |   "note"      |
    | "file"           |   "file"      |
    | "midi_channel"   |   "midi"      |
    | "display_fifths" |   "fift"      |
    | "note_key_major" |   "nkey"      |
+   | "tempo"          |   "tmpo"      |
+   | "glob flag"      |   "flag"      |
    +------------------+---------------+
 ```
 # -- in mode "mchg" (see above)
@@ -118,6 +124,18 @@
 #    (normal number values)
 # -- In mode "nkey", turning the rotary encoder control clockwise or coounter clockwise will change the key of the notes display between
 #    Major and Minor
+# -- In mode "tmpo", pressing "BUTTON 2" (right button) increases the tempo. Pressing "BUTTON 4" (left button) decreases the tempo.
+# -- In mode "flag" shows a "Glob Flag" menu with the following options appears:
+```
+   !---Glob Flag---|
+     >> none 0 <<
+       debug 0
+         TAG 0
+        Wifi 1
+        dtUS 1
+   ! Exit=>Enc Btn |
+```
+
 #
 # NOTE: At startup the flag for "display of fifths" is set to False. The flag for the Key of notes is set to True (Major)
 # NOTE: It is advised to use the D-Pad (middle, Up and Down keys) to perform file actions.
