@@ -648,6 +648,8 @@ def load_all_note_sets(state, use_warnings):
     state.mode = MODE_F # "file"
     ret = True
     f = None
+    nr_note_sets_removed = 0
+    ns = "note sets"
     try:
         f = open(state.fn, "r")
         sl = json.loads(f.read()) # ["loops"]
@@ -660,7 +662,17 @@ def load_all_note_sets(state, use_warnings):
             sl["loops"] = []
         # Check for an empty note set.
         # If not found, add one
-        le = len(sl['loops'])
+    
+        # Max 10 note lists
+        nr_note_sets_removed = 0
+        while True:
+            le = len(sl['loops'])
+            if le > 9:
+                del sl['loops'][le-1]
+                nr_note_sets_removed += 1
+            else:
+                break
+        
         # print(TAG+f"sets: {sl['loops']}")
         set_nr = fnd_empty_loop(state)
         # print(f"set_nr = {set_nr}")
@@ -682,7 +694,11 @@ def load_all_note_sets(state, use_warnings):
             if my_debug:
                 print(TAG+state.fn)
                 print(TAG+f"saved_loops: {state.saved_loops}\nloaded successfully")
-            msg = [TAG, "note sets", "have been", "read from file", state.fn, "successfully"]
+            msg = [TAG, ns, "have been", "read from file", state.fn, "successfully"]
+            if nr_note_sets_removed > 0:
+                s = "nr (ultimate) "+ns+" not loaded: {:d}".format(nr_note_sets_removed)
+                msg.append(s)
+                msg.append("only 10 "+ns+" can be loaded")
             pr_msg(msg)
 
     except (OSError, KeyError) as e:
