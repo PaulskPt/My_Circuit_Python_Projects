@@ -8,10 +8,15 @@
 # If my_debug is False these print commands will be inhibited
 # Only error situations will be printed to the REPL
 #
-# There are several other global variables (flags)
+# There are several other global variables (flags).
 # use_ssd1306 (for the OLED 128x64 that came with the kit v1.2) (either this flag or use_sh1107 can have value True)
 # use_sh1107 (for the Adafruit OLED 128x128 display)
-# other flags are inside the state class object
+# other flags are inside the state class object.
+# The following global flags can be changes from within the "Glob Flags" menu:
+# - debug (flag "my_debug");
+# - TAG (flag "use_TAG");
+# - WiFi (flag "use_wifi");
+# - dtUS (flag "state.use_str_usa").  This is a flag inside the state class. Default: True
 #
 # NOTE: 
 # At startup all the note sets (from file 'saved_loops.json') are loaded into memory.
