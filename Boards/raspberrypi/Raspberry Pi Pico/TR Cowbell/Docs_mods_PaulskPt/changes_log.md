@@ -345,8 +345,9 @@
 - 202-09-06
 - In function pr_state() changed the "/1" and "/2" in the left column to " 1", "5", "9" and "13" (See image below).
 - Replaced IMG_09.png with images IMG_08a.jpg and IMG_08b.jpg which show the new situation.
-- 
--   8 buttons active
+
+```
+  8 buttons active
  ------------------
   1 >A4< D5  F5   0
   5   0  64   0  64
@@ -355,9 +356,22 @@
  --------------------
  selected idx: 1
  mode:indx.NoteSet:1
+```
 
 2023-09-11.
 - In function load_all_note_sets() added functionality to limit the number of note sets to be loaded to 10.
+- In case more than 10 note sets are found in the file "saved_loops.json", the following two (ultimate) lines
+- will be added to the displayed message:
+```
+note sets
+have been
+read from file
+saved_loops.json
+successfully
+nr (ultimate) note sets not loaded: 2
+only 10 note sets can be loaded
+```
+
 - Added folder "Docs_mods_PaulskPt".
 - Moved all "REPL...md" files and this file to the new folder.
 - Updated the file "README_buttons_and_controls.md".
