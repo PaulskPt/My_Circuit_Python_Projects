@@ -76,12 +76,12 @@
 # -- When scrolling down to "tmpo 7" the displayed menu will scroll up (see menu on the right).
 ```
    !---- Mode ----|               !---- Mode ----|
-     >> indx 1 <<                   >> note 2 <<
+     >> indx 1 <<                      note 2   
         note 2                         file 3
         file 3                         midi 4
         midi 4                         fift 5
         fift 5                         nkey 6
-        nkey 6                         tmpo 7
+        nkey 6                      >> tmpo 7 <<
         tmpo 7                         flag 8
    ! Exit=>Enc Btn |              ! Exit=>Enc Btn |
 ```
