@@ -52,10 +52,10 @@
 #
 # Up button (BUTTON 1):
 # - In mode "indx" or "file" this button loads the next notes set from memory
-# - In mode "note", if one or more buttons is activated: increases the note frequency
+# - In mode "note", if one or more buttons is activated: increases the note frequency of the selected note key
 # Down button (BUTTON 3):
 # - In mode "indx" or "file" this button loads the previous notes set from memory
-# - In mode "note", if one or more buttons is activated: decreases the note frequency
+# - In mode "note", if one or more buttons is activated: decreases the note frequency of the selected note key
 # Left button (BUTTON 4):
 # - In mode "indx" or in mode "note" if more than one button is activated, 
 #   this button changes the selected index to the previous available index
