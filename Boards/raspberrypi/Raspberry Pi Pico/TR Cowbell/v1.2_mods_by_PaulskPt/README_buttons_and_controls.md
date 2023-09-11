@@ -15,7 +15,7 @@
 #
 # NOTE: 
 # At startup all the note sets (from file 'saved_loops.json') are loaded into memory.
-# A 'sero notes set' will be displayed at startup (state.notes_lst is defaulted to: '[0] * 16')
+# A 'zero notes set' will be displayed at startup (state.notes_lst is defaulted to: '[0] * 16')
 # The script expects a 'zero notes set' to be at the end of the 'saved_loops.json' file.
 # If no 'zero note set' is in the saved_loops.json file, when saving them to the file, a 'zero notes set' will be added
 # to the end of the file.
