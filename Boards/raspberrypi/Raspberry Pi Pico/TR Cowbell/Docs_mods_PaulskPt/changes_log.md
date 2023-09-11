@@ -346,3 +346,8 @@
 - In function pr_state() changed the "/1" and "/2" in the left column to " 1", "5", "9" and "13". Replaced IMG_09.png with images IMG_08a.jpg and IMG_08b.jpg which show the new
 - situation.
 
+2023-09-11.
+- In function load_all_note_sets() added functionality to limit the number of note sets to be loaded to 10.
+- Added folder "Docs_mods_PaulskPt".
+- Moved all "REPL...md" files and this file to the new folder.
+- Updated the file "README_buttons_and_controls.md".
