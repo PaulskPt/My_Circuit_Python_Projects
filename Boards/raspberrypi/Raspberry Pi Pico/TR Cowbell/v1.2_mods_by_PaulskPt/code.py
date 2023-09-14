@@ -1408,6 +1408,7 @@ async def read_encoder(state):
         # ---------------------------------------------------------------------------------------------------
 
         if state.mode == MODE_G:
+            send_midi_panic()
             glob_flag_change(state)
 
         encoder_dbl_btn.update()
