@@ -1500,8 +1500,10 @@ async def read_encoder(state):
                 if my_debug:
                     print(TAG+f"state.selected_file= {state.selected_file}")
             elif state.mode == MODE_D: # "fifths"
+                send_midi_panic()
                 fifths_change(state)
             elif state.mode == MODE_K: # "note key Major or Minor
+                send_midi_panic()
                 key_change(state)
             #elif state.mode == MODE_G: # "global flag change
             #    glob_flag_change(state)
@@ -1552,8 +1554,10 @@ async def read_encoder(state):
                 if my_debug:
                     print(TAG+f"state.selected_file= {state.selected_file}")
             elif state.mode == MODE_D: # "fifths"
+                send_midi_panic()
                 fifths_change(state)
             elif state.mode == MODE_K: # "note key Major or Minor
+                send_midi_panic()
                 key_change(state)
             #elif state.mode == MODE_G: # "global flag change
             #    glob_flag_change(state)
