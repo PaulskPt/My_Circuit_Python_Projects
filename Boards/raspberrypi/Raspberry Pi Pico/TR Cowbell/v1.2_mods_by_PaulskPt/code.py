@@ -6,7 +6,7 @@
 # Partly also based on TR_Cowbell_Sequencer_Software repo by @Foamyguy
 # 2023-08-20
 # More info about buttons and controls, see file: README_buttons_and_controls.md (work-in-progress)
-# For list of changes see file: changes_log.md 
+# For list of changes see file: changes_log.md
 import asyncio
 import time
 import board
@@ -53,7 +53,7 @@ from io import BytesIO
 import msgpack
 from adafruit_midi.note_off import NoteOff
 from adafruit_midi.note_on import NoteOn
-# PitchBend is a special MIDI message, with a range of 0 to 16383. 
+# PitchBend is a special MIDI message, with a range of 0 to 16383.
 # Since pitch can be bent up or down, the midpoint (no pitch bend) is 8192.
 from adafruit_midi.pitch_bend import PitchBend
 
@@ -552,13 +552,14 @@ def pr_dt(state, short, choice):
     # yd = now[7]
     # dst = now[8]
 
-    dow = {0: 'Sunday',
-           1: 'Monday',
-           2: 'Tuesday',
-           3: 'Wednesday',
-           4: 'Thursday',
-           5: 'Friday',
-           6: 'Saturday'
+    dow = {
+           0: 'Monday',
+           1: 'Tuesday',
+           2: 'Wednesday',
+           3: 'Thursday',
+           4: 'Friday',
+           5: 'Saturday',
+           6: 'Sunday',
            }
 
     swd = dow[wd][:3] if short else dow[wd]
@@ -662,7 +663,7 @@ def load_all_note_sets(state, use_warnings):
             sl["loops"] = []
         # Check for an empty note set.
         # If not found, add one
-    
+
         # Max 10 note lists
         nr_note_sets_removed = 0
         while True:
@@ -672,7 +673,7 @@ def load_all_note_sets(state, use_warnings):
                 nr_note_sets_removed += 1
             else:
                 break
-        
+
         # print(TAG+f"sets: {sl['loops']}")
         set_nr = fnd_empty_loop(state)
         # print(f"set_nr = {set_nr}")
@@ -764,7 +765,7 @@ def key_change(state):
     k = "{:s}".format("Major" if state.key_major else "Minor")
     msg = [TAG, "The key", "of the notes", "changed to:", k]
     pr_msg(msg)
-    
+
 def tempo_change(state, rl):
     TAG = tag_adj("tempo_change(): ")
     diff = None
@@ -776,7 +777,7 @@ def tempo_change(state, rl):
         if state.tempo_reset:
             state.tempo = state.tempo_default
             state.bpm = state.tempo / 60 / 16
-            state.tempo_shown = state.tempo 
+            state.tempo_shown = state.tempo
         else:
             if rl:  # button right pressed. Increase tempo
                 state.tempo -= state.tempo_delta # Beats Per Minute (approximation)
@@ -794,7 +795,7 @@ def tempo_change(state, rl):
                 state.tempo_shown = state.tempo - (diff * 2)
             else:
                 state.tempo_shown = state.tempo
-                
+
         if state.tempo_reset:
             state.tempo_reset = False
         else:
@@ -806,7 +807,7 @@ def tempo_change(state, rl):
     gc.collect()
 
 def mode_change(state):
-    TAG = tag_adj("mode_change(): ")  
+    TAG = tag_adj("mode_change(): ")
     i = None
     le = None
     k = None
@@ -845,8 +846,8 @@ def mode_change(state):
             n_start = n_stop - (nr_items-1)
             # print(TAG+f"\nnr_items: {nr_items}, n_start: {n_start}, n_stop: {n_stop}")
             print(scrn_lst[0])  # print heading line
-            
-            for i in range(n_start, n_stop): 
+
+            for i in range(n_start, n_stop):
                 t = (scrn_lst[i])
                 t2 = t.rstrip()[-1] # extract the MODE value
                 n = int(t2) if t2.isdigit() else -1  # 0-9 ? Yes, convert to integer else -1
@@ -858,7 +859,7 @@ def mode_change(state):
             print(scrn_lst[le-1], end='')  # print the bottom line
             msg_shown = True
         enc_pos = encoder.position
-        # print(TAG+f"state.lp: {state.last_position}, enc pos: {enc_pos}") 
+        # print(TAG+f"state.lp: {state.last_position}, enc pos: {enc_pos}")
         if state.last_position < enc_pos:  # Rotary control turned CW
             state.last_position = enc_pos
             m_idx += 1
@@ -896,15 +897,15 @@ def glob_flag_change(state):  # Global flag change
     F_MIN = None
     F_MAX = None
     i = None
-    k = None 
+    k = None
     k2 = None
     m_idx = None
-    msg = None 
+    msg = None
     msg_shown = None
     no_chg_flg = False
     old_pos = state.last_position
     old_enc_pos = state.enc_sw_cnt
-    v = None 
+    v = None
 
     flags_dict = {0 : {'none' : no_chg_flg}, 1 : {'debug': my_debug}, 2: {'TAG': use_TAG}, 3: {'wifi' : use_wifi}}
     le = len(flags_dict)
@@ -1011,7 +1012,7 @@ def glob_flag_change(state):  # Global flag change
     if my_debug:
         print(TAG+f"\ndebug: {my_debug}, TAG: {use_TAG}, wifi: {use_wifi}")
     gc.collect()
-        
+
 def id_change(lps, ne, s, le):  # Called from read_buttons()
     lps2 = lps
     if 'id' in ne.keys():
@@ -1068,7 +1069,7 @@ def fnd_empty_loop(state):
     # print(TAG+f"ret= {ret}")
     gc.collect()
     return ret
-        
+
 def send_bend(bend_start, bend_val, rate, bend_dir):
     TAG = tag_adj("send_bend(): ")
     b = bend_start
@@ -1078,7 +1079,7 @@ def send_bend(bend_start, bend_val, rate, bend_dir):
             b = b - rate
             midi.send(PitchBend(b))
             # midi_serial.send(PitchBend(b))
-            
+
     if bend_dir == 1:
         while b < bend_val - rate:
             # print(b)
@@ -1382,7 +1383,7 @@ async def read_buttons(state):
 def reset_encoder(state):
     global encoder
     # encoder = rotaryio.IncrementalEncoder(board.GP18, board.GP19)
-    
+
     encoder.position = 0  # This works OK!
     state.last_position = 0 # Also reset the last position.
 
@@ -1399,7 +1400,7 @@ async def read_encoder(state):
 
     tm_interval = 10
     tm_start = int(time.monotonic()) # Start time keeping track of last encoder rotary control action
-    
+
     while True:
 
         # ---------------------------------------------------------------------------------------------------
@@ -1451,7 +1452,7 @@ async def read_encoder(state):
         if (tm_elapsed >= tm_interval) or (cur_position < -127 or cur_position > 127):
             if (tm_elapsed >= tm_interval):
                 tm_start = tm_curr  # reset the encoder rotary control value to 0 when passing tm_elapsed
-            #                         we want to prevent that the tone value will be changed too much 
+            #                         we want to prevent that the tone value will be changed too much
             #                         at each couple of turns of the encoder rotary control
             #                         or reset the encoder rotary control value when passing limits for note values
             reset_encoder(state)
@@ -1559,7 +1560,7 @@ async def read_encoder(state):
             # same
             pass
         gc.collect()
-    
+
 async def play_note(state, note, delay):
     TAG = tag_adj("play_note(): ")
     try:
