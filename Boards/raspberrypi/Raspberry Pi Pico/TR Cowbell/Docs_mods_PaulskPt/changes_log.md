@@ -17,8 +17,7 @@
  pr_dt(), 
  load_all_note_sets(), 
  load_note_set(),
- fifths_change():
- key_change(), 
+ fk_change():
  tempo_change(), 
  mode_change(), 
  glob_flag_change(), 
@@ -27,7 +26,8 @@
  send_bend(), 
  wr_to_fi(),
  reset_encoder(),
- send_midi_panic(), 
+ send_midi_panic(),
+ extr_midi_note(),
  tag_adj(), 
  do_connect(), 
  dt_update(), 
@@ -378,24 +378,28 @@ only 10 note sets can be loaded
 
 2923-09-15.
 - Because of Memory Allocation errors, I made the following changes:
-- In file midi_note_nrs.py I removed the large midi_notes_dict. I created a new ```octaves_dict``` and an ```octaves_base_lst```.
+- In file ```midi_note_nrs.py``` I removed the large midi_notes_dict. I created a new, short, ```octaves_dict``` and an ```octaves_base_lst```.
 - In file ```code.py``` I created a new function ```extr_midi_note()```. 
 - I combined the functions: ```fifth_change()``` and ```key_change()``` into a new function ```fk_change()```.
   
 - Below the display output of the new fk_change(state, True) call:
-- ```Display notes as
+```
+Display notes as
 fifths: False
  
 Turn encoder control to change
  
-Exit=>Enc Btn```
+Exit=>Enc Btn
+```
 
 Below the display output of the new fk_change(state, False) call:
 
-`´`The key 
+```
+The key 
 of the notes: Major
  
 Turn encoder control to change
  
-Exit=>Enc Btn```
+Exit=>Enc Btn
+```
 
