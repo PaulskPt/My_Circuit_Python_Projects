@@ -209,9 +209,7 @@ mode_rv_dict = {
     "glob_flag_change" : MODE_G
     }
 
-from midi_note_nrs import * # import the midi_notes_dict
-# To check the import:
-# print(f"MIDI_NOTE= {MIDI_NOTE}, MIDI_ORGAN= {MIDI_ORGAN}, MIDI_PIANO= {MIDI_PIANO}, MIDI_FREQ= {MIDI_FREQ}")
+from midi_note_nrs import * # import the octaves_base_lst, octaves_dict and function extr_midi_note()
 
 midi_channel_min = 1
 midi_channel_max = 2
@@ -314,7 +312,6 @@ class State:
         self.bpm = self.tempo / 60 / 16  # 120 / 60 / 16 = 0.125
         self.tempo_reset = False
 
-
         if saved_state_json:
             saved_state_obj = json.loads(saved_state_json)
             for i, note in enumerate(saved_state_obj['notes']):
@@ -336,7 +333,6 @@ class State:
                 self.latches[i] = True
             else:
                 self.latches[i] = False
-
 
 def increment_selected(state):
     _checked = 0
@@ -392,11 +388,8 @@ def get_latch(mcp, pin, state):
 
 def count_btns_active(state):
     TAG = tag_adj("count_btns_active(): ")
-    #cnt = 0
     latches_cnt = 0
     for i in range(16):
-        #if (state.notes_lst[i] is not None) and (state.notes_lst[i] != 0):
-        #    cnt += 1
         if state.latches[i]:
             latches_cnt += 1
     if my_debug:
@@ -405,8 +398,6 @@ def count_btns_active(state):
         else:
             ltch = "latches"
         print(f"\ncount_btns_active(): {latches_cnt} button {ltch} active")
-        #print(f"\ncount_btns_active(): {cnt} button(s) active and {latches_cnt} latches active")
-    # return cnt
     return latches_cnt
 
 def clr_events(state):
@@ -420,20 +411,17 @@ def clr_scrn():
 def pr_state(state):
     global lStart
     TAG = tag_adj("pr_state(): ")
-    # clr_scrn()
     if state.selected_file is None:
         ns = "?"
     else:
         ns = state.selected_file+1
     if state.btn_event or lStart:
         org_cnt = count_btns_active(state)
-        # print(f"btns active: {cnt}")
         if org_cnt == 0:
             my_lst = state.notes_lst
             if len(my_lst) == 0:
                 my_lst = [0] * 16
                 cnt = len(my_lst)
-        #if cnt > 0:
         btn = "button" if org_cnt in [0, 1] else "buttons"
         print(TAG+"\n{:2d} {:s} active".format(org_cnt, btn))
         print("-"*18)
@@ -443,14 +431,13 @@ def pr_state(state):
                 if i % 4 == 0:
                     print("{:2d} ".format(i+1), end='')
                 sn = state.notes_lst[i]
-                if sn >= 21 and  sn < len(midi_notes_dict) and sn in midi_notes_dict.keys():  # 21 = A0
-                    sn = midi_notes_dict[sn][MIDI_NOTE][:3]  # cut e.g. F#6/Gb6 to F#6
-                    if i == state.selected_index:
-                        print(">{:>2s}<".format(sn), end='')  # put a marker for the selected note ---- state.notes_lst[state.selected_index]
-                    else:
-                        print("{:>3s} ".format(sn), end='')
+                sn2 = extr_midi_note(sn)[:3]
+                gc.collect()
+                if i == state.selected_index:
+                    print(">{:>2s}<".format(sn2), end='')  # put a marker for the selected note ---- state.notes_lst[state.selected_index]
                 else:
-                    print("{:>3d} ".format(sn), end='')
+                    print("{:>3s} ".format(sn2), end='')
+
                 if i in [3, 7, 11]:
                     print()
             print("\n"+"-"*18)
@@ -460,25 +447,23 @@ def pr_state(state):
                     grp += 1
                 if i == 4 or i == 12:
                     print("\n", end='')
-                #if i > 0 and i % 4 == 0:
-                #    print("\n   ", end='')
-
                 n = state.notes_lst[i] % 12 # index for notes_major_minor_dict
                 idx = 60 + n # Value 60 represents the "Central C" or C4
 
                 n2 = FIFTHS_NOTES_MAJOR if state.key_major else FIFTHS_NOTES_MINOR
                 if idx in notes_major_minor_dict.keys():
-                    sn = notes_major_minor_dict[idx][n2]
+                    sn2 = notes_major_minor_dict[idx][n2]
                 else:
                     sn = state.notes_lst[i]
                     if sn == 60:
-                        sn = notes_C_dict[sn]
-                le = len(sn)
+                        sn2 = extr_midi_note(sn)[:3]
+                    else:
+                        sn2 = extr_midi_note(sn)
+                    gc.collect()
+                le = len(sn2)
                 if le > 7:
-                    sn = sn[:7]  # was [:5]
-                print("{:s} ".format(sn), end='')
-                #else:
-                #    print("{:>3d} ".format(state.notes_lst[i]), end='')
+                    sn2 = sn2[:7]
+                print("{:s} ".format(sn2), end='')
                 if i == 7:
                     print()
             print("\n"+"-"*18)
@@ -563,7 +548,6 @@ def pr_dt(state, short, choice):
            }
 
     swd = dow[wd][:3] if short else dow[wd]
-
     dt0 = "{:s}".format(swd)
     if my_debug:
         print(TAG+f"state.dt_str_usa: {state.dt_str_usa}")
@@ -573,17 +557,13 @@ def pr_dt(state, short, choice):
             ampm = "PM"
         else:
             ampm = "AM"
-
         if hh == 0:
             hh = 12
-
         dt1 = "{:d}/{:02d}/{:02d}".format(mm, dd, yy)
         dt2 = "{:02d}:{:02d}:{:02d} {:s}".format(hh, mi, ss, ampm)
     else:
         dt1 = "{:d}-{:02d}-{:02d}".format(yy, mm, dd)
         dt2 = "{:02d}:{:02d}:{:02d}".format(hh, mi, ss)
-
-
     if choice2 == DT_ALL:
         ret = dt0 + " " + dt1 + ", "+ dt2
     if choice2 == DT_DATE_L:
@@ -592,32 +572,24 @@ def pr_dt(state, short, choice):
         ret = dt0 + " " + dt1
     if choice == DT_TIME:
         ret = dt2
-
     if my_debug:
         print(TAG+f"{ret}")
-
     return ret
 
 async def blink_the_leds(state, delay=0.125):
     TAG = tag_adj("blink_the_leds(): ")
     while True:
-        #pr_state(state)
         # blink all the LEDs together
         for (x, y) in led_pins:
             if not get_latch(x, y, state):
                 led_pins_per_chip[x][y].value = True
-                # time.sleep(0.001)
                 await asyncio.sleep(0.001)
                 led_pins_per_chip[x][y].value = False
                 await asyncio.sleep(delay)
             else:
-                #if my_debug:
-                    #print(TAG+"getlatch was true")
-                    #print(TAG+f"index: {x}, {y} - {x * 8 + y}")
                 led_pins_per_chip[x][y].value = False
                 #---------- PLAY A NOTE ------------- (added by @PaulskPt -- seeing @Foamyguys stream of dec 2022
                 await play_note(state, state.notes_lst[x * 8 + y], delay)
-                # time.sleep(0.001)
                 led_pins_per_chip[x][y].value = True
         pr_state(state)
 
@@ -625,13 +597,10 @@ async def blink_selected(state, delay=0.05):
     while True:
         if state.selected_index >= 0:
             _selected_chip_and_index = index_to_chip_and_index(state.selected_index)
-            # print(led_pins_per_chip[_selected_chip_and_index[0]][_selected_chip_and_index[1]].value)
             if state.notes_lst[state.selected_index] is not None:
                 led_pins_per_chip[_selected_chip_and_index[0]][_selected_chip_and_index[1]].value = False
-                # time.sleep(delay)
                 await asyncio.sleep(delay)
                 led_pins_per_chip[_selected_chip_and_index[0]][_selected_chip_and_index[1]].value = True
-
             else:
                 if led_pins_per_chip[_selected_chip_and_index[0]][_selected_chip_and_index[1]].value:
                     led_pins_per_chip[_selected_chip_and_index[0]][_selected_chip_and_index[1]].value = False
@@ -663,7 +632,6 @@ def load_all_note_sets(state, use_warnings):
             sl["loops"] = []
         # Check for an empty note set.
         # If not found, add one
-
         # Max 10 note lists
         nr_note_sets_removed = 0
         while True:
@@ -673,10 +641,7 @@ def load_all_note_sets(state, use_warnings):
                 nr_note_sets_removed += 1
             else:
                 break
-
-        # print(TAG+f"sets: {sl['loops']}")
         set_nr = fnd_empty_loop(state)
-        # print(f"set_nr = {set_nr}")
         if set_nr < 0:
             # No empty notes set found. We're going to add one
             ne = {"id": le, "selected_index": -1, "notes": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }
@@ -747,30 +712,52 @@ def load_note_set(state, dir_up, use_warnings):
     state.load_state_obj(state.saved_loops['loops'][state.selected_file])
     state.mode = MODE_I # Change mode to "index"
 
-def fifths_change(state):
-    TAG = tag_adj("fifths_change(): ")
-    if state.display_fifths:
-        state.display_fifths = False  # negate the flag
-    else:
-        state.display_fifths = True
-    msg = [TAG, "Display fifths", "changed to:", state.display_fifths]
-    pr_msg(msg)
+# parameter fk = fifths or key (boolean)
+def fk_change(state, fk):
+    if not isinstance(fk, bool):
+        return
+    s = "{:s} change: ".format("fifths" if fk else "key")
+    TAG = tag_adj(s)
+    msg_shown = False
+    reset_encoder(state)
+    while True:
+        if not msg_shown:
+            clr_scrn()
+            s1 = "Display notes as " if fk else "The key "
+            if fk:
+                s2 = "fifths: {:s}".format("True" if state.display_fifths else "False")
+            else:
+                s2 = "of the notes: {:s}".format("Major" if state.key_major else "Minor")
+            msg = [TAG, s1, s2," ","Turn encoder control to change"," ","Exit=>Enc Btn"]
+            pr_msg(msg)
+            msg_shown = True
 
-def key_change(state):
-    TAG = tag_adj("key_change(): ")
-    if state.key_major:
-        state.key_major = False  # negate the flag
-    else:
-        state.key_major = True
-    k = "{:s}".format("Major" if state.key_major else "Minor")
-    msg = [TAG, "The key", "of the notes", "changed to:", k]
-    pr_msg(msg)
+        cur_position = encoder.position
+        if state.last_position != cur_position:  
+            state.last_position = cur_position
+            if fk:
+                if state.display_fifths:
+                    state.display_fifths = False  # negate the flag
+                else:
+                    state.display_fifths = True    
+            else:
+                if state.key_major:
+                    state.key_major = False  # negate the flag
+                else:
+                    state.key_major = True
+            reset_encoder(state)
+            msg_shown = False
+        
+        encoder_btn.update()  # read the encoder button switch state
+        time.sleep(0.05)
+        if encoder_btn.fell:
+            break
+    state.mode = MODE_I  # Back to index mode
 
 def tempo_change(state, rl):
     TAG = tag_adj("tempo_change(): ")
     diff = None
     tempo_old = state.tempo
-    # print(TAG+f"rl: {rl}, type(rl): {type(rl)}")
     state.tempo_shown = state.tempo_default
     if rl is not None and isinstance(rl, bool):
         # rl stands for right or left
@@ -844,7 +831,6 @@ def mode_change(state):
             scrolled = False if (m_idx < (le - 3)) else True
             n_stop = (le-1) if scrolled else le-2
             n_start = n_stop - (nr_items-1)
-            # print(TAG+f"\nnr_items: {nr_items}, n_start: {n_start}, n_stop: {n_stop}")
             print(scrn_lst[0])  # print heading line
 
             for i in range(n_start, n_stop):
@@ -859,7 +845,6 @@ def mode_change(state):
             print(scrn_lst[le-1], end='')  # print the bottom line
             msg_shown = True
         enc_pos = encoder.position
-        # print(TAG+f"state.lp: {state.last_position}, enc pos: {enc_pos}")
         if state.last_position < enc_pos:  # Rotary control turned CW
             state.last_position = enc_pos
             m_idx += 1
@@ -878,6 +863,17 @@ def mode_change(state):
         encoder_btn.update()
 
         if encoder_btn.fell:
+            if m_idx == MODE_K and not state.display_fifths:
+                msg_shown = False
+                m_idx = MODE_D
+                clr_scrn()
+                s1 = "Switch on fifths "
+                s2 = "first"
+                if my_debug:
+                    print(TAG+s1+s2)
+                msg = [TAG,s1,s2]
+                pr_msg(msg)
+                continue
             if my_debug:
                 print(TAG+f"\nsaving mode as: {mode_dict[m_idx]}")
             state.enc_sw_cnt = m_idx
@@ -925,7 +921,6 @@ def glob_flag_change(state):  # Global flag change
             print(TAG+"\n|---Glob Flag---|")
 
             for k in flags_dict.items():
-                # print(f"k = {k}")
                 d = k[1]
                 for k2, v in d.items():
                     if m_idx == k[0]:
@@ -936,7 +931,6 @@ def glob_flag_change(state):  # Global flag change
             msg_shown = True
 
         enc_pos = encoder.position
-        # print(TAG+f"state.lp: {state.last_position}, enc pos: {enc_pos}")
 
         if state.last_position < enc_pos:
             state.last_position = enc_pos
@@ -975,9 +969,6 @@ def glob_flag_change(state):  # Global flag change
                 if m_idx == 4:
                     flags_dict[m_idx]['dtUS'] = False if state.dt_str_usa == True else True
                     flag_chg_dict['dtUS'] = True
-
-                #if my_debug:
-                #    print(TAG+f"\nsaving global flag as: {flags_dict[m_idx]}")
             break
         time.sleep(0.05)
     # Restore
@@ -997,13 +988,11 @@ def glob_flag_change(state):  # Global flag change
         if i == 3:
             if flag_chg_dict['wifi']:
                 use_wifi = flags_dict[i]['wifi']
-                # print(f"state of global wifi flag: {'True' if use_wifi else 'False'}")
                 if use_wifi:
                     do_connect(state)
         if use_wifi:
             if i == 4:
                 if flag_chg_dict['dtUS']:
-                    # print(TAG+f"changing state.dt_str_USA to: {flags_dict[i]['dtUS']}")
                     state.dt_str_usa = flags_dict[i]['dtUS']
                     # check if it worked
                     msg = [TAG, 'NTP date:', pr_dt(state, True, 0), pr_dt(state, True, 2)]
@@ -1032,7 +1021,6 @@ def fnd_empty_loop(state):
     ret = -1
     id = 0
     id_found = []
-    # print(TAG+f"type(lps)= {type(lps)}")
     if isinstance(lps, dict):
         le = len(lps['loops'])
         if my_debug:
@@ -1066,7 +1054,6 @@ def fnd_empty_loop(state):
             print(TAG+f"zeros count= {cnt}. id\'s found= {id_found}")
             print(TAG+f"lowest id= {n}")
         ret = n
-    # print(TAG+f"ret= {ret}")
     gc.collect()
     return ret
 
@@ -1075,17 +1062,13 @@ def send_bend(bend_start, bend_val, rate, bend_dir):
     b = bend_start
     if bend_dir == 0:
         while b > bend_val + rate:
-            # print(b)
             b = b - rate
             midi.send(PitchBend(b))
-            # midi_serial.send(PitchBend(b))
 
     if bend_dir == 1:
         while b < bend_val - rate:
-            # print(b)
             b = b + rate
             midi.send(PitchBend(b))
-            # midi_serial.send(PitchBend(b))
 
 def wrt_to_fi(state):
     TAG = tag_adj("wrt_to_f(): ")
@@ -1271,7 +1254,6 @@ async def read_buttons(state):
                 if not _new_latch_state:
                     if state.selected_index == chip_and_index_to_index(mcp_number, key_number):
                         increment_selected(state)
-
             # make sure to yield during the reading of the buttons
             gc.collect()
             await asyncio.sleep(0)
@@ -1309,8 +1291,6 @@ async def read_buttons(state):
                                 state.notes_lst[state.selected_index] += 1
                             else:
                                 state.notes_lst[state.selected_index] -= 1
-                            # print(f"state.notes_lst[{state.selected_index}]= {state.notes_lst[state.selected_index]}")
-
                     elif state.mode in [MODE_I, MODE_F]:
                         dir_up = True if ud else False
                         use_warnings = True
@@ -1346,10 +1326,6 @@ async def read_buttons(state):
                     elif state.mode ==  MODE_T:  # "tempo change"
                         if btns_active >0:
                             tempo_change(state, rl)
-
-                    # state.send_off = not state.send_off
-                    # print(f"send off: {state.send_off}")
-
                 if middle_btn.long_press:
                     state.btn_event = True
                     state.longpress_event = True
@@ -1378,20 +1354,18 @@ async def read_buttons(state):
                         tempo_change(state, rl)
         # slow down the loop a little bit, can be adjusted
         gc.collect()
-        await asyncio.sleep(0.15)  # Was: 0.05 or BPM -- has to be longer to avoid double hit
+        await asyncio.sleep(0.15)
 
 def reset_encoder(state):
     global encoder
-    # encoder = rotaryio.IncrementalEncoder(board.GP18, board.GP19)
-
     encoder.position = 0  # This works OK!
     state.last_position = 0 # Also reset the last position.
+    state.enc_sw_cnt = 0
 
 async def read_encoder(state):
     TAG = tag_adj("read_encoder(): ")
     # print("\n"+TAG+f"mode: {mode_dict[state.mode]}")
     pr_state(state)
-
 
     state.enc_sw_cnt = state.mode  # line-up the encoder switch count with that of the current state.mode
 
@@ -1402,23 +1376,25 @@ async def read_encoder(state):
     tm_start = int(time.monotonic()) # Start time keeping track of last encoder rotary control action
 
     while True:
-
-        # ---------------------------------------------------------------------------------------------------
+        # ----------------------------------
         #  Read the encoder button (switch)
-        # ---------------------------------------------------------------------------------------------------
+        # ----------------------------------
 
         if state.mode == MODE_G:
             send_midi_panic()
             glob_flag_change(state)
+        elif state.mode in [MODE_D, MODE_K]:
+            send_midi_panic()
+            gc.collect()
+            choice = True if state.mode == MODE_D else False
+            fk_change(state, choice)
 
         encoder_dbl_btn.update()
 
         if encoder_dbl_btn.short_count >=2 :  # We have an encoder button double press
             send_midi_panic()
+            state.mode = MODE_I
             mode_change(state)
-
-            #if state.mode == mode_dict[MODE_C]:  # "chgm"
-            #    mode_change(state)
         else:
             encoder_btn.update()
             if encoder_btn.fell:
@@ -1428,10 +1404,8 @@ async def read_encoder(state):
                     state.enc_sw_cnt = MODE_MIN
                 if my_debug:
                     print(TAG+f"len(mode_klst): {len(mode_klst)}. New enc_sw_cnt: {state.enc_sw_cnt}")
-                #state.mode = "note" if state.mode == "index" else "index"
                 state.mode = state.enc_sw_cnt  # mode_lst[state.enc_sw_cnt]
                 if my_debug:
-                    # print(TAG+f"mode_dict[MODE_G]: {mode_dict[MODE_G]}, state.mode: {state.mode}")
                     print(TAG+"Encoder sw. pressed")
                     print(TAG+f"new mode:\n\"{mode_dict[state.mode]}\"")
 
@@ -1441,9 +1415,9 @@ async def read_encoder(state):
             print(TAG+f"mode_rv_dict[\"{mode_dict[state.mode]}\"]= {mode_rv_dict[mode_dict[state.mode]]}")
         await asyncio.sleep(0.02)  # was 0.05
 
-        # ---------------------------------------------------------------------------------------------------
+        # ---------------------------------
         #  Read the encoder rotary control
-        # ---------------------------------------------------------------------------------------------------
+        # ---------------------------------
 
         cur_position = encoder.position  # read the rotary encoder control position
         tm_curr = int(time.monotonic())
@@ -1475,11 +1449,11 @@ async def read_encoder(state):
                     if my_debug:
                         print(TAG+f"\nstate.notes_lst[state.selected_index] = {state.notes_lst[state.selected_index]}")
                         print(TAG+f"n= {n}, Encoder rotary control last pos: {state.last_position} -> curr pos: {cur_position}")
-                    if n >= 0 and n < len(midi_notes_dict):
+                    if n >= octaves_dict[0][0] and n < octaves_dict[len(octaves_dict)-1][1]:
                         state.notes_lst[state.selected_index] += cur_position # make big note value changes possible
                     else:
                         n = state.notes_lst[state.selected_index] + 1
-                        if n >= 0 and n < len(midi_notes_dict):
+                        if n >= octaves_dict[0][0] and n < octaves_dict[len(octaves_dict)-1][1]:
                             state.notes_lst[state.selected_index] += 1
             elif state.mode == MODE_M:  # "midi_channel"
                 state.midi_channel += 1
@@ -1499,14 +1473,6 @@ async def read_encoder(state):
                     state.selected_file += 1
                 if my_debug:
                     print(TAG+f"state.selected_file= {state.selected_file}")
-            elif state.mode == MODE_D: # "fifths"
-                send_midi_panic()
-                fifths_change(state)
-            elif state.mode == MODE_K: # "note key Major or Minor
-                send_midi_panic()
-                key_change(state)
-            #elif state.mode == MODE_G: # "global flag change
-            #    glob_flag_change(state)
         elif cur_position < state.last_position:   # turned CCW
             state.last_position = cur_position
             state.btn_event = True
@@ -1525,14 +1491,14 @@ async def read_encoder(state):
                     if my_debug:
                         print(TAG+f"\nstate.notes_lst[state.selected_index] = {state.notes_lst[state.selected_index]}")
                         print(TAG+f"n= {n}, Encoder rotary control last pos: {state.last_position} -> curr pos: {cur_position}")
-                    if n >= 0 and n < len(midi_notes_dict):
+                    if n >= octaves_dict[0][0] and n < octaves_dict[len(octaves_dict)-1][1]:
                         if cur_position < 0:
                             state.notes_lst[state.selected_index] += cur_position  # add a negative value. Make big note value changes possible
                         else:
                             state.notes_lst[state.selected_index] -= cur_position  # subtract a positive value. Make big note value changes possible
                     else:
                         n = state.notes_lst[state.selected_index] - 1
-                        if n >= 0 and n < len(midi_notes_dict):
+                        if n >= octaves_dict[0][0] and n < octaves_dict[len(octaves_dict)-1][1]:
                             state.notes_lst[state.selected_index] -= 1
             elif state.mode == MODE_M:  # "midi_channel"
                 state.midi_channel -= 1
@@ -1553,36 +1519,77 @@ async def read_encoder(state):
                         state.selected_file = 0
                 if my_debug:
                     print(TAG+f"state.selected_file= {state.selected_file}")
-            elif state.mode == MODE_D: # "fifths"
-                send_midi_panic()
-                fifths_change(state)
-            elif state.mode == MODE_K: # "note key Major or Minor
-                send_midi_panic()
-                key_change(state)
-            #elif state.mode == MODE_G: # "global flag change
-            #    glob_flag_change(state)
         else:
             # same
             pass
         gc.collect()
+        
+def extr_midi_note(note):
+    if isinstance(note, int):
+        i = -1
+        j = -1
+        k = -1
+        tipe = -1
+
+        for _ in range(len(octaves_dict)):
+            if note >= octaves_dict[_][0] and note <= octaves_dict[_][1]:
+                i = octaves_dict[_][0]
+                j = octaves_dict[_][1]
+                k = _
+                break
+        
+        if k >= 0:
+            le = (j - i) + 1
+            if le == 3:
+                tipe = 0
+            elif le == 12:
+                tipe = 1
+            elif le == 8:
+                tipe = 2
+                
+            n = note % le
+            
+            # print(f"note: {note}, k: {k}, i: {i}, j: {j}, n(idx): {n}")
+                
+            if tipe >= 0:
+                if tipe == 0:
+                    le1 = (j - i)
+                    le2 = len(octaves_base_lst) -1
+                    lst = octaves_base_lst[le2-le1:]
+                    s = lst[n]
+                    le1 = None
+                    le2 = None
+                    lst = None
+                elif tipe == 1:
+                    s = octaves_base_lst[n]
+                elif tipe == 2:
+                    lst = octaves_base_lst[:le]
+                    s = lst[n]
+                    lst = None
+                gc.collect()
+                le3 = len(s)
+                if le3 == 1:
+                    s2 = s + str(k)
+                elif le3 == 5:
+                    s2 = s[:2] + str(k) + s[2:]+ str(k)
+                else:
+                    s2 = "0"
+                return s2
+    return "0"
 
 async def play_note(state, note, delay):
     TAG = tag_adj("play_note(): ")
     try:
-        if state.midi_ch_chg_event:  # was: if note == 61 and midi_ch_chg_event
-            state.midi_ch_chg_event = False  # Clear event flag
+        if state.midi_ch_chg_event:
+            state.midi_ch_chg_event = False
         if (note > 0 and note < 128 ):
-            if note >= 21 and  note < len(midi_notes_dict) and note in midi_notes_dict.keys():  # 21 = A0
-                sn = midi_notes_dict[note][MIDI_NOTE]
-            else:
-                sn = ""
+            sn = extr_midi_note(note)
+            gc.collect()
             if my_debug:
                 print(TAG+f"\nnote to play: {note} = {sn}")
             if not state.send_off:
                 midi.send(NoteOff(note, 0))
                 note_on = NoteOn(note, 127)
-                #if my_debug:
-                #    print(TAG+f"playing other channel? {note_on.channel}")
                 midi.send(note_on, channel=state.midi_channel)
                 await asyncio.sleep(state.bpm)  # was: delay)
                 if state.send_off:
@@ -1603,72 +1610,28 @@ def send_midi_panic():
         midi.send(NoteOff(x, 0))
         midi.send(NoteOff(x, 0))
 
-async def update_display(state, delay=0.125):
-    while True:
-        b = BytesIO()
-        msgpack.pack({"notes": state.notes_lst,
-                      "selected_index": state.selected_index,
-                      "mode": state.mode}, b)#  "mode": mode_rv_dict[state.mode]}, b)
-        b.seek(0)
-        # print(b.read())
-        # b.seek(0)
-        display_uart.write(b.read())
-        display_uart.write(b"\n")
-        # display_uart.write(struct.pack("b"*len(state.notes_lst),*state.notes_lst))
-
-        await asyncio.sleep(delay)
-
-        # if state.received_ack:
-        #     #display_uart.write(bytes(state.notes_lst))
-        #     b = BytesIO()
-        #     msgpack.pack({"notes": state.notes_lst, "selected_index": state.selected_index}, b)
-        #     b.seek(0)
-        #     print(b.read())
-        #     b.seek(0)
-        #     display_uart.write(b.read())
-        #     display_uart.write(b"\n")
-        #     state.received_ack = False
-        #     #display_uart.write(struct.pack("b"*len(state.notes_lst),*state.notes_lst))
-        #
-        # else:
-        #     data = display_uart.readline()
-        #     if data is not None:
-        #         print(f"received: {data}")
-        #
-        # await asyncio.sleep(delay)
-
 def tag_adj(t):
     global tag_le_max
-
     if use_TAG:
         le = 0
         spc = 0
         ret = t
-
         if isinstance(t, str):
             le = len(t)
         if le >0:
             spc = tag_le_max - le
-            #print(f"spc= {spc}")
             ret = ""+t+"{0:>{1:d}s}".format("",spc)
-            #print(f"s=\'{s}\'")
         return ret
     return ""
 
 def do_connect(state):
     global ip, s_ip, pool, ntp, rtc
     TAG = tag_adj("do_connect(): ")
-    # if my_debug:
-    #    print(TAG+"wifi.radio.enabled=", wifi.radio.enabled)
     cnt = 0
     timeout_cnt = 5
     dc_ip = None
-    #s_ip = None
-    # print(TAG+f"dc_ip= {dc_ip}. type(dc_ip)= {type(dc_ip)}")
     while dc_ip is None or dc_ip == '0.0.0.0':
-        # print(TAG+f"cnt= {cnt}")
         try:
-            # wifi.radio.connect(secrets["ssid"], secrets["password"])
             wifi.radio.connect(os.getenv("CIRCUITPY_WIFI_SSID"), os.getenv("CIRCUITPY_WIFI_PASSWORD"))
         except ConnectionError as e:
             if cnt == 0:
@@ -1701,7 +1664,6 @@ def do_connect(state):
         s_ip = str(ip)
     if s_ip is not None and s_ip != '0.0.0.0':
         if not my_debug:
-            # print(TAG+"s_ip= \'{}\'".format(s_ip))
             print(TAG+f"connected to {os.getenv('CIRCUITPY_WIFI_SSID')}")
             print(TAG+"IP address is", ip)
             msg = [TAG, "connected to", os.getenv('CIRCUITPY_WIFI_SSID'), "IP Address is:", ip,
@@ -1726,8 +1688,6 @@ def do_connect(state):
     elif s_ip == '0.0.0.0':
         print(TAG+f"s_ip= {s_ip}. Resetting this \'{wifi.radio.hostname}\' device...")
         time.sleep(2)  # wait a bit to show the user the message
-        #import microcontroller
-        #microcontroller.reset()
     gc.collect()
 
 def dt_update(state):
@@ -1753,7 +1713,6 @@ def setup(state):
     gc.collect()
 
 async def main():
-    # state = State(saved_loops.LOOP1)
     test_state_json = []
     state = State()
     setup(state)
@@ -1761,7 +1720,6 @@ async def main():
         asyncio.create_task(blink_the_leds(state, delay=0.125)),
         asyncio.create_task(read_buttons(state)),
         asyncio.create_task(blink_selected(state)),
-        asyncio.create_task(update_display(state, delay=0.125)),
         asyncio.create_task(read_encoder(state))
     )
     gc.collect()
