@@ -1,0 +1,340 @@
+Friday 2023-09-15 17h30 PT (UTC +1)
+
+Platform: TR-Cowbell board by @DJDevon3 with Raspberry Pi PicoW
+
+IDE: mu-editor v1.1.1
+
+REPL output    of modified script by @PaulskPt:
+
+
+]0;🐍Wi-Fi: No IP | Done | 8.2.3\]0;🐍Wi-Fi: No IP | Done | 8.2.3\
+Auto-reload is on. Simply save files over USB to run them or enter REPL to disable.
+code.py output:
+]0;🐍192.168.x.yy | code.py | 8.2.3\
+
+TR-COWBELL test
+Board:
+raspberry_pi_pico_w
+Filesystem:Readonly
+OLED driver: SH1107
+--------------------
+Connecting WiFi to Vodafone-8D96F1
+connected to Vodafone-8D96F1
+IP address is 192.168.x.yy
+
+
+
+connected to
+Vodafone-xxxxxx
+IP Address is:
+192.168.x.yy
+NTP date:
+Fri 9/15/2023
+05:22:28 PM
+
+
+
+note sets
+have been
+read from file
+saved_loops.json
+successfully
+
+
+ 0 button active
+------------------
+ 1   0   0   0   0 
+ 5   0   0   0   0 
+ 9   0   0   0   0 
+13   0   0   0   0 
+------------------
+No buttons active
+mode:indx.NoteSet:8
+
+
+loading:                  <<<=== After pressing BUTTON 1 (Up button)
+from
+notes set nr: 1
+
+
+
+ 8 buttons active
+------------------
+ 1  A4  D5  F5   0 
+ 5   0  G4   0  G4 
+ 9   0   0   0  G5 
+13  E5 >A4<  0   0 
+------------------
+selected idx: 14
+mode:indx.NoteSet:1
+
+
+|---- Mode -----|       <<<=== After encoder button double press
+  >> indx 1 << 
+     note 2   
+     file 3   
+     midi 4   
+     fift 5   
+     nkey 6   
+     tmpo 7   
+| Exit=>Enc Btn |
+
+
+|---- Mode -----|      <<<=== After encoder rotary control turn one notch clockwise
+     indx 1   
+  >> note 2 << 
+     file 3   
+     midi 4   
+     fift 5   
+     nkey 6   
+     tmpo 7   
+| Exit=>Enc Btn |
+
+
+|---- Mode -----|      <<<=== After encoder rotary control turn one notch clockwise for a 2nd time
+     indx 1   
+     note 2   
+  >> file 3 << 
+     midi 4   
+     fift 5   
+     nkey 6   
+     tmpo 7   
+| Exit=>Enc Btn |
+
+
+|---- Mode -----|      <<<=== After encoder rotary control turn one notch clockwise for a 3rd time
+     indx 1   
+     note 2   
+     file 3   
+  >> midi 4 << 
+     fift 5   
+     nkey 6   
+     tmpo 7   
+| Exit=>Enc Btn |
+
+
+|---- Mode -----|      <<<=== After encoder rotary control turn one notch clockwise for a 4th time
+     indx 1   
+     note 2   
+     file 3   
+     midi 4   
+  >> fift 5 << 
+     nkey 6   
+     tmpo 7   
+| Exit=>Enc Btn |
+
+
+
+Display notes as       <<<=== After encoder button single press
+fifths: False
+ 
+Turn encoder control to change
+ 
+Exit=>Enc Btn
+
+
+Display notes as       <<<=== After encoder rotary control turn one notch clockwise
+fifths: True
+ 
+Turn encoder control to change
+ 
+Exit=>Enc Btn
+
+
+ 8 buttons active       <<<=== After encoder button single press
+------------------
+A4 D4 F4 C4 
+C4 G4 C4 G4 
+C4 C4 C4 G4 
+E4 A4 C4 C4 
+------------------
+selected idx: 14
+mode:indx.NoteSet:1
+
+
+|---- Mode -----|       <<<=== After encoder button double press
+  >> indx 1 << 
+     note 2   
+     file 3   
+     midi 4   
+     fift 5   
+     nkey 6   
+     tmpo 7   
+| Exit=>Enc Btn |
+
+
+|---- Mode -----|      <<<=== After encoder rotary control turn one notch clockwise
+     indx 1   
+  >> note 2 << 
+     file 3   
+     midi 4   
+     fift 5   
+     nkey 6   
+     tmpo 7   
+| Exit=>Enc Btn |
+
+
+|---- Mode -----|      <<<=== After encoder rotary control turn one notch clockwise for a 2nd time
+     indx 1   
+     note 2   
+  >> file 3 << 
+     midi 4   
+     fift 5   
+     nkey 6   
+     tmpo 7   
+| Exit=>Enc Btn |
+
+
+|---- Mode -----|      <<<=== After encoder rotary control turn one notch clockwise for a 3rd time
+     indx 1   
+     note 2   
+     file 3   
+  >> midi 4 << 
+     fift 5   
+     nkey 6   
+     tmpo 7   
+| Exit=>Enc Btn |
+
+
+|---- Mode -----|      <<<=== After encoder rotary control turn one notch clockwise for a 4th time
+     indx 1   
+     note 2   
+     file 3   
+     midi 4   
+  >> fift 5 << 
+     nkey 6   
+     tmpo 7   
+| Exit=>Enc Btn |
+
+
+|---- Mode -----|      <<<=== After encoder rotary control turn one notch clockwise for a 5th time
+     indx 1   
+     note 2   
+     file 3   
+     midi 4   
+     fift 5   
+  >> nkey 6 << 
+     tmpo 7   
+| Exit=>Enc Btn |
+
+
+
+The key                <<<=== After encoder button single press
+of the notes: Major
+ 
+Turn encoder control to change
+ 
+Exit=>Enc Btn
+
+
+The key 
+of the notes: Minor     <<<=== After encoder rotary control turn one notch clockwise
+ 
+Turn encoder control to change
+ 
+Exit=>Enc Btn
+
+
+
+The key                  <<<=== After encoder rotary control turn one notch counter clockwise
+of the notes: Major
+ 
+Turn encoder control to change
+ 
+Exit=>Enc Btn
+
+
+ 8 buttons active         <<<=== After encoder button single press
+------------------
+A4 D4 F4 C4 
+C4 G4 C4 G4 
+C4 C4 C4 G4 
+E4 A4 C4 C4 
+------------------
+selected idx: 14
+mode:indx.NoteSet:1
+
+
+|---- Mode -----|       <<<=== After encoder button double press
+  >> indx 1 << 
+     note 2   
+     file 3   
+     midi 4   
+     fift 5   
+     nkey 6   
+     tmpo 7   
+| Exit=>Enc Btn |
+
+
+|---- Mode -----|      <<<=== After encoder rotary control turn one notch clockwise
+     indx 1   
+  >> note 2 << 
+     file 3   
+     midi 4   
+     fift 5   
+     nkey 6   
+     tmpo 7   
+| Exit=>Enc Btn |
+
+
+|---- Mode -----|      <<<=== After encoder rotary control turn one notch clockwisea for a 2nd time
+     indx 1   
+     note 2   
+  >> file 3 << 
+     midi 4   
+     fift 5   
+     nkey 6   
+     tmpo 7   
+| Exit=>Enc Btn |
+
+
+|---- Mode -----|      <<<=== After encoder rotary control turn one notch clockwise for a 3rd time
+     indx 1   
+     note 2   
+     file 3   
+  >> midi 4 << 
+     fift 5   
+     nkey 6   
+     tmpo 7   
+| Exit=>Enc Btn |
+
+
+|---- Mode -----|      <<<=== After encoder rotary control turn one notch clockwise for a 4th time
+     indx 1   
+     note 2   
+     file 3   
+     midi 4   
+  >> fift 5 << 
+     nkey 6   
+     tmpo 7   
+| Exit=>Enc Btn |
+
+
+
+Display notes as          <<<=== After encoder button single press
+fifths: True
+ 
+Turn encoder control to change
+ 
+Exit=>Enc Btn
+
+
+
+Display notes as      <<<=== After encoder rotary control turn one notch clockwise
+fifths: False
+ 
+Turn encoder control to change
+ 
+Exit=>Enc Btn
+
+
+ 8 buttons active          <<<=== After encoder button single press
+------------------
+ 1  A4  D5  F5   0 
+ 5   0  G4   0  G4 
+ 9   0   0   0  G5 
+13  E5 >A4<  0   0 
+------------------
+selected idx: 14
+mode:indx.NoteSet:1
+

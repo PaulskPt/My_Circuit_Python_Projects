@@ -375,3 +375,27 @@ only 10 note sets can be loaded
 - Added folder "Docs_mods_PaulskPt".
 - Moved all "REPL...md" files and this file to the new folder.
 - Updated the file "README_buttons_and_controls.md".
+
+2923-09-15.
+- Because of Memory Allocation errors, I made the following changes:
+- In file midi_note_nrs.py I removed the large midi_notes_dict. I created a new ```octaves_dict``` and an ```octaves_base_lst```.
+- In file ```code.py``` I created a new function ```extr_midi_note()```. 
+- I combined the functions: ```fifth_change()``` and ```key_change()``` into a new function ```fk_change()```.
+  
+- Below the display output of the new fk_change(state, True) call:
+- ```Display notes as
+fifths: False
+ 
+Turn encoder control to change
+ 
+Exit=>Enc Btn```
+
+Below the display output of the new fk_change(state, False) call:
+
+`´`The key 
+of the notes: Major
+ 
+Turn encoder control to change
+ 
+Exit=>Enc Btn```
+
