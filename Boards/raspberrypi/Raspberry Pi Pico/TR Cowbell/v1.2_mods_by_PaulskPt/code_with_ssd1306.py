@@ -3,6 +3,10 @@
 # Based on PicoStepSeq by @todbot Tod Kurt
 # https://github.com/todbot/picostepseq/
 # This config requires the bodge fix to work.
+#
+# Added code for scanning I2C0 and I2C1 busses
+# by @PaulskPt (Github) on 2023-08-19
+#
 import asyncio
 import time
 import board
@@ -22,6 +26,45 @@ displayio.release_displays()
 # Initialize 2 Separate Physical I2C buses
 i2c0 = busio.I2C(board.GP13, board.GP12)  # Bus I2C0
 i2c1 = busio.I2C(board.GP27, board.GP26)  # Bus I2C1
+
+
+# Lock the 1st I2C bus
+while not i2c0.try_lock():
+    pass
+
+# Scan the 1st I2C bus
+count0 = 0
+print()
+try:
+    # Scan for devices on the I2C bus
+    print("Scanning I2C0 bus")
+    for x in i2c0.scan():
+        print("device {}: addres: {}".format(count0+1, hex(x)))
+        count0 += 1
+
+    print("%d device(s) found on I2C0 bus" % count0)
+
+finally:  # unlock the i2c0 bus when ctrl-c'ing out of the loop
+    i2c0.unlock()
+
+# Lock the 2nd I2C bus
+while not i2c1.try_lock():
+    pass
+# Scan the 2nd I2C bus
+count1 = 0
+print()
+try:
+    # Scan for devices on the I2C bus
+    print("Scanning I2C0 bus")
+    for x in i2c1.scan():
+        print("device {}: addres: {}".format(count1+1, hex(x)))
+        count1 += 1
+
+    print("%d device(s) found on I2C0 bus" % count1)
+
+finally:  # unlock the i2c1 bus when ctrl-c'ing out of the loop
+    i2c1.unlock()
+
 
 WIDTH = 128
 HEIGHT = 64  # Change to 64 if needed

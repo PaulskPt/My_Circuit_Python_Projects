@@ -8,29 +8,13 @@
 # as a sequence of perfect fifths.
 # Key of C Major:
 
-FIFTHS_NOTES_MAJOR = 0
-FIFTHS_NOTES_MINOR = 1
 # Major: C D E F G A B
 # Minor: A B C D E F G
 
 # Keys of C major and minor.
-notes_major_minor_dict = {
-    60 : ("C4", "cm"),      # middle C  261.63 Hz
-    61 : ("C4#/Db4", "a#m/bbm"),
-    62 : ("D4", "bm"),
-    63 : ("D#4/Eb4", "b#m"),
-    64 : ("E4", "c#m"),
-    65 : ("F4", "dm"),
-    66 : ("F#4/Gb4", "d#m/cbm",),
-    67 : ("G4", "em"),
-    68 : ("G#4/Ab4", "fm"),
-    69 : ("A4", "f#m/gbm"),     # concert pitch  440.00 Hz
-    70 : ("A#4/Bb4", "gm"),
-    71 : ("B4", "g#m"),
-    }
 
-octaves_base_lst = ["C", "C#/Db", "D", "D#/Eb", "E", "F", "F#/Gb", "G", "G#/Ab", "A", "A#/Bb", "B"]
-
+octaves_major_lst = ["C", "C#/Db",    "D",  "D#/Eb", "E",   "F",  "F#/Gb",   "G",  "G#/Ab", "A",       "A#/Bb", "B"]
+octaves_minor_lst = ["cm", "a#m/bbm", "bm", "b#m",   "c#m", "dm", "d#m/cbm", "em", "fm",    "f#m/gbm", "gm",    "g#m"]
 
 octaves_dict = { 
     0: (21, 23),   # only 3 tones

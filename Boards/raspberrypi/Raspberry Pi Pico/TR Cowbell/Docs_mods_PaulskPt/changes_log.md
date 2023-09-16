@@ -17,7 +17,7 @@
  pr_dt(), 
  load_all_note_sets(), 
  load_note_set(),
- fk_change():
+ key_change():
  tempo_change(), 
  mode_change(), 
  glob_flag_change(), 
@@ -401,5 +401,38 @@ of the notes: Major
 Turn encoder control to change
  
 Exit=>Enc Btn
+```
+
+2023-09-16.
+- Since the normal screen contains notes represented in the "Major" key format, decided to remove the ```state.display_fifths``` flag, removed ```MODE_D```. Renamed flag ```state.key_major``` into  ```state.key_minor``` (default: False). Renamed function ```fk_change()``` into ```key_change```. In Class State added the list: ```state.notes_txt_lst```.
+- Changed functions ```extr_midi_notes()```, ```read_buttons()```, ```play_note()```..
+- In file ```midi_note_nrs.py``` renamed the ```octaves_base_lst``` to ```octaves_major_lst```. Added a similar ```octaves_minor_lst```.
+
+The screen when flag ```state.key_minor``` is False:
+
+```
+ 8 buttons active
+------------------
+ 1 >A#4<A#0  A0  C4 
+ 5  C4  C4  C4  C4 
+ 9  C4  C4 C#9  C9 
+13  C4  C4  C4  D3 
+------------------
+selected note: 1
+mode:indx.NoteSet:7
+```
+
+Screen when flag ```state.key_minor``` is True:
+
+```
+ 8 buttons active
+------------------
+>gm<a#m  cm  cm 
+ cm  cm  cm  cm 
+ cm  cm a#m  cm 
+ cm  cm  cm  bm 
+------------------
+selected note: 1
+mode:indx.NoteSet:7
 ```
 
