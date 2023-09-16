@@ -414,10 +414,10 @@ The screen when flag ```state.key_minor``` is False:
 ```
  8 buttons active
 ------------------
- 1 >A#4<A#0  A0  C4 
- 5  C4  C4  C4  C4 
- 9  C4  C4 C#9  C9 
-13  C4  C4  C4  D3 
+ 1 >A#4<A#0   0  C4 
+ 5   0   0  C4   0 
+ 9   0  C4 C#9   0 
+13  C4   0   0  D3 
 ------------------
 selected note: 1
 mode:indx.NoteSet:7
@@ -428,10 +428,10 @@ Screen when flag ```state.key_minor``` is True:
 ```
  8 buttons active
 ------------------
->gm<a#m  cm  cm 
- cm  cm  cm  cm 
- cm  cm a#m  cm 
- cm  cm  cm  bm 
+ 1 >gm<a#m   0  cm 
+ 5   0   0  cm   0 
+ 9   0  cm a#m   0 
+13  cm   0   0  bm 
 ------------------
 selected note: 1
 mode:indx.NoteSet:7
