@@ -406,7 +406,8 @@ Exit=>Enc Btn
 2023-09-16.
 - Since the normal screen contains notes represented in the "Major" key format, decided to remove the ```state.display_fifths``` flag, removed ```MODE_D```. Renamed flag ```state.key_major``` into  ```state.key_minor``` (default: False). Renamed function ```fk_change()``` into ```key_change```. In Class State added the list: ```state.notes_txt_lst```.
 - Changed functions ```extr_midi_notes()```, ```read_buttons()```, ```play_note()```..
-- In file ```midi_note_nrs.py``` renamed the ```octaves_base_lst``` to ```octaves_major_lst```. Added a similar ```octaves_minor_lst```.
+- In file ```midi_note_nrs.py``` removed the dictionary: ```notes_major_minor_dict```, removed the definitions: ```FIFTHS_NOTES_MAJOR``` and 
+```FIFTHS_NOTES_MINOR```. Renamed the ```octaves_base_lst``` to ```octaves_major_lst```. Added a similar ```octaves_minor_lst```.
 
 The screen when flag ```state.key_minor``` is False:
 
