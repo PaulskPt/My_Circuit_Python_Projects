@@ -419,9 +419,9 @@ def pr_state(state):
         print("-"*18)
         grp = 0
         for i in range(len(state.notes_txt_lst)):
-            if not state.key_minor:
-                if i % 4 == 0:
-                    print("{:2d} ".format(i+1), end='')
+            #if not state.key_minor:
+            if i % 4 == 0:
+                print("{:2d} ".format(i+1), end='')
             sn2 = state.notes_txt_lst[i][:3]
             gc.collect()
             if i == state.selected_index:
@@ -701,12 +701,13 @@ def key_change(state):
             msg_shown = False
         
         encoder_btn.update()
-        time.sleep(0.05)
+        # time.sleep(0.125)
         if encoder_btn.fell:
             break
     if old_key != state.key_minor:
         extr_midi_notes(state) # reread
-    state.mode = MODE_I
+    state.mode = MODE_C
+    state.enc_sw_cnt = state.mode # reset
 
 def tempo_change(state, rl):
     TAG = tag_adj("tempo_change(): ")
@@ -797,6 +798,7 @@ def mode_change(state):
                 else:
                     print(scrn_lst[i])
             print(scrn_lst[le-1], end='')
+            print()
             msg_shown = True
         enc_pos = encoder.position
         if state.last_position < enc_pos:  # CW
@@ -1303,9 +1305,9 @@ def reset_encoder(state):
     encoder.position = 0  # This works OK!
     state.last_position = 0 # Also reset the last position.
     state.enc_sw_cnt = 0
-    for _ in range(5):
-        encoder_btn.update()
-        time.sleep(0.005)
+    #for _ in range(5):
+    #    encoder_btn.update()
+    #    time.sleep(0.005)
 
 async def read_encoder(state):
     TAG = tag_adj("read_encoder(): ")
@@ -1326,14 +1328,6 @@ async def read_encoder(state):
         #  Read the encoder button (switch)
         # ----------------------------------
 
-        if state.mode == MODE_G:
-            send_midi_panic()
-            glob_flag_change(state)
-        elif state.mode == MODE_K:
-            send_midi_panic()
-            gc.collect()
-            key_change(state)
-
         encoder_dbl_btn.update()
 
         if encoder_dbl_btn.short_count >=2 :  # We have an encoder button double press
@@ -1353,6 +1347,15 @@ async def read_encoder(state):
                 if my_debug:
                     print(TAG+"Encoder sw. pressed")
                     print(TAG+f"new mode:\n\"{mode_dict[state.mode]}\"")
+                    
+        if state.mode == MODE_G:
+            send_midi_panic()
+            glob_flag_change(state)
+        elif state.mode == MODE_K:
+            send_midi_panic()
+            gc.collect()
+            state.btn_event = False # We don't want the notes screen first
+            key_change(state)
 
         # state.last_position = cur_position
         state.enc_sw_cnt = state.mode  # line-up
@@ -1482,6 +1485,9 @@ def extr_midi_notes(state):
     state.notes_txt_lst = []
     for _ in range(len(state.notes_lst)):
         note = state.notes_lst[_]
+        if note == 0:
+            state.notes_txt_lst.append("0")
+            continue
         for n in range(len(octaves_dict)):
             if note >= octaves_dict[n][0] and note <= octaves_dict[n][1]:
                 i = octaves_dict[n][0]
@@ -1616,12 +1622,12 @@ def do_connect(state):
         ip = dc_ip
         s_ip = str(ip)
     if s_ip is not None and s_ip != '0.0.0.0':
-        if not my_debug:
+        if my_debug:
             print(TAG+f"connected to {os.getenv('CIRCUITPY_WIFI_SSID')}")
             print(TAG+"IP address is", ip)
-            msg = [TAG, "connected to", os.getenv('CIRCUITPY_WIFI_SSID'), "IP Address is:", ip,
-                   'NTP date:', pr_dt(state, True, 0), pr_dt(state, True, 2)]
-            pr_msg(msg)
+        msg = [TAG, "connected to", os.getenv('CIRCUITPY_WIFI_SSID'), "IP Address is:", ip,
+            'NTP date:', pr_dt(state, True, 0), pr_dt(state, True, 2)]
+        pr_msg(msg)
         addr_idx = 0
         addr_dict = {0:'LAN gateway', 1:'google.com'}
         info = pool.getaddrinfo(addr_dict[1], 80)
@@ -1656,7 +1662,8 @@ def setup(state):
     s = "{}".format(os.getenv('CIRCUITPY_WIFI_SSID'))
     s2 = "Connecting WiFi to {:s}".format(s) if not wifi_is_connected() else "WiFi is connected to {:s}".format(s)
     if use_wifi:
-        print(TAG+s2)
+        if my_debug:
+            print(TAG+s2)
         if not wifi_is_connected():
             do_connect(state)
         dt_update(state)
