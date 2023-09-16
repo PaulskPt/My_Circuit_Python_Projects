@@ -1331,9 +1331,12 @@ async def read_encoder(state):
         encoder_dbl_btn.update()
 
         if encoder_dbl_btn.short_count >=2 :  # We have an encoder button double press
+            state.btn_event = False
             send_midi_panic()
+            state.enc_sw_cnt = 0
             state.mode = MODE_I
             mode_change(state)
+            state.btn_event = True
         else:
             encoder_btn.update()
             if encoder_btn.fell:
