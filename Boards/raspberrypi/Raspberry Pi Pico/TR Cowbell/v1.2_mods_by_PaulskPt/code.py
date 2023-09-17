@@ -37,7 +37,11 @@ if use_wifi:
     import rtc
     pool = socketpool.SocketPool(wifi.radio)
     ntp = adafruit_ntp.NTP(pool, tz_offset=1)  # tz_offset utc+1
-    rtc.RTC().datetime = ntp.datetime
+    try:
+        rtc.RTC().datetime = ntp.datetime
+    except OSError as e:
+        print(f"Error {e}")
+    gc.collect()
 else:
     wifi = None
     ipaddress = None
@@ -291,6 +295,7 @@ class State:
         self.midi_channel = 2
         self.midi_ch_chg_event = False # Midi channel change event. See read_encoder() and play_note()
         self.enc_sw_cnt = MODE_I  # mode_klst[1] = index
+        self.enc_double_press = False
         self.key_minor = False  # If True, the key is Minor
         self.rtc_is_set = False
         self.ntp_datetime = None
@@ -301,6 +306,7 @@ class State:
         self.tempo_delta = 10
         self.bpm = self.tempo / 60 / 16  # 120 / 60 / 16 = 0.125
         self.tempo_reset = False
+        self.blink_selected = True
 
         if saved_state_json:
             saved_state_obj = json.loads(saved_state_json)
@@ -404,6 +410,7 @@ def clr_scrn():
 # Called from blink_the_leds()
 def pr_state(state):
     global lStart
+    if state.enc_double_press: return
     TAG = tag_adj("pr_state(): ")
     extr_midi_notes(state)
     gc.collect()
@@ -574,7 +581,8 @@ async def blink_the_leds(state, delay=0.125):
 async def blink_selected(state, delay=0.05):
     while True:
         if state.selected_index >= 0:
-            if state.latches[state.selected_index]:  # @Paulskpt added: ...and not ...:
+            # Don't blink the selected if state.blink_selected is False. Default: True.  @Paulskpt
+            if not state.blink_selected and state.latches[state.selected_index]: 
                 return
             _selected_chip_and_index = index_to_chip_and_index(state.selected_index)
             if state.notes_lst[state.selected_index] is not None:
@@ -691,6 +699,7 @@ def load_note_set(state, dir_up, use_warnings):
 
 def key_change(state):
     TAG = tag_adj("key_changer(): ")
+    if state.enc_double_press: return
     msg_shown = False
     old_key = state.key_minor
     reset_encoder(state)
@@ -837,6 +846,7 @@ def mode_change(state):
             state.enc_sw_cnt = m_idx
             state.mode = m_idx
             state.last_position = enc_pos
+            state.enc_double_press = False # reset
             break
         time.sleep(0.05)
     gc.collect()
@@ -861,14 +871,14 @@ def glob_flag_change(state):  # Global flag change
     old_enc_pos = state.enc_sw_cnt
     v = None
 
-    flags_dict = {0 : {'none' : no_chg_flg}, 1 : {'debug': my_debug}, 2: {'TAG': use_TAG}, 3: {'wifi' : use_wifi}}
+    flags_dict = {0 : {'none' : no_chg_flg}, 1 : {'debug': my_debug}, 2: {'TAG': use_TAG}, 3: {'blinks' : state.blink_selected}, 4: {'wifi' : use_wifi}}
     le = len(flags_dict)
     if use_wifi:
         flags_dict[le] = {'dtUS' : state.dt_str_usa} # add a key and item
     F_MIN = 0
     F_MAX = len(flags_dict)-1
     m_idx = F_MIN
-    flag_chg_dict = {'none': False, 'debug': False, 'TAG': False, 'wifi' : False}
+    flag_chg_dict = {'none': False, 'debug': False, 'TAG': False, 'blinks' : False, 'wifi' : False}
     if use_wifi:
         flag_chg_dict['dtUS'] = False
 
@@ -882,9 +892,9 @@ def glob_flag_change(state):  # Global flag change
                 d = k[1]
                 for k2, v in d.items():
                     if m_idx == k[0]:
-                        print(TAG+"  >> {:>5s} {:d} <<".format(k2, v))
+                        print(TAG+"  >> {:>6s} {:d} <<".format(k2, v))
                     else:
-                        print(TAG+"     {:>5s} {:d}   ".format(k2, v ))
+                        print(TAG+"     {:>6s} {:d}   ".format(k2, v ))
             print(TAG+"| Exit=>Enc Btn |", end= '\n')
             msg_shown = True
 
@@ -920,11 +930,14 @@ def glob_flag_change(state):  # Global flag change
                 flags_dict[m_idx]['TAG'] = False if use_TAG == True else True
                 flag_chg_dict['TAG'] = True
             elif m_idx == 3:
+                flags_dict[m_idx]['blinks'] = False if state.blink_selected == True else True
+                flag_chg_dict['blinks'] = True
+            elif m_idx == 4:
                 flags_dict[m_idx]['wifi'] = False if use_wifi == True else True
                 flag_chg_dict['wifi'] = True
 
             if use_wifi:
-                if m_idx == 4:
+                if m_idx == 5:
                     flags_dict[m_idx]['dtUS'] = False if state.dt_str_usa == True else True
                     flag_chg_dict['dtUS'] = True
             break
@@ -944,20 +957,22 @@ def glob_flag_change(state):  # Global flag change
             if flag_chg_dict['TAG']:
                 use_TAG = flags_dict[i]['TAG']
         if i == 3:
+            if flag_chg_dict['blinks']:
+                state.blink_selected = flags_dict[i]['blinks']
+        if i == 4:
             if flag_chg_dict['wifi']:
                 use_wifi = flags_dict[i]['wifi']
                 if use_wifi:
                     do_connect(state)
         if use_wifi:
-            if i == 4:
+            if i == 5:
                 if flag_chg_dict['dtUS']:
                     state.dt_str_usa = flags_dict[i]['dtUS']
                     # check if it worked
                     msg = [TAG, 'NTP date:', pr_dt(state, True, 0), pr_dt(state, True, 2)]
                     pr_msg(msg)
-
-    if my_debug:
-        print(TAG+f"\ndebug: {my_debug}, TAG: {use_TAG}, wifi: {use_wifi}")
+    if not my_debug:
+        print(TAG+f"\ndebug: {my_debug}, TAG: {use_TAG}, blinks: {state.blink_selected}, wifi: {use_wifi}")
     gc.collect()
 
 def id_change(lps, ne, s, le):  # Called from read_buttons()
@@ -1344,6 +1359,7 @@ async def read_encoder(state):
         encoder_dbl_btn.update()
 
         if encoder_dbl_btn.short_count >=2 :  # We have an encoder button double press
+            state.enc_double_press = True
             state.btn_event = False
             send_midi_panic()
             state.enc_sw_cnt = 0

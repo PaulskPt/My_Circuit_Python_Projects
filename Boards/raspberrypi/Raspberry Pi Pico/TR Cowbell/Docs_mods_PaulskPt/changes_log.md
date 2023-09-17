@@ -441,6 +441,18 @@ mode:indx.NoteSet:7
 
 I changed function ``´blink_the_leds()`` in an attempt to not blink active buttons (latches). I managed to do this. This change makes viewing the 16 leds more calm and indicates better which are active. Only the active selected led kept blinking. I managed to stop the blinking of the active selected by 
 changing the function ```blink_selected()```.
-TODO: add a flag in Class State and add this flag in function ```glob_flag_change()```. Then add this flag as a condition in function ```blink_selected```. In this way the user can activate or de-activate this flag and thus control the blinking (or not) of the active selected.
-I favor for not blinking the active selected because in the screen the selected is marked by the chevrons: ">   <" and by the first text line below the set of notes, e.g.: "selected note: 14". For me a more "calm" behaviour
-of the sixteen leds is more important than the necessity having the selected blink.
+
+I added the flag ```blink_selected```in Class State. Its default value is ```True```. This flag can be changed from within function ```glob_flag_change()```. The state of this flag is used in function ```blink_selected```. In this way the user can activate or de-activate this flag and thus control the blinking (or not) of the active selected.
+I favor for not blinking the active selected because in the screen the selected is marked by the chevrons: ">   <" and by the first text line below the set of notes, e.g.: "selected note: 14". For me a more "calm" behaviour of the sixteen leds is more important than the necessity having the selected blink.
+However, blinking the selected is more in line with the original version by @Foamyguy et al.
+
+Because there occurred an OSError in line 40 of code.py: ```40 rtc.RTC().datetime = ntp.datetime```, I put this line inside a try...except block that will
+catch future occurrances of this error.
+
+To improve the reaction of the encoder button double press, in Class State I added the flag ```enc_double_press```. In function ```read_encoder()``` this flag will be set True as soon as a double press of the encoder button has been registrated. At the start of function ```pr_state()``` I added the line:
+```   if state.enc_double_press: return``` so that the main screen will not be created (and no time used for it). The flag ```state.enc_double_press``` will be cleared in the end of function ```mode_change()```. The line ``` if state.enc_double_press: return``` I also added at the start of function ```key_change()``` because it happened that after a "missed" double press of the encoder button the function key_change() was called (unintended).
+I tested the addition of the state.enc_double_press flag and the changes for it in the code. It improved the response to a double press of the encoder button.
+
+Note that the double press action of the encoder button has to be performed quickly otherwise it will not be "served". This is caused by the execution of the async system.
+
+
