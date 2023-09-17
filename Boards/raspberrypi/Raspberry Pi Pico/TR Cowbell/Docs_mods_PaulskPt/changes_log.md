@@ -438,8 +438,9 @@ mode:indx.NoteSet:7
 ```
 
 2023-09-17
+
 I changed function ``´blink_the_leds()`` in an attempt to not blink active buttons (latches). I managed to do this. This change makes viewing the 16 leds more calm and indicates better which are active. Only the active selected led kept blinking. I managed to stop the blinking of the active selected by 
 changing the function ```blink_selected()```.
 TODO: add a flag in Class State and add this flag in function ```glob_flag_change()```. Then add this flag as a condition in function ```blink_selected```. In this way the user can activate or de-activate this flag and thus control the blinking (or not) of the active selected.
-I favor for not blinking the active selected because in the screen the selected is marked by the chevrons: ">   <". For me a more "calm" behaviour
+I favor for not blinking the active selected because in the screen the selected is marked by the chevrons: ">   <" and by the first text line below the set of notes, e.g.: "selected note: 14". For me a more "calm" behaviour
 of the sixteen leds is more important than the necessity having the selected blink.
