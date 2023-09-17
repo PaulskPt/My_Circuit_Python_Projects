@@ -378,16 +378,20 @@ def get_latch(mcp, pin, state):
 
 def count_btns_active(state):
     TAG = tag_adj("count_btns_active(): ")
+    #latches_lst = []
     latches_cnt = 0
     for i in range(16):
         if state.latches[i]:
+            #latches_lst.append(i)
             latches_cnt += 1
-    if my_debug:
+    if not my_debug:
         if latches_cnt < 2:
             ltch = "latch"
         else:
             ltch = "latches"
-        print(f"\ncount_btns_active(): {latches_cnt} button {ltch} active")
+        #print(TAG+f"\n{latches_cnt} button {ltch} active")
+        #print(TAG+f"latches list: {latches_lst}")
+    #latches_lst = None
     return latches_cnt
 
 def clr_events(state):
@@ -544,25 +548,34 @@ def pr_dt(state, short, choice):
 
 async def blink_the_leds(state, delay=0.125):
     TAG = tag_adj("blink_the_leds(): ")
+    latch_cnt = 0
     while True:
-
         for (x, y) in led_pins:
-            if not get_latch(x, y, state):
-                led_pins_per_chip[x][y].value = True
-                await asyncio.sleep(0.001)
-                led_pins_per_chip[x][y].value = False
-                await asyncio.sleep(delay)
+            # print(f"x: {x}, y: {y}. state.latches[{latch_cnt}]: {state.latches[latch_cnt]}")
+            if state.latches[latch_cnt]:
+                led_pins_per_chip[x][y].value = True # Don't blink an active latch (@PaulskPt)
             else:
-                led_pins_per_chip[x][y].value = False
-                idx = x * 8 + y
-                await play_note(state, idx, delay)
-                led_pins_per_chip[x][y].value = True
+                if not get_latch(x, y, state):
+                    led_pins_per_chip[x][y].value = True
+                    await asyncio.sleep(0.001)
+                    led_pins_per_chip[x][y].value = False
+                    await asyncio.sleep(delay)
+                else:
+                    led_pins_per_chip[x][y].value = False
+                    idx = x * 8 + y
+                    await play_note(state, idx, delay)
+                    led_pins_per_chip[x][y].value = True
+            latch_cnt += 1
+            if latch_cnt >= 16:
+                latch_cnt = 0
         pr_state(state)
         gc.collect()
 
 async def blink_selected(state, delay=0.05):
     while True:
         if state.selected_index >= 0:
+            if state.latches[state.selected_index]:  # @Paulskpt added: ...and not ...:
+                return
             _selected_chip_and_index = index_to_chip_and_index(state.selected_index)
             if state.notes_lst[state.selected_index] is not None:
                 led_pins_per_chip[_selected_chip_and_index[0]][_selected_chip_and_index[1]].value = False
