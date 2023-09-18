@@ -465,11 +465,11 @@ The current mode_change() menu is:
 
 ```
 |---- Mode -----|
-  >> indx 1 << 
+     indx 1   
      note 2   
      file 3   
      midi 4   
-     nkey 5   
+  >> nkey 5 << 
      tmpo 6   
 | Exit=>Enc Btn |
 ```
@@ -477,12 +477,12 @@ The current mode_change() menu is:
 and in case scolled:
 ```
 |---- Mode -----|
-  >> indx 1 << 
      note 2   
      file 3   
      midi 4   
      nkey 5   
-     tmpo 6   
+  >> tmpo 6 << 
+     flag 7   
 | Exit=>Enc Btn |
 ```
 
