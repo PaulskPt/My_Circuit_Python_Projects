@@ -462,7 +462,8 @@ In an attempt to minimize the number of code lines, I took out the globaL variab
 For this I also took my_debug out of the function ```glob_flag_change()```. For this I was also able to remove some other code lines defining the (local) TAG variable, used in most of the debug print lines. This removing action saved 165 lines of code. The number of lines of code went down from 1719 to 1554. Although I keep a copy of the version with the debug print lines for when needed.
 
 The current mode_change() menu is:
-```|---- Mode -----|
+```
+|---- Mode -----|
   >> indx 1 << 
      note 2   
      file 3   
