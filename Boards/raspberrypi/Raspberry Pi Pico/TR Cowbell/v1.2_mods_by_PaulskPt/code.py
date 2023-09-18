@@ -369,8 +369,6 @@ def chip_and_index_to_index(chip, index):
     return chip * 8 + index
 
 def toggle_latch(mcp, pin, state):
-    # print(mcp, pin)
-
     state.latches[mcp * 8 + pin] = not state.latches[mcp * 8 + pin]
     if state.latches[mcp * 8 + pin]:
         state.selected_index = mcp * 8 + pin
@@ -565,17 +563,18 @@ async def blink_the_leds(state, delay=0.125):
 async def blink_selected(state, delay=0.05):
     while True:
         if state.selected_index >= 0:
-            # Don't blink the selected if state.blink_selected is False. Default: True.  @Paulskpt
-            if not state.blink_selected and state.latches[state.selected_index]: 
-                return
-            _selected_chip_and_index = index_to_chip_and_index(state.selected_index)
-            if state.notes_lst[state.selected_index] is not None:
-                led_pins_per_chip[_selected_chip_and_index[0]][_selected_chip_and_index[1]].value = False
-                await asyncio.sleep(delay)
-                led_pins_per_chip[_selected_chip_and_index[0]][_selected_chip_and_index[1]].value = True
-            else:
-                if led_pins_per_chip[_selected_chip_and_index[0]][_selected_chip_and_index[1]].value:
+            if state.blink_selected and state.latches[state.selected_index]: 
+                _selected_chip_and_index = index_to_chip_and_index(state.selected_index)
+                if state.notes_lst[state.selected_index] is not None:
                     led_pins_per_chip[_selected_chip_and_index[0]][_selected_chip_and_index[1]].value = False
+                    await asyncio.sleep(delay)
+                    led_pins_per_chip[_selected_chip_and_index[0]][_selected_chip_and_index[1]].value = True
+                else:
+                    if led_pins_per_chip[_selected_chip_and_index[0]][_selected_chip_and_index[1]].value:
+                        led_pins_per_chip[_selected_chip_and_index[0]][_selected_chip_and_index[1]].value = False
+                    await asyncio.sleep(delay)
+            else:
+                # Don't blink the selected if state.blink_selected is False. Default: True.  @Paulskpt
                 await asyncio.sleep(delay)
         else:
             for i in range(16):
@@ -691,14 +690,15 @@ def key_change(state):
                 state.key_minor = True
             reset_encoder(state)
             msg_shown = False
-        
+    
         encoder_btn.update()
         # time.sleep(0.125)
         if encoder_btn.fell:
             break
     if old_key != state.key_minor:
         extr_midi_notes(state) # reread
-    state.mode = MODE_C
+    state.mode = MODE_I
+    state.btn_event = True
     state.enc_sw_cnt = state.mode # reset
 
 def tempo_change(state, rl):
@@ -807,9 +807,10 @@ def mode_change(state):
             state.enc_sw_cnt = m_idx
             state.mode = m_idx
             state.last_position = enc_pos
-            state.enc_double_press = False # reset
+            state.btn_event = True
             break
         time.sleep(0.05)
+    state.enc_double_press = False # reset
     gc.collect()
 
 def glob_flag_change(state):  # Global flag change
@@ -829,13 +830,14 @@ def glob_flag_change(state):  # Global flag change
     msg_shown = None
     no_chg_flg = False
     old_pos = state.last_position
-    old_enc_pos = state.enc_sw_cnt
+    old_blinks = state.blink_selected
     v = None
 
-    flags_dict = {0 : {'none' : no_chg_flg}, 1 : {'TAG': use_TAG}, 2: {'blinks' : state.blink_selected}, 3: {'wifi' : use_wifi}}
+    flags_dict = {0 : {'none' : no_chg_flg}, 1 : {'TAG': use_TAG}, 2: {'blinks' : old_blinks}, 3: {'wifi' : use_wifi}}
     le = len(flags_dict)
     if use_wifi:
         flags_dict[le] = {'dtUS' : state.dt_str_usa} # add a key and item
+        #print(f"flags_dict: {flags_dict}")
     F_MIN = 0
     F_MAX = len(flags_dict)-1
     m_idx = F_MIN
@@ -901,8 +903,8 @@ def glob_flag_change(state):  # Global flag change
             break
         time.sleep(0.05)
     # Restore
-    state.enc_sw_cnt = old_enc_pos
     state.mode = MODE_I
+    state.enc_sw_cnt = state.mode # was: = old_enc_pos
     state.last_position = old_pos
     for i in range(len(flags_dict)):
         if i == 0:
@@ -1222,7 +1224,7 @@ def reset_encoder(state):
     #    time.sleep(0.005)
 
 async def read_encoder(state):
-    #pr_state(state)
+    pr_state(state)
     gc.collect()
     state.enc_sw_cnt = state.mode  # line-up
     tm_interval = 10
@@ -1243,113 +1245,113 @@ async def read_encoder(state):
             state.enc_sw_cnt = 0
             state.mode = MODE_I
             mode_change(state)
+
+        if state.mode == MODE_G:
+            send_midi_panic()
+            glob_flag_change(state)
+        elif state.mode == MODE_K:
+            send_midi_panic()
+            gc.collect()
+            state.btn_event = False # We don't want the notes screen first
+            key_change(state)
+            
+        encoder_btn.update()
+        if encoder_btn.fell:
             state.btn_event = True
-        else:
-            encoder_btn.update()
-            if encoder_btn.fell:
-                state.btn_event = True
-                state.enc_sw_cnt += 1
-                if state.enc_sw_cnt > MODE_MAX-1:  # Do not allow to go to MODE_G (glob_flag_change) from this location (only from mode_change())
-                    state.enc_sw_cnt = MODE_MIN
-                state.mode = state.enc_sw_cnt  # mode_lst[state.enc_sw_cnt]                 
-            if state.mode == MODE_G:
-                send_midi_panic()
-                glob_flag_change(state)
-            elif state.mode == MODE_K:
-                send_midi_panic()
-                gc.collect()
-                state.btn_event = False # We don't want the notes screen first
-                key_change(state)
+            state.enc_sw_cnt += 1
+            if state.enc_sw_cnt > MODE_MAX-1:  # Do not allow to go to MODE_G (glob_flag_change) from this location (only from mode_change())
+                state.enc_sw_cnt = MODE_MIN
+            state.mode = state.enc_sw_cnt  # mode_lst[state.enc_sw_cnt]  
 
-            # state.last_position = cur_position
-            state.enc_sw_cnt = state.mode  # line-up
-            await asyncio.sleep(0.02)
+        # state.last_position = cur_position
+        state.enc_sw_cnt = state.mode  # line-up
+        await asyncio.sleep(0.02)
 
-            # ---------------------------------
-            #  Read the encoder rotary control
-            # ---------------------------------
+        # ---------------------------------
+        #  Read the encoder rotary control
+        # ---------------------------------
 
-            cur_position = encoder.position
-            tm_curr = int(time.monotonic())
-            tm_elapsed = tm_curr - tm_start
-            if (tm_elapsed >= tm_interval) or (cur_position < -127 or cur_position > 127):
-                if (tm_elapsed >= tm_interval):
-                    tm_start = tm_curr  # reset the encoder rotary control value to 0 when passing tm_elapsed
-                #                         we want to prevent that the tone value will be changed too much
-                #                         at each couple of turns of the encoder rotary control
-                #                         or reset the encoder rotary control value when passing limits for note values
-                reset_encoder(state)
-                cur_position = encoder.position # re-read
-            if state.last_position < cur_position:   # turned CW
-                state.last_position = cur_position
-                state.btn_event = True
-                if state.mode == MODE_C:  # "chgm"
-                    pass # mode_change(state)
-                elif state.mode == MODE_I:
-                    increment_selected(state)
-                elif state.mode == MODE_N:
-                    if state.selected_index != -1:
-                        n = state.notes_lst[state.selected_index] + cur_position
-                        if n >= octaves_dict[0][0] and n < octaves_dict[len(octaves_dict)-1][1]:
-                            state.notes_lst[state.selected_index] += cur_position # make big note value changes possible
-                        else:
-                            n = state.notes_lst[state.selected_index] + 1
-                            if n >= octaves_dict[0][0] and n < octaves_dict[len(octaves_dict)-1][1]:
-                                state.notes_lst[state.selected_index] += 1
-                elif state.mode == MODE_M:
-                    state.midi_channel += 1
-                    state.midi_ch_chg_event = True
-                    if state.midi_channel > midi_channel_max:
-                        state.midi_channel = midi_channel_min
-                    s = "new midi channel {:d}".format(state.midi_channel)
-                    msg = [s]
-                    pr_msg(msg)
-                    s = None
-                elif state.mode == MODE_F:
-                    if state.selected_file is None:
-                        state.selected_file = 0
+        cur_position = encoder.position
+        tm_curr = int(time.monotonic())
+        tm_elapsed = tm_curr - tm_start
+        if (tm_elapsed >= tm_interval) or (cur_position < -127 or cur_position > 127):
+            if (tm_elapsed >= tm_interval):
+                tm_start = tm_curr  # reset the encoder rotary control value to 0 when passing tm_elapsed
+            #                         we want to prevent that the tone value will be changed too much
+            #                         at each couple of turns of the encoder rotary control
+            #                         or reset the encoder rotary control value when passing limits for note values
+            reset_encoder(state)
+            cur_position = encoder.position # re-read
+        if state.last_position < cur_position:   # turned CW
+            state.last_position = cur_position
+            state.btn_event = True
+            if state.mode == MODE_C:  # "chgm"
+                pass # mode_change(state)
+            elif state.mode == MODE_I:
+                increment_selected(state)
+            elif state.mode == MODE_N:
+                if state.selected_index != -1:
+                    n = state.notes_lst[state.selected_index] + cur_position
+                    if n >= octaves_dict[0][0] and n < octaves_dict[len(octaves_dict)-1][1]:
+                        state.notes_lst[state.selected_index] += cur_position # make big note value changes possible
                     else:
-                        state.selected_file += 1
-            elif cur_position < state.last_position:   # CCW
-                state.last_position = cur_position
-                state.btn_event = True
-                if state.mode == MODE_C:  # "chgm"
-                    pass # mode_change(state)
-                elif state.mode == MODE_I:
-                    decrement_selected(state)
-                elif state.mode == MODE_N:
-                    if state.selected_index != -1:
+                        n = state.notes_lst[state.selected_index] + 1
+                        if n >= octaves_dict[0][0] and n < octaves_dict[len(octaves_dict)-1][1]:
+                            state.notes_lst[state.selected_index] += 1
+            elif state.mode == MODE_M:
+                state.midi_channel += 1
+                state.midi_ch_chg_event = True
+                if state.midi_channel > midi_channel_max:
+                    state.midi_channel = midi_channel_min
+                s = "new midi channel {:d}".format(state.midi_channel)
+                msg = [s]
+                pr_msg(msg)
+                s = None
+            elif state.mode == MODE_F:
+                if state.selected_file is None:
+                    state.selected_file = 0
+                else:
+                    state.selected_file += 1
+        elif cur_position < state.last_position:   # CCW
+            state.last_position = cur_position
+            state.btn_event = True
+            if state.mode == MODE_C:  # "chgm"
+                pass # mode_change(state)
+            elif state.mode == MODE_I:
+                decrement_selected(state)
+            elif state.mode == MODE_N:
+                if state.selected_index != -1:
+                    if cur_position < 0:
+                        n = state.notes_lst[state.selected_index] + cur_position  # add a negative value
+                    else:
+                        n = state.notes_lst[state.selected_index] - cur_position  # subtract a positive value
+                    if n >= octaves_dict[0][0] and n < octaves_dict[len(octaves_dict)-1][1]:
                         if cur_position < 0:
-                            n = state.notes_lst[state.selected_index] + cur_position  # add a negative value
+                            state.notes_lst[state.selected_index] += cur_position  # add a negative value. Make big note value changes possible
                         else:
-                            n = state.notes_lst[state.selected_index] - cur_position  # subtract a positive value
-                        if n >= octaves_dict[0][0] and n < octaves_dict[len(octaves_dict)-1][1]:
-                            if cur_position < 0:
-                                state.notes_lst[state.selected_index] += cur_position  # add a negative value. Make big note value changes possible
-                            else:
-                                state.notes_lst[state.selected_index] -= cur_position  # subtract a positive value. Make big note value changes possible
-                        else:
-                            n = state.notes_lst[state.selected_index] - 1
-                            if n >= octaves_dict[0][0] and n < octaves_dict[len(octaves_dict)-1][1]:
-                                state.notes_lst[state.selected_index] -= 1
-                elif state.mode == MODE_M:
-                    state.midi_channel -= 1
-                    state.midi_ch_chg_event = True
-                    if state.midi_channel < midi_channel_min:
-                        state.midi_channel = midi_channel_max
-                    s = "new midi channel {:d}".format(state.midi_channel)
-                    msg = [s]
-                    pr_msg(msg)
-                elif state.mode == MODE_F:  # "file"
-                    if state.selected_file is None:
-                        state.selected_file = 0
+                            state.notes_lst[state.selected_index] -= cur_position  # subtract a positive value. Make big note value changes possible
                     else:
-                        state.selected_file -= 1
-                        if state.selected_file < 0:
-                            state.selected_file = 0
-            else:
-                # same
-                pass
+                        n = state.notes_lst[state.selected_index] - 1
+                        if n >= octaves_dict[0][0] and n < octaves_dict[len(octaves_dict)-1][1]:
+                            state.notes_lst[state.selected_index] -= 1
+            elif state.mode == MODE_M:
+                state.midi_channel -= 1
+                state.midi_ch_chg_event = True
+                if state.midi_channel < midi_channel_min:
+                    state.midi_channel = midi_channel_max
+                s = "new midi channel {:d}".format(state.midi_channel)
+                msg = [s]
+                pr_msg(msg)
+            elif state.mode == MODE_F:  # "file"
+                if state.selected_file is None:
+                    state.selected_file = 0
+                else:
+                    state.selected_file -= 1
+                    if state.selected_file < 0:
+                        state.selected_file = 0
+        else:
+            # same
+            pass
         gc.collect()
 
 def extr_midi_notes(state):
