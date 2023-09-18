@@ -456,3 +456,41 @@ I tested the addition of the state.enc_double_press flag and the changes for it 
 Note that the double press action of the encoder button has to be performed quickly otherwise it will not be "served". This is caused by the execution of the async system.
 
 
+2023-09-18
+
+In an attempt to minimise the number of code lines, I took out the globaL variable ```my_debug``` and all code (print) lines associated with this global variable. 
+For this I also took my_debug out of the function ```glob_flag_change()```. For this I was also able to remove some other code lines defining the (local) TAG variable, used in most of the debug print lines. This removing action saved 165 lines of code. The number of lines of code went down from 1719 to 1554. Although I keep a copy of the version with the debug print lines for when needed.
+
+The current mode_change() menu is:
+```|---- Mode -----|
+  >> indx 1 << 
+     note 2   
+     file 3   
+     midi 4   
+     nkey 5   
+     tmpo 6   
+| Exit=>Enc Btn |
+```
+and in case scolled:
+```
+|---- Mode -----|
+  >> indx 1 << 
+     note 2   
+     file 3   
+     midi 4   
+     nkey 5   
+     tmpo 6   
+| Exit=>Enc Btn |
+```
+
+The current glob_flag_change() menu is:
+```
+|---Glob Flag---|
+       none 0   
+  >>    TAG 0 <<
+     blinks 1   
+       wifi 1   
+       dtUS 1   
+| Exit=>Enc Btn |
+```
+
